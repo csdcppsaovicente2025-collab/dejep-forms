@@ -1,146 +1,334 @@
-// ============================================================
-// APPS SCRIPT — RECEBE DADOS DO FORMULÁRIO WEB E SALVA NA PLANILHA
-// Cole em: Extensões > Apps Script da sua planilha Google Sheets
-// ============================================================
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEJEP — CPP São Vicente</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a2b3c; min-height: 100vh; padding: 2rem 1rem 4rem; }
+    .container { max-width: 680px; margin: 0 auto; }
 
-const SPREADSHEET_ID = 'COLE_O_ID_DA_SUA_PLANILHA_AQUI';
-const ABA_DISPONIBILIDADE = 'Disponibilidade';
+    .header { background: #1a3a5c; color: white; border-radius: 14px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; text-align: center; }
+    .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+    .header p { font-size: 0.9rem; opacity: 0.8; }
 
-function doPost(e) {
-  try {
-    const dados = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const aba = ss.getSheetByName(ABA_DISPONIBILIDADE);
+    .card { background: white; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; border: 1px solid #dde4ed; }
+    .card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #6b80a0; margin-bottom: 1rem; }
 
-    if (!aba) return resposta(false, 'Aba Disponibilidade não encontrada.');
+    .field-group { display: flex; gap: 12px; flex-wrap: wrap; }
+    .field { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 0.83rem; color: #5a6e8a; font-weight: 500; }
+    .field input, .field select { border: 1px solid #d0d9e6; border-radius: 8px; padding: 9px 12px; font-size: 0.95rem; color: #1a2b3c; background: white; outline: none; transition: border 0.15s; width: 100%; }
+    .field input:focus, .field select:focus { border-color: #2d6a9f; }
+    .field input::placeholder { color: #aab8c8; }
+    .field.required label::after { content: ' *'; color: #e05050; }
 
-    const { nome, email, regime, obs, linhas } = dados;
-
-    if (!nome || !regime || !linhas || linhas.length === 0)
-      return resposta(false, 'Dados incompletos.');
-
-    const agora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
-
-    // Garante cabeçalho na linha 3 (padrão da planilha DEJEP)
-    garantirCabecalho(aba);
-
-    // Salva cada dia como uma linha
-    // Colunas: Nome | Dia da semana | Data | Regime | Observação | E-mail | Enviado em
-    linhas.forEach(linha => {
-      aba.appendRow([
-        nome,
-        linha.dow,
-        linha.data,
-        regime,
-        obs || '',
-        email || '',
-        agora
-      ]);
-    });
-
-    // Envia comprovante por e-mail
-    if (email && email.includes('@')) {
-      enviarComprovante(nome, email, regime, obs, linhas, agora);
+    .month-titulo {
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #1a3a5c;
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
-    return resposta(true, 'Disponibilidade registrada com sucesso!');
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .cal-header { text-align: center; font-size: 0.72rem; font-weight: 700; color: #6b80a0; padding: 4px 0; text-transform: uppercase; }
+    .day-cell {
+      border: 1px solid #dde4ed; border-radius: 8px; background: white;
+      cursor: pointer; padding: 6px 2px; text-align: center;
+      transition: border-color 0.12s, background 0.12s; min-height: 44px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .day-cell:hover:not(.empty):not(.past) { border-color: #2d6a9f; background: #f0f6ff; }
+    .day-cell.empty { border: none; background: transparent; cursor: default; }
+    .day-cell.past { opacity: 0.35; cursor: not-allowed; }
+    .day-cell.selected { border-color: #2d6a9f; background: #1a3a5c; }
+    .day-cell.selected .day-num { color: white; }
+    .day-num { font-size: 0.85rem; font-weight: 600; color: #1a2b3c; line-height: 1; }
 
-  } catch (err) {
-    return resposta(false, 'Erro interno: ' + err.message);
-  }
-}
+    .sel-count { font-size: 0.82rem; color: #6b80a0; margin-top: 0.6rem; min-height: 20px; }
 
-function garantirCabecalho(aba) {
-  const val = aba.getRange('A3').getValue();
-  if (val !== 'Nome Completo') {
-    aba.getRange('A3:G3').setValues([[
-      'Nome Completo', 'Dia da Semana', 'Data', 'Regime', 'Observação', 'E-mail', 'Enviado em'
-    ]]);
-    aba.getRange('A3:G3')
-      .setBackground('#1a3a5c')
-      .setFontColor('#ffffff')
-      .setFontWeight('bold');
-  }
-}
+    .obs-field { margin-top: 1rem; }
+    .obs-field label { font-size: 0.83rem; color: #5a6e8a; font-weight: 500; display: block; margin-bottom: 5px; }
+    .obs-field textarea { width: 100%; border: 1px solid #d0d9e6; border-radius: 8px; padding: 9px 12px; font-size: 0.9rem; color: #1a2b3c; resize: vertical; min-height: 70px; outline: none; font-family: inherit; }
+    .obs-field textarea:focus { border-color: #2d6a9f; }
+    .obs-field textarea::placeholder { color: #aab8c8; }
 
-function enviarComprovante(nome, email, regime, obs, linhas, agora) {
-  const primeiroNome = nome.split(' ')[0];
+    .preview-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eef1f5; font-size: 0.85rem; }
+    .preview-row:last-child { border-bottom: none; }
+    .pr-data { color: #6b80a0; min-width: 85px; font-size: 0.82rem; }
+    .pr-dia { font-weight: 600; flex: 1; color: #1a2b3c; }
+    .empty-msg { font-size: 0.88rem; color: #9aabbd; }
 
-  let tabelaLinhas = '';
-  linhas.forEach(l => {
-    tabelaLinhas += `
-      <tr>
-        <td style="padding:8px 14px; border-bottom:1px solid #eee; font-weight:600; color:#1a2b3c;">${l.data}</td>
-        <td style="padding:8px 14px; border-bottom:1px solid #eee; text-transform:capitalize; color:#444;">${l.dow}</td>
-      </tr>`;
-  });
+    .send-btn { width: 100%; margin-top: 1rem; padding: 14px; font-size: 1rem; font-weight: 700; border-radius: 10px; border: none; background: #1a3a5c; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s; }
+    .send-btn:hover { background: #2d6a9f; }
+    .send-btn:disabled { background: #aab8c8; cursor: not-allowed; }
 
-  const obsBloco = obs ? `
-    <div style="margin-top:20px; padding:12px 16px; background:#fff8e0; border-left:4px solid #e0b020; border-radius:4px; font-size:13px; color:#6a4800;">
-      <strong>Observação informada:</strong><br>${obs}
-    </div>` : '';
+    .instrucao { background: #eef4fb; border-left: 4px solid #2d6a9f; border-radius: 6px; padding: 0.75rem 1rem; font-size: 0.83rem; color: #1a3a5c; margin-top: 0.75rem; line-height: 1.6; }
 
-  const html = `
-  <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px;">
-  <div style="max-width:540px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-    <div style="background:#1a3a5c;padding:28px 32px;text-align:center;">
-      <div style="font-size:12px;color:#88aacc;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Polícia Penal SP</div>
-      <div style="font-size:20px;font-weight:700;color:#fff;">CPP São Vicente</div>
-      <div style="font-size:13px;color:#88aacc;margin-top:4px;">Comprovante de Disponibilidade DEJEP</div>
-    </div>
-    <div style="padding:28px 32px;">
-      <p style="font-size:15px;color:#333;margin-bottom:20px;">
-        Olá, <strong>${primeiroNome}</strong>! Sua disponibilidade foi registrada com sucesso.
-      </p>
-      <div style="background:#f8f9fa;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
-        <table style="width:100%;font-size:13px;color:#555;">
-          <tr><td style="padding:4px 0;color:#888;width:100px;">Nome</td><td style="font-weight:600;color:#333;">${nome}</td></tr>
-          <tr><td style="padding:4px 0;color:#888;">Regime</td><td style="font-weight:600;color:#333;">${regime}</td></tr>
-          <tr><td style="padding:4px 0;color:#888;">Enviado em</td><td style="font-weight:600;color:#333;">${agora}</td></tr>
-        </table>
-      </div>
-      <p style="font-size:12px;font-weight:700;color:#1a3a5c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">
-        Dias disponíveis informados (${linhas.length} dia${linhas.length > 1 ? 's' : ''})
-      </p>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <thead>
-          <tr style="background:#f0f4f8;">
-            <th style="padding:8px 14px;text-align:left;font-weight:600;color:#1a3a5c;">Data</th>
-            <th style="padding:8px 14px;text-align:left;font-weight:600;color:#1a3a5c;">Dia da semana</th>
-          </tr>
-        </thead>
-        <tbody>${tabelaLinhas}</tbody>
-      </table>
-      ${obsBloco}
-      <div style="margin-top:24px;padding:14px 16px;background:#eef4fb;border-left:4px solid #2d6a9f;border-radius:4px;font-size:13px;color:#1a3a5c;">
-        <strong>Atenção:</strong> Este e-mail confirma que sua disponibilidade foi recebida.
-        A escala final será definida pela coordenação e comunicada posteriormente.
-      </div>
-    </div>
-    <div style="background:#f0f4f8;padding:14px 32px;text-align:center;font-size:11px;color:#999;">
-      CPP São Vicente &bull; Sistema de Escala DEJEP &bull; E-mail automático
-    </div>
+    .alerta { padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-top: 0.75rem; display: none; }
+    .alerta.erro { background: #fde8e8; color: #a02020; border: 1px solid #f0b0b0; }
+    .alerta.aviso { background: #fff8e0; color: #7a5800; border: 1px solid #f0d070; }
+
+    .sucesso { display: none; text-align: center; padding: 2.5rem 1.5rem; }
+    .sucesso-icone { font-size: 3.5rem; color: #276221; margin-bottom: 1rem; }
+    .sucesso h2 { font-size: 1.3rem; color: #1a3a5c; margin-bottom: 0.5rem; font-weight: 700; }
+    .sucesso p { font-size: 0.9rem; color: #6b80a0; line-height: 1.6; }
+    .email-info { background: #d9ead3; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.88rem; color: #276221; font-weight: 500; }
+    .novo-btn { margin-top: 1.5rem; background: none; border: 1.5px solid #2d6a9f; color: #2d6a9f; border-radius: 8px; padding: 9px 24px; font-size: 0.9rem; cursor: pointer; font-weight: 600; }
+    .novo-btn:hover { background: #eef4fb; }
+
+    @media (max-width: 480px) {
+      .header { padding: 1.25rem 1rem; }
+      .card { padding: 1.25rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>DEJEP — Disponibilidade de Escala</h1>
+    <p>CPP São Vicente &bull; Preencha sua disponibilidade para o mês</p>
   </div>
-  </body></html>`;
 
-  GmailApp.sendEmail(email, '✅ Comprovante DEJEP — CPP São Vicente', '', {
-    htmlBody: html,
-    name: 'DEJEP CPP São Vicente'
-  });
-}
+  <div id="form-area">
 
-function resposta(sucesso, mensagem) {
-  return ContentService
-    .createTextOutput(JSON.stringify({ sucesso, mensagem }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+    <div class="card">
+      <div class="card-title">Identificação</div>
+      <div class="field-group">
+        <div class="field required" style="flex:2; min-width:200px;">
+          <label for="nome">Nome completo</label>
+          <input type="text" id="nome" placeholder="Seu nome completo" oninput="updatePreview()" />
+        </div>
+        <div class="field required">
+          <label for="regime">Regime</label>
+          <select id="regime" onchange="updatePreview()">
+            <option value="">Selecione...</option>
+            <option>Diarista</option>
+            <option>Plantonista</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:12px;">
+        <div class="field required">
+          <label for="email">E-mail (para receber o comprovante)</label>
+          <input type="email" id="email" placeholder="seu.email@exemplo.com" />
+        </div>
+      </div>
+    </div>
 
-// ============================================================
-// COMO PUBLICAR:
-// 1. Clique em "Implantar" > "Nova implantação"
-// 2. Tipo: "App da Web"
-// 3. Executar como: "Eu (seu e-mail)"
-// 4. Quem tem acesso: "Qualquer pessoa"
-// 5. Clique em "Implantar" e autorize
-// 6. Copie a URL e cole no index.html onde está COLE_A_URL_DO_SEU_APPS_SCRIPT_AQUI
-// ============================================================
+    <div class="card">
+      <div class="card-title">Dias disponíveis — clique para marcar ou desmarcar</div>
+      <div class="month-titulo" id="month-titulo"></div>
+      <div class="cal-grid">
+        <div class="cal-header">Dom</div><div class="cal-header">Seg</div>
+        <div class="cal-header">Ter</div><div class="cal-header">Qua</div>
+        <div class="cal-header">Qui</div><div class="cal-header">Sex</div>
+        <div class="cal-header">Sáb</div>
+      </div>
+      <div class="cal-grid" id="calendar" style="margin-top:5px;"></div>
+      <div class="sel-count" id="sel-count"></div>
+
+      <div class="obs-field">
+        <label for="obs">Observações (opcional)</label>
+        <textarea id="obs" placeholder="Ex: não posso nas segundas pela manhã, disponível a partir do dia 10..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Resumo dos dias selecionados</div>
+      <div id="preview-area"><div class="empty-msg">Selecione os dias disponíveis no calendário acima.</div></div>
+
+      <div class="alerta aviso" id="alerta-aviso"></div>
+      <div class="alerta erro" id="alerta-erro"></div>
+
+      <button class="send-btn" id="send-btn" onclick="enviar()">
+        <i class="fa-solid fa-paper-plane"></i> Enviar disponibilidade
+      </button>
+
+      <div class="instrucao">
+        Após enviar, você receberá um <strong>e-mail de comprovante</strong> com todos os dias selecionados.
+        Verifique sua caixa de entrada (e a pasta de spam).
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card sucesso" id="sucesso">
+    <div class="sucesso-icone"><i class="fa-solid fa-circle-check"></i></div>
+    <h2>Disponibilidade registrada!</h2>
+    <p>Sua disponibilidade para DEJEP foi enviada com sucesso e já está na planilha da coordenação.</p>
+    <div class="email-info" id="email-info"></div>
+    <button class="novo-btn" onclick="reiniciar()">Registrar nova disponibilidade</button>
+  </div>
+
+</div>
+<script>
+  // ============================================================
+  // ✏️  ALTERE AQUI TODO MÊS — formato: ano, mês (1=Jan, 12=Dez)
+  // ============================================================
+  const MES_ATIVO = { ano: 2026, mes: 6 }; // Junho 2026
+
+  // ============================================================
+  const APPS_SCRIPT_URL = 'COLE_A_URL_DO_SEU_APPS_SCRIPT_AQUI';
+
+  const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                 'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DIAS_EXT = ['domingo','segunda-feira','terça-feira','quarta-feira',
+                    'quinta-feira','sexta-feira','sábado'];
+
+  const viewYear = MES_ATIVO.ano;
+  const viewMonth = MES_ATIVO.mes - 1; // JS usa 0-11
+  const today = new Date();
+  let selectedDays = new Set();
+
+  function render() {
+    document.getElementById('month-titulo').textContent =
+      MESES[viewMonth] + ' ' + viewYear;
+
+    const cal = document.getElementById('calendar');
+    cal.innerHTML = '';
+    const first = new Date(viewYear, viewMonth, 1).getDay();
+    const total = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+    for (let i = 0; i < first; i++) {
+      const e = document.createElement('div');
+      e.className = 'day-cell empty';
+      cal.appendChild(e);
+    }
+    for (let d = 1; d <= total; d++) {
+      const ds = dateStr(d);
+      const isPast = new Date(viewYear, viewMonth, d) <
+                     new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const cell = document.createElement('div');
+      cell.className = 'day-cell' + (isPast ? ' past' : '') +
+                       (selectedDays.has(ds) ? ' selected' : '');
+      cell.innerHTML = '<div class="day-num">' + d + '</div>';
+      if (!isPast) cell.onclick = () => toggleDay(ds, cell);
+      cal.appendChild(cell);
+    }
+    updateCount();
+  }
+
+  function dateStr(d) {
+    return viewYear + '-' + String(viewMonth + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+  }
+
+  function toggleDay(ds, cell) {
+    if (selectedDays.has(ds)) {
+      selectedDays.delete(ds);
+      cell.classList.remove('selected');
+    } else {
+      selectedDays.add(ds);
+      cell.classList.add('selected');
+    }
+    updateCount(); updatePreview();
+  }
+
+  function updateCount() {
+    const total = selectedDays.size;
+    document.getElementById('sel-count').textContent =
+      total > 0 ? total + ' dia(s) selecionado(s)' : '';
+  }
+
+  function getRows() {
+    const nome = document.getElementById('nome').value.trim();
+    const regime = document.getElementById('regime').value;
+    if (!nome || !regime) return [];
+    return [...selectedDays].sort().map(ds => {
+      const dt = new Date(ds + 'T12:00:00');
+      const dow = DIAS_EXT[dt.getDay()];
+      const fmt = String(dt.getDate()).padStart(2,'0') + '/' +
+                  String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
+      return { nome, regime, dow, data: fmt, raw: ds };
+    });
+  }
+
+  function updatePreview() {
+    const rows = getRows();
+    const area = document.getElementById('preview-area');
+    if (!rows.length) {
+      area.innerHTML = '<div class="empty-msg">Selecione os dias disponíveis no calendário acima.</div>';
+      return;
+    }
+    area.innerHTML = rows.map(r =>
+      '<div class="preview-row">' +
+        '<span class="pr-data">' + r.data + '</span>' +
+        '<span class="pr-dia">' + r.dow.charAt(0).toUpperCase() + r.dow.slice(1) + '</span>' +
+      '</div>'
+    ).join('');
+  }
+
+  function mostrarAlerta(tipo, msg) {
+    ['aviso','erro'].forEach(t => {
+      const el = document.getElementById('alerta-'+t);
+      el.style.display = 'none'; el.textContent = '';
+    });
+    if (tipo && msg) {
+      const el = document.getElementById('alerta-'+tipo);
+      el.textContent = msg; el.style.display = 'block';
+    }
+  }
+
+  async function enviar() {
+    mostrarAlerta(null);
+    const nome = document.getElementById('nome').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const regime = document.getElementById('regime').value;
+    const obs = document.getElementById('obs').value.trim();
+    const rows = getRows();
+
+    if (!nome)  { mostrarAlerta('aviso', 'Preencha seu nome completo.'); return; }
+    if (!regime){ mostrarAlerta('aviso', 'Selecione seu regime de trabalho.'); return; }
+    if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido para receber o comprovante.'); return; }
+    if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível no calendário.'); return; }
+
+    const btn = document.getElementById('send-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+
+    try {
+      const resp = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ nome, email, regime, obs, linhas: rows }),
+      });
+      const json = await resp.json();
+
+      if (json.sucesso) {
+        document.getElementById('form-area').style.display = 'none';
+        document.getElementById('sucesso').style.display = 'block';
+        document.getElementById('email-info').innerHTML =
+          '<i class="fa-solid fa-envelope"></i> Comprovante enviado para <strong>' + email + '</strong>';
+      } else {
+        mostrarAlerta('erro', 'Erro ao salvar: ' + json.mensagem);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar disponibilidade';
+      }
+    } catch(err) {
+      mostrarAlerta('erro', 'Não foi possível conectar. Verifique sua internet e tente novamente.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar disponibilidade';
+    }
+  }
+
+  function reiniciar() {
+    selectedDays.clear();
+    document.getElementById('nome').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('regime').value = '';
+    document.getElementById('obs').value = '';
+    document.getElementById('sucesso').style.display = 'none';
+    document.getElementById('form-area').style.display = 'block';
+    mostrarAlerta(null);
+    render(); updatePreview();
+  }
+
+  render();
+</script>
+</body>
+</html>
