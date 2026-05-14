@@ -1,487 +1,146 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DEJEP — Disponibilidade de Escala</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+// ============================================================
+// APPS SCRIPT — RECEBE DADOS DO FORMULÁRIO WEB E SALVA NA PLANILHA
+// Cole em: Extensões > Apps Script da sua planilha Google Sheets
+// ============================================================
 
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f0f4f8;
-      color: #1a2b3c;
-      min-height: 100vh;
-      padding: 2rem 1rem 4rem;
-    }
+const SPREADSHEET_ID = 'COLE_O_ID_DA_SUA_PLANILHA_AQUI';
+const ABA_DISPONIBILIDADE = 'Disponibilidade';
 
-    .container {
-      max-width: 680px;
-      margin: 0 auto;
-    }
+function doPost(e) {
+  try {
+    const dados = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const aba = ss.getSheetByName(ABA_DISPONIBILIDADE);
 
-    /* HEADER */
-    .header {
-      background: #1a3a5c;
-      color: white;
-      border-radius: 14px;
-      padding: 1.5rem 2rem;
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
-    .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
-    .header p { font-size: 0.9rem; opacity: 0.8; }
+    if (!aba) return resposta(false, 'Aba Disponibilidade não encontrada.');
 
-    /* CARDS */
-    .card {
-      background: white;
-      border-radius: 14px;
-      padding: 1.5rem;
-      margin-bottom: 1.25rem;
-      border: 1px solid #dde4ed;
-    }
-    .card-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: #6b80a0;
-      margin-bottom: 1rem;
-    }
+    const { nome, email, regime, obs, linhas } = dados;
 
-    /* CAMPOS */
-    .field-group { display: flex; gap: 12px; flex-wrap: wrap; }
-    .field { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 5px; }
-    .field label { font-size: 0.83rem; color: #5a6e8a; font-weight: 500; }
-    .field input, .field select {
-      border: 1px solid #d0d9e6;
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-size: 0.95rem;
-      color: #1a2b3c;
-      background: white;
-      outline: none;
-      transition: border 0.15s;
-      width: 100%;
-    }
-    .field input:focus, .field select:focus { border-color: #2d6a9f; }
+    if (!nome || !regime || !linhas || linhas.length === 0)
+      return resposta(false, 'Dados incompletos.');
 
-    /* NAVEGAÇÃO DO MÊS */
-    .month-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.75rem;
-    }
-    .month-nav button {
-      background: none;
-      border: 1px solid #d0d9e6;
-      border-radius: 8px;
-      padding: 5px 14px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      color: #1a3a5c;
-      transition: background 0.12s;
-    }
-    .month-nav button:hover { background: #f0f4f8; }
-    .month-label { font-weight: 700; font-size: 1rem; color: #1a3a5c; }
+    const agora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
 
-    /* CALENDÁRIO */
-    .cal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-    }
-    .cal-header {
-      text-align: center;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #6b80a0;
-      padding: 4px 0;
-      text-transform: uppercase;
-    }
-    .day-cell {
-      border: 1px solid #dde4ed;
-      border-radius: 8px;
-      background: white;
-      cursor: pointer;
-      padding: 4px 2px;
-      text-align: center;
-      transition: border-color 0.12s, background 0.12s;
-      min-height: 52px;
-    }
-    .day-cell:hover:not(.empty):not(.past) { border-color: #2d6a9f; }
-    .day-cell.empty { border: none; background: transparent; cursor: default; }
-    .day-cell.past { opacity: 0.35; cursor: not-allowed; }
-    .day-cell.selected { border-color: #2d6a9f; background: #eef4fb; }
-    .day-num { font-size: 0.8rem; font-weight: 600; color: #1a2b3c; line-height: 1.6; }
-    .day-cell.past .day-num { color: #aaa; }
-    .badge-row { display: flex; gap: 2px; justify-content: center; flex-wrap: wrap; margin-top: 2px; min-height: 12px; }
-    .badge {
-      font-size: 0.6rem;
-      border-radius: 4px;
-      padding: 1px 4px;
-      font-weight: 700;
-    }
-    .b07 { background: #d9ead3; color: #276221; }
-    .b11 { background: #fce5cd; color: #8a4900; }
-    .b23 { background: #cfe2f3; color: #0c447c; }
+    // Garante cabeçalho na linha 3 (padrão da planilha DEJEP)
+    garantirCabecalho(aba);
 
-    /* PICKER DE HORÁRIO */
-    .picker {
-      display: none;
-      background: #f0f4f8;
-      border: 1px solid #dde4ed;
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
-      margin-top: 0.75rem;
-    }
-    .picker.visible { display: block; }
-    .picker-title { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.6rem; color: #1a3a5c; }
-    .picker-btns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .h-btn {
-      border: 1px solid #c8d4e0;
-      border-radius: 8px;
-      background: white;
-      padding: 6px 16px;
-      font-size: 0.88rem;
-      cursor: pointer;
-      color: #1a2b3c;
-      transition: background 0.1s, border-color 0.1s;
-      font-weight: 500;
-    }
-    .h-btn:hover { background: #e8f0fb; }
-    .h-btn.on-07 { background: #d9ead3; border-color: #3a8a30; color: #1a4a16; }
-    .h-btn.on-11 { background: #fce5cd; border-color: #c47a20; color: #6b3c00; }
-    .h-btn.on-23 { background: #cfe2f3; border-color: #378add; color: #0c447c; }
-    .clear-btn {
-      font-size: 0.78rem;
-      color: #8a99aa;
-      background: none;
-      border: none;
-      cursor: pointer;
-      text-decoration: underline;
-      margin-left: auto;
-    }
-
-    /* CONTAGEM */
-    .sel-count { font-size: 0.8rem; color: #6b80a0; margin-top: 0.6rem; }
-
-    /* PREVIEW */
-    .preview-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 0;
-      border-bottom: 1px solid #eef1f5;
-      font-size: 0.85rem;
-    }
-    .preview-row:last-child { border-bottom: none; }
-    .pr-data { color: #6b80a0; min-width: 80px; }
-    .pr-nome { font-weight: 600; flex: 1; }
-    .pr-h { font-size: 0.78rem; color: #6b80a0; }
-    .empty-msg { font-size: 0.88rem; color: #9aabbd; }
-
-    /* BOTÃO COPIAR */
-    .copy-btn {
-      width: 100%;
-      margin-top: 1rem;
-      padding: 12px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      border-radius: 10px;
-      border: 1px solid #2d6a9f;
-      background: #1a3a5c;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: background 0.15s;
-    }
-    .copy-btn:hover { background: #2d6a9f; }
-    .copy-btn.ok { background: #276221; border-color: #276221; }
-
-    /* INSTRUÇÃO */
-    .instrucao {
-      background: #eef4fb;
-      border-left: 4px solid #2d6a9f;
-      border-radius: 6px;
-      padding: 0.75rem 1rem;
-      font-size: 0.83rem;
-      color: #1a3a5c;
-      margin-top: 0.75rem;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 480px) {
-      .header { padding: 1.25rem 1rem; }
-      .card { padding: 1.25rem 1rem; }
-      .day-cell { min-height: 44px; }
-      .day-num { font-size: 0.72rem; }
-    }
-  </style>
-</head>
-<body>
-<div class="container">
-
-  <div class="header">
-    <h1>DEJEP &mdash; Disponibilidade de Escala</h1>
-    <p>CPP SV &bull; Preencha sua disponibilidade para o mês</p>
-  </div>
-
-  <!-- IDENTIFICAÇÃO -->
-  <div class="card">
-    <div class="card-title">Identificação</div>
-    <div class="field-group">
-      <div class="field" style="flex: 2; min-width: 200px;">
-        <label for="nome">Nome completo</label>
-        <input type="text" id="nome" placeholder="Seu nome completo" oninput="updatePreview()" />
-      </div>
-      <div class="field">
-        <label for="regime">Regime</label>
-        <select id="regime" onchange="onRegimeChange()">
-          <option value="">Selecione...</option>
-          <option>Diarista</option>
-          <option>Plantonista</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="turno">Turno</label>
-        <select id="turno" onchange="updatePreview()">
-          <option value="">Selecione...</option>
-          <option>Diurno</option>
-          <option>Noturno</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- CALENDÁRIO -->
-  <div class="card">
-    <div class="card-title">Dias disponíveis — clique no dia e escolha o horário</div>
-
-    <div class="month-nav">
-      <button onclick="changeMonth(-1)">&#8249;</button>
-      <span class="month-label" id="month-label"></span>
-      <button onclick="changeMonth(1)">&#8250;</button>
-    </div>
-
-    <div class="cal-grid" id="cal-headers">
-      <div class="cal-header">Dom</div>
-      <div class="cal-header">Seg</div>
-      <div class="cal-header">Ter</div>
-      <div class="cal-header">Qua</div>
-      <div class="cal-header">Qui</div>
-      <div class="cal-header">Sex</div>
-      <div class="cal-header">Sáb</div>
-    </div>
-    <div class="cal-grid" id="calendar"></div>
-    <div class="sel-count" id="sel-count"></div>
-
-    <div class="picker" id="picker">
-      <div class="picker-title" id="picker-title"></div>
-      <div class="picker-btns">
-        <button class="h-btn" id="btn-07" onclick="toggle('07h (Diurno)')">07h — diurno</button>
-        <button class="h-btn" id="btn-11" onclick="toggle('11h (Diurno)')">11h — diurno</button>
-        <button class="h-btn" id="btn-23" onclick="toggle('23h (Noturno)')">23h — noturno</button>
-        <button class="clear-btn" onclick="clearDay()">Limpar dia</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- PREVIEW -->
-  <div class="card">
-    <div class="card-title">Pré-visualização — linhas prontas para a planilha</div>
-    <div id="preview-area"><div class="empty-msg">Preencha seu nome e selecione os dias disponíveis.</div></div>
-
-    <button class="copy-btn" id="copy-btn" onclick="copyAll()">
-      <i class="fa-regular fa-copy"></i> Copiar tudo para colar na planilha
-    </button>
-
-    <div class="instrucao">
-      <strong>Como usar:</strong> Após copiar, abra o Google Sheets na aba <strong>Disponibilidade</strong>,
-      clique na primeira célula vazia da coluna A e pressione <strong>Ctrl+V</strong> (ou Cmd+V no Mac).
-      Os dados serão colados automaticamente nas colunas certas.
-    </div>
-  </div>
-
-</div>
-
-<script>
-  const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                 'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const DIAS_EXT = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-
-  const today = new Date();
-  let viewYear = today.getFullYear();
-  let viewMonth = today.getMonth();
-  let selDay = null;
-  let dayData = {};
-
-  function changeMonth(dir) {
-    viewMonth += dir;
-    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-    if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
-    selDay = null;
-    document.getElementById('picker').classList.remove('visible');
-    render();
-    updatePreview();
-  }
-
-  function render() {
-    document.getElementById('month-label').textContent = MESES[viewMonth] + ' ' + viewYear;
-    const cal = document.getElementById('calendar');
-    cal.innerHTML = '';
-    const first = new Date(viewYear, viewMonth, 1).getDay();
-    const total = new Date(viewYear, viewMonth + 1, 0).getDate();
-
-    for (let i = 0; i < first; i++) {
-      const e = document.createElement('div');
-      e.className = 'day-cell empty';
-      cal.appendChild(e);
-    }
-
-    for (let d = 1; d <= total; d++) {
-      const ds = dateStr(d);
-      const isPast = new Date(viewYear, viewMonth, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const cell = document.createElement('div');
-      cell.className = 'day-cell' + (isPast ? ' past' : '') + (dayData[ds]?.length ? ' selected' : '');
-      cell.innerHTML = `<div class="day-num">${d}</div><div class="badge-row" id="br-${ds}"></div>`;
-      if (!isPast) cell.onclick = () => openPicker(ds, d);
-      cal.appendChild(cell);
-      drawBadges(ds);
-    }
-    updateCount();
-  }
-
-  function dateStr(d) {
-    return `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  }
-
-  function drawBadges(ds) {
-    const row = document.getElementById('br-' + ds);
-    if (!row) return;
-    row.innerHTML = '';
-    (dayData[ds] || []).forEach(h => {
-      const b = document.createElement('span');
-      b.className = 'badge ' + (h.startsWith('07') ? 'b07' : h.startsWith('11') ? 'b11' : 'b23');
-      b.textContent = h.startsWith('07') ? '07h' : h.startsWith('11') ? '11h' : '23h';
-      row.appendChild(b);
+    // Salva cada dia como uma linha
+    // Colunas: Nome | Dia da semana | Data | Regime | Observação | E-mail | Enviado em
+    linhas.forEach(linha => {
+      aba.appendRow([
+        nome,
+        linha.dow,
+        linha.data,
+        regime,
+        obs || '',
+        email || '',
+        agora
+      ]);
     });
-  }
 
-  function openPicker(ds, d) {
-    selDay = ds;
-    const dow = new Date(viewYear, viewMonth, d).getDay();
-    document.getElementById('picker-title').textContent =
-      DIAS_EXT[dow].charAt(0).toUpperCase() + DIAS_EXT[dow].slice(1) + ', ' + d + ' de ' + MESES[viewMonth];
-    document.getElementById('picker').classList.add('visible');
-    refreshBtns();
-  }
-
-  function refreshBtns() {
-    const hs = dayData[selDay] || [];
-    document.getElementById('btn-07').className = 'h-btn' + (hs.includes('07h (Diurno)') ? ' on-07' : '');
-    document.getElementById('btn-11').className = 'h-btn' + (hs.includes('11h (Diurno)') ? ' on-11' : '');
-    document.getElementById('btn-23').className = 'h-btn' + (hs.includes('23h (Noturno)') ? ' on-23' : '');
-  }
-
-  function toggle(h) {
-    if (!selDay) return;
-    if (!dayData[selDay]) dayData[selDay] = [];
-    const i = dayData[selDay].indexOf(h);
-    if (i >= 0) dayData[selDay].splice(i, 1);
-    else dayData[selDay].push(h);
-    refreshBtns();
-    const cell = document.getElementById('br-' + selDay)?.parentElement;
-    if (cell) cell.className = 'day-cell' + (dayData[selDay].length ? ' selected' : '');
-    drawBadges(selDay);
-    updateCount();
-    updatePreview();
-  }
-
-  function clearDay() {
-    if (!selDay) return;
-    dayData[selDay] = [];
-    const cell = document.getElementById('br-' + selDay)?.parentElement;
-    if (cell) cell.className = 'day-cell';
-    drawBadges(selDay);
-    refreshBtns();
-    updateCount();
-    updatePreview();
-  }
-
-  function updateCount() {
-    const total = Object.values(dayData).reduce((s, v) => s + v.length, 0);
-    document.getElementById('sel-count').textContent = total > 0
-      ? total + ' horário(s) selecionado(s) no total'
-      : '';
-  }
-
-  function onRegimeChange() {
-    const r = document.getElementById('regime').value;
-    const t = document.getElementById('turno');
-    if (r === 'Diarista') { t.value = 'Diurno'; t.disabled = true; }
-    else { t.disabled = false; }
-    updatePreview();
-  }
-
-  function getRows() {
-    const nome = document.getElementById('nome').value.trim();
-    const regime = document.getElementById('regime').value;
-    const turno = document.getElementById('turno').value;
-    if (!nome || !regime || !turno) return [];
-    const rows = [];
-    Object.entries(dayData).forEach(([ds, hs]) => {
-      hs.forEach(h => {
-        const dt = new Date(ds + 'T12:00:00');
-        const dow = DIAS_EXT[dt.getDay()];
-        const fmt = String(dt.getDate()).padStart(2,'0') + '/' +
-                    String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
-        rows.push({ nome, dow, data: fmt, horario: h, raw: ds });
-      });
-    });
-    return rows.sort((a, b) => a.raw > b.raw ? 1 : -1);
-  }
-
-  function updatePreview() {
-    const rows = getRows();
-    const area = document.getElementById('preview-area');
-    if (!rows.length) {
-      area.innerHTML = '<div class="empty-msg">Preencha seu nome e selecione os dias disponíveis.</div>';
-      return;
+    // Envia comprovante por e-mail
+    if (email && email.includes('@')) {
+      enviarComprovante(nome, email, regime, obs, linhas, agora);
     }
-    area.innerHTML = rows.map(r =>
-      `<div class="preview-row">
-        <span class="pr-data">${r.data}</span>
-        <span class="pr-nome">${r.nome}</span>
-        <span class="pr-h">${r.dow} &bull; ${r.horario}</span>
-       </div>`
-    ).join('');
-  }
 
-  function copyAll() {
-    const rows = getRows();
-    if (!rows.length) {
-      alert('Preencha seu nome e selecione ao menos um dia antes de copiar.');
-      return;
-    }
-    const txt = rows.map(r => `${r.nome}\t${r.dow}\t${r.data}\t${r.horario}`).join('\n');
-    navigator.clipboard.writeText(txt).then(() => {
-      const btn = document.getElementById('copy-btn');
-      btn.classList.add('ok');
-      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copiado! Cole agora na aba Disponibilidade';
-      setTimeout(() => {
-        btn.classList.remove('ok');
-        btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copiar tudo para colar na planilha';
-      }, 3500);
-    }).catch(() => alert('Não foi possível copiar automaticamente. Selecione o texto manualmente.'));
-  }
+    return resposta(true, 'Disponibilidade registrada com sucesso!');
 
-  render();
-</script>
-</body>
-</html>
+  } catch (err) {
+    return resposta(false, 'Erro interno: ' + err.message);
+  }
+}
+
+function garantirCabecalho(aba) {
+  const val = aba.getRange('A3').getValue();
+  if (val !== 'Nome Completo') {
+    aba.getRange('A3:G3').setValues([[
+      'Nome Completo', 'Dia da Semana', 'Data', 'Regime', 'Observação', 'E-mail', 'Enviado em'
+    ]]);
+    aba.getRange('A3:G3')
+      .setBackground('#1a3a5c')
+      .setFontColor('#ffffff')
+      .setFontWeight('bold');
+  }
+}
+
+function enviarComprovante(nome, email, regime, obs, linhas, agora) {
+  const primeiroNome = nome.split(' ')[0];
+
+  let tabelaLinhas = '';
+  linhas.forEach(l => {
+    tabelaLinhas += `
+      <tr>
+        <td style="padding:8px 14px; border-bottom:1px solid #eee; font-weight:600; color:#1a2b3c;">${l.data}</td>
+        <td style="padding:8px 14px; border-bottom:1px solid #eee; text-transform:capitalize; color:#444;">${l.dow}</td>
+      </tr>`;
+  });
+
+  const obsBloco = obs ? `
+    <div style="margin-top:20px; padding:12px 16px; background:#fff8e0; border-left:4px solid #e0b020; border-radius:4px; font-size:13px; color:#6a4800;">
+      <strong>Observação informada:</strong><br>${obs}
+    </div>` : '';
+
+  const html = `
+  <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px;">
+  <div style="max-width:540px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+    <div style="background:#1a3a5c;padding:28px 32px;text-align:center;">
+      <div style="font-size:12px;color:#88aacc;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Polícia Penal SP</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;">CPP São Vicente</div>
+      <div style="font-size:13px;color:#88aacc;margin-top:4px;">Comprovante de Disponibilidade DEJEP</div>
+    </div>
+    <div style="padding:28px 32px;">
+      <p style="font-size:15px;color:#333;margin-bottom:20px;">
+        Olá, <strong>${primeiroNome}</strong>! Sua disponibilidade foi registrada com sucesso.
+      </p>
+      <div style="background:#f8f9fa;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
+        <table style="width:100%;font-size:13px;color:#555;">
+          <tr><td style="padding:4px 0;color:#888;width:100px;">Nome</td><td style="font-weight:600;color:#333;">${nome}</td></tr>
+          <tr><td style="padding:4px 0;color:#888;">Regime</td><td style="font-weight:600;color:#333;">${regime}</td></tr>
+          <tr><td style="padding:4px 0;color:#888;">Enviado em</td><td style="font-weight:600;color:#333;">${agora}</td></tr>
+        </table>
+      </div>
+      <p style="font-size:12px;font-weight:700;color:#1a3a5c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">
+        Dias disponíveis informados (${linhas.length} dia${linhas.length > 1 ? 's' : ''})
+      </p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#f0f4f8;">
+            <th style="padding:8px 14px;text-align:left;font-weight:600;color:#1a3a5c;">Data</th>
+            <th style="padding:8px 14px;text-align:left;font-weight:600;color:#1a3a5c;">Dia da semana</th>
+          </tr>
+        </thead>
+        <tbody>${tabelaLinhas}</tbody>
+      </table>
+      ${obsBloco}
+      <div style="margin-top:24px;padding:14px 16px;background:#eef4fb;border-left:4px solid #2d6a9f;border-radius:4px;font-size:13px;color:#1a3a5c;">
+        <strong>Atenção:</strong> Este e-mail confirma que sua disponibilidade foi recebida.
+        A escala final será definida pela coordenação e comunicada posteriormente.
+      </div>
+    </div>
+    <div style="background:#f0f4f8;padding:14px 32px;text-align:center;font-size:11px;color:#999;">
+      CPP São Vicente &bull; Sistema de Escala DEJEP &bull; E-mail automático
+    </div>
+  </div>
+  </body></html>`;
+
+  GmailApp.sendEmail(email, '✅ Comprovante DEJEP — CPP São Vicente', '', {
+    htmlBody: html,
+    name: 'DEJEP CPP São Vicente'
+  });
+}
+
+function resposta(sucesso, mensagem) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ sucesso, mensagem }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ============================================================
+// COMO PUBLICAR:
+// 1. Clique em "Implantar" > "Nova implantação"
+// 2. Tipo: "App da Web"
+// 3. Executar como: "Eu (seu e-mail)"
+// 4. Quem tem acesso: "Qualquer pessoa"
+// 5. Clique em "Implantar" e autorize
+// 6. Copie a URL e cole no index.html onde está COLE_A_URL_DO_SEU_APPS_SCRIPT_AQUI
+// ============================================================
