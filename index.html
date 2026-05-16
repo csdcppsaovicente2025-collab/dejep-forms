@@ -15,7 +15,7 @@
     .card { background: white; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; border: 1px solid #dde4ed; }
     .card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #6b80a0; margin-bottom: 1rem; }
     .field-group { display: flex; gap: 12px; flex-wrap: wrap; }
-    .field { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 5px; }
+    .field { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 5px; }
     .field label { font-size: 0.83rem; color: #5a6e8a; font-weight: 500; }
     .field input, .field select { border: 1px solid #d0d9e6; border-radius: 8px; padding: 9px 12px; font-size: 0.95rem; color: #1a2b3c; background: white; outline: none; transition: border 0.15s; width: 100%; }
     .field input:focus, .field select:focus { border-color: #2d6a9f; }
@@ -75,6 +75,16 @@
           <input type="text" id="nome" placeholder="Seu nome completo" oninput="updatePreview()" />
         </div>
         <div class="field required">
+          <label for="genero">Gênero</label>
+          <select id="genero" onchange="updatePreview()">
+            <option value="">Selecione...</option>
+            <option>Masculino</option>
+            <option>Feminino</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:12px;">
+        <div class="field required">
           <label for="regime">Regime</label>
           <select id="regime" onchange="updatePreview()">
             <option value="">Selecione...</option>
@@ -112,7 +122,7 @@
       <div class="sel-count" id="sel-count"></div>
       <div class="obs-field">
         <label for="obs">Observações (opcional)</label>
-        <textarea id="obs" placeholder="Ex: não posso nas segundas pela manhã, disponível a partir do dia 10..."></textarea>
+        <textarea id="obs" placeholder="Ex: não posso nas segundas pela manhã..."></textarea>
       </div>
     </div>
 
@@ -141,7 +151,7 @@
 </div>
 
 <script>
-  // ✏️ ALTERE AQUI TODO MÊS — formato: ano, mês (1=Jan, 12=Dez)
+  // ✏️ ALTERE AQUI TODO MÊS
   const MES_ATIVO = { ano: 2026, mes: 6 }; // Junho 2026
 
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbww3uivOnWXDmPfhtb1tEVK15p-esBsQz_dQIQP_IB17uFv19dNSWqGfLnTw1GLcdVRQg/exec';
@@ -193,12 +203,13 @@
     const nome = document.getElementById('nome').value.trim();
     const regime = document.getElementById('regime').value;
     const turno = document.getElementById('turno').value;
-    if (!nome || !regime || !turno) return [];
+    const genero = document.getElementById('genero').value;
+    if (!nome || !regime || !turno || !genero) return [];
     return [...selectedDays].sort().map(ds => {
       const dt = new Date(ds + 'T12:00:00');
       const dow = DIAS_EXT[dt.getDay()];
       const fmt = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
-      return { nome, regime, turno, dow, data: fmt, raw: ds };
+      return { nome, regime, turno, genero, dow, data: fmt, raw: ds };
     });
   }
 
@@ -222,21 +233,23 @@
     const email = document.getElementById('email').value.trim();
     const regime = document.getElementById('regime').value;
     const turno = document.getElementById('turno').value;
+    const genero = document.getElementById('genero').value;
     const obs = document.getElementById('obs').value.trim();
     const rows = getRows();
 
     if (!nome) { mostrarAlerta('aviso', 'Preencha seu nome completo.'); return; }
+    if (!genero) { mostrarAlerta('aviso', 'Selecione seu gênero.'); return; }
     if (!regime) { mostrarAlerta('aviso', 'Selecione seu regime de trabalho.'); return; }
     if (!turno) { mostrarAlerta('aviso', 'Selecione seu turno.'); return; }
-    if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido para receber o comprovante.'); return; }
-    if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível no calendário.'); return; }
+    if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido.'); return; }
+    if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível.'); return; }
 
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
 
     try {
-      const payload = { nome, email, regime, turno, obs, linhas: rows };
+      const payload = { nome, email, regime, turno, genero, obs, linhas: rows };
       const url = APPS_SCRIPT_URL + '?dados=' + encodeURIComponent(JSON.stringify(payload));
       const resp = await fetch(url, { method: 'GET' });
       const json = await resp.json();
@@ -264,6 +277,7 @@
     document.getElementById('email').value = '';
     document.getElementById('regime').value = '';
     document.getElementById('turno').value = '';
+    document.getElementById('genero').value = '';
     document.getElementById('obs').value = '';
     document.getElementById('sucesso').style.display = 'none';
     document.getElementById('form-area').style.display = 'block';
