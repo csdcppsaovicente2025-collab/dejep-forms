@@ -265,6 +265,7 @@
 
     try {
       const payload = { nome, email, regime, turno, genero, dejeps_mes, obs, linhas: rows };
+      console.log('PAYLOAD ENVIADO:', JSON.stringify(payload));
       const url = APPS_SCRIPT_URL + '?dados=' + encodeURIComponent(JSON.stringify(payload));
       const resp = await fetch(url, { method: 'GET' });
       const json = await resp.json();
