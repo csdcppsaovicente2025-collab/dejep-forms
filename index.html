@@ -93,11 +93,11 @@
           </select>
         </div>
         <div class="field required">
-          <label for="turno">Turno</label>
+          <label for="turno">Qual regime da DEJEP?</label>
           <select id="turno" onchange="updatePreview()">
             <option value="">Selecione...</option>
-            <option>Diurno</option>
-            <option>Noturno</option>
+            <option value="Diurno">Diurna</option>
+            <option value="Noturno">Noturna</option>
           </select>
         </div>
       </div>
@@ -254,7 +254,7 @@
     if (!nome) { mostrarAlerta('aviso', 'Preencha seu nome completo.'); return; }
     if (!genero) { mostrarAlerta('aviso', 'Selecione seu gênero.'); return; }
     if (!regime) { mostrarAlerta('aviso', 'Selecione seu regime de trabalho.'); return; }
-    if (!turno) { mostrarAlerta('aviso', 'Selecione seu turno.'); return; }
+    if (!turno) { mostrarAlerta('aviso', 'Selecione o regime da DEJEP.'); return; }
     if (!dejeps_mes) { mostrarAlerta('aviso', 'Informe quantas DEJEPs fez no mês atual.'); return; }
     if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido.'); return; }
     if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível.'); return; }
