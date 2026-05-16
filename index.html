@@ -103,6 +103,18 @@
       </div>
       <div class="field-group" style="margin-top:12px;">
         <div class="field required">
+          <label for="dejeps_mes">Quantas DEJEPs fez ou ainda vai fazer no mês atual?</label>
+          <select id="dejeps_mes" onchange="updatePreview()">
+            <option value="">Selecione...</option>
+            <option>Nenhuma</option>
+            <option>Uma</option>
+            <option>Duas</option>
+            <option>Três ou mais</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group" style="margin-top:12px;">
+        <div class="field required">
           <label for="email">E-mail (para receber o comprovante)</label>
           <input type="email" id="email" placeholder="seu.email@exemplo.com" />
         </div>
@@ -204,12 +216,13 @@
     const regime = document.getElementById('regime').value;
     const turno = document.getElementById('turno').value;
     const genero = document.getElementById('genero').value;
-    if (!nome || !regime || !turno || !genero) return [];
+    const dejeps_mes = document.getElementById('dejeps_mes').value;
+    if (!nome || !regime || !turno || !genero || !dejeps_mes) return [];
     return [...selectedDays].sort().map(ds => {
       const dt = new Date(ds + 'T12:00:00');
       const dow = DIAS_EXT[dt.getDay()];
       const fmt = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
-      return { nome, regime, turno, genero, dow, data: fmt, raw: ds };
+      return { nome, regime, turno, genero, dejeps_mes, dow, data: fmt, raw: ds };
     });
   }
 
@@ -234,6 +247,7 @@
     const regime = document.getElementById('regime').value;
     const turno = document.getElementById('turno').value;
     const genero = document.getElementById('genero').value;
+    const dejeps_mes = document.getElementById('dejeps_mes').value;
     const obs = document.getElementById('obs').value.trim();
     const rows = getRows();
 
@@ -241,6 +255,7 @@
     if (!genero) { mostrarAlerta('aviso', 'Selecione seu gênero.'); return; }
     if (!regime) { mostrarAlerta('aviso', 'Selecione seu regime de trabalho.'); return; }
     if (!turno) { mostrarAlerta('aviso', 'Selecione seu turno.'); return; }
+    if (!dejeps_mes) { mostrarAlerta('aviso', 'Informe quantas DEJEPs fez no mês atual.'); return; }
     if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido.'); return; }
     if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível.'); return; }
 
@@ -249,7 +264,7 @@
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
 
     try {
-      const payload = { nome, email, regime, turno, genero, obs, linhas: rows };
+      const payload = { nome, email, regime, turno, genero, dejeps_mes, obs, linhas: rows };
       const url = APPS_SCRIPT_URL + '?dados=' + encodeURIComponent(JSON.stringify(payload));
       const resp = await fetch(url, { method: 'GET' });
       const json = await resp.json();
@@ -273,12 +288,8 @@
 
   function reiniciar() {
     selectedDays.clear();
-    document.getElementById('nome').value = '';
-    document.getElementById('email').value = '';
-    document.getElementById('regime').value = '';
-    document.getElementById('turno').value = '';
-    document.getElementById('genero').value = '';
-    document.getElementById('obs').value = '';
+    ['nome','email','obs'].forEach(id => document.getElementById(id).value = '');
+    ['regime','turno','genero','dejeps_mes'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('sucesso').style.display = 'none';
     document.getElementById('form-area').style.display = 'block';
     mostrarAlerta(null);
