@@ -190,14 +190,14 @@
 
 <script>
   // Mês ativo calculado automaticamente — não precisa alterar mais!
-  var MES_ATIVO = { ano: new Date().getFullYear(), mes: new Date().getMonth() + 1 };
+  var MES_ATIVO = { ano: new Date().getFullYear(), mes: new Date().getMonth() + 1 }; // será atualizado por calcularMesAtivo()
 
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8po1JfLVJBYbf_CKjsJY1Gsp8E88EwWDYJ-CJW110GITNZDR3HS9oXQ/exec';
 
   const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const DIAS_EXT = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-  const viewYear = MES_ATIVO.ano;
-  const viewMonth = MES_ATIVO.mes - 1;
+  // viewYear e viewMonth definidos após calcularMesAtivo()
+  var viewYear, viewMonth;
   const today = new Date();
   let selectedDays = new Set();
 
@@ -354,6 +354,10 @@
   // Atualiza MES_ATIVO dinamicamente
   MES_ATIVO.mes = PERIODO.mes;
   MES_ATIVO.ano = PERIODO.ano;
+
+  // Agora define viewYear e viewMonth com os valores corretos
+  viewYear = MES_ATIVO.ano;
+  viewMonth = MES_ATIVO.mes - 1;
 
   function verificarPrazo() {
     if (!PERIODO.aberto) {
