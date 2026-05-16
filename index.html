@@ -57,6 +57,13 @@
     .novo-btn { margin-top: 1.5rem; background: none; border: 1.5px solid #2d6a9f; color: #2d6a9f; border-radius: 8px; padding: 9px 24px; font-size: 0.9rem; cursor: pointer; font-weight: 600; }
     .novo-btn:hover { background: #eef4fb; }
     @media (max-width: 480px) { .header { padding: 1.25rem 1rem; } .card { padding: 1.25rem 1rem; } }
+
+    /* PRAZO ENCERRADO */
+    .prazo-card { background: white; border-radius: 14px; padding: 2.5rem 1.5rem; margin-bottom: 1.25rem; border: 1px solid #dde4ed; text-align: center; display: none; }
+    .prazo-icone { font-size: 3.5rem; margin-bottom: 1rem; }
+    .prazo-card h2 { font-size: 1.3rem; color: #1a3a5c; margin-bottom: 0.75rem; font-weight: 700; }
+    .prazo-card p { font-size: 0.9rem; color: #6b80a0; line-height: 1.7; }
+    .prazo-info { background: #fff8e0; border: 1px solid #f0d070; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.88rem; color: #7a5800; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -64,6 +71,15 @@
   <div class="header">
     <h1>DEJEP — Disponibilidade de Escala</h1>
     <p>CPP São Vicente &bull; Preencha sua disponibilidade para o mês</p>
+  </div>
+
+  <!-- PRAZO ENCERRADO -->
+  <div class="prazo-card" id="prazo-card">
+    <div class="prazo-icone">🔒</div>
+    <h2>Inscrições Encerradas</h2>
+    <p>O período de inscrição para a escala DEJEP deste mês já foi encerrado.<br>
+    As inscrições ficam abertas somente entre os dias <strong>20 e 25</strong> de cada mês.</p>
+    <div class="prazo-info" id="prazo-info"></div>
   </div>
 
   <div id="form-area">
@@ -297,6 +313,44 @@
     render(); updatePreview();
   }
 
+  // ============================================================
+  // CONTROLE DE PRAZO — inscrições abertas somente entre dias 20 e 25
+  // ============================================================
+  function verificarPrazo() {
+    var agora = new Date();
+    var diaHoje = agora.getDate();
+    var mesHoje = agora.getMonth() + 1;
+    var anoHoje = agora.getFullYear();
+
+    // Verifica se estamos no mês correto de inscrição
+    // As inscrições são para o mês SEGUINTE ao MES_ATIVO
+    var mesInscricao = MES_ATIVO.mes - 1; // mês anterior ao da escala
+    if (mesInscricao === 0) mesInscricao = 12;
+    var anoInscricao = MES_ATIVO.mes === 1 ? MES_ATIVO.ano - 1 : MES_ATIVO.ano;
+
+    var dentroDoMes = (mesHoje === mesInscricao && anoHoje === anoInscricao);
+    var dentroDoPrazo = dentroDoMes && diaHoje >= 20 && diaHoje <= 25;
+
+    if (!dentroDoPrazo) {
+      document.getElementById('form-area').style.display = 'none';
+      var prazoCard = document.getElementById('prazo-card');
+      prazoCard.style.display = 'block';
+
+      var info = document.getElementById('prazo-info');
+      if (dentroDoMes && diaHoje < 20) {
+        info.innerHTML = '📅 As inscrições para ' + MESES[MES_ATIVO.mes - 1] + ' ' + MES_ATIVO.ano +
+          ' abrem no dia <strong>20/' + String(mesInscricao).padStart(2,'0') + '/' + anoInscricao + '</strong>.';
+      } else if (dentroDoMes && diaHoje > 25) {
+        info.innerHTML = '⏰ O prazo de inscrição para ' + MESES[MES_ATIVO.mes - 1] + ' ' + MES_ATIVO.ano +
+          ' encerrou no dia <strong>25/' + String(mesInscricao).padStart(2,'0') + '/' + anoInscricao + '</strong>.';
+      } else {
+        info.innerHTML = '📅 As inscrições para ' + MESES[MES_ATIVO.mes - 1] + ' ' + MES_ATIVO.ano +
+          ' abrem entre os dias <strong>20 e 25 do mês anterior</strong>.';
+      }
+    }
+  }
+
+  verificarPrazo();
   render();
 </script>
 </body>
