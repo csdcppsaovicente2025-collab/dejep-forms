@@ -179,8 +179,8 @@
 </div>
 
 <script>
-  // ✏️ ALTERE AQUI TODO MÊS
-  const MES_ATIVO = { ano: 2026, mes: 6 }; // Junho 2026
+  // Mês ativo calculado automaticamente — não precisa alterar mais!
+  var MES_ATIVO = { ano: new Date().getFullYear(), mes: new Date().getMonth() + 1 };
 
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8po1JfLVJBYbf_CKjsJY1Gsp8E88EwWDYJ-CJW110GITNZDR3HS9oXQ/exec';
 
@@ -314,38 +314,61 @@
   }
 
   // ============================================================
-  // CONTROLE DE PRAZO — inscrições abertas somente entre dias 20 e 25
+  // CONTROLE DE PRAZO E MÊS — 100% AUTOMÁTICO
+  // Dias 20-25: inscrições abertas para o mês seguinte
+  // Fora desse período: formulário bloqueado com aviso
   // ============================================================
+  function calcularMesAtivo() {
+    var hoje = new Date();
+    var dia = hoje.getDate();
+    var mes = hoje.getMonth(); // 0-11
+    var ano = hoje.getFullYear();
+
+    if (dia >= 20 && dia <= 25) {
+      // Período de inscrição: mês ativo é o próximo mês
+      var mesEscala = mes + 2; // +1 para 1-12, +1 para próximo mês
+      var anoEscala = ano;
+      if (mesEscala > 12) { mesEscala = 1; anoEscala++; }
+      return { aberto: true, mes: mesEscala, ano: anoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
+    } else {
+      // Fora do período — calcula qual seria o próximo período
+      var proximoMesEscala = mes + 2;
+      var proximoAnoEscala = ano;
+      if (proximoMesEscala > 12) { proximoMesEscala = 1; proximoAnoEscala++; }
+      return { aberto: false, mes: proximoMesEscala, ano: proximoAnoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
+    }
+  }
+
+  var PERIODO = calcularMesAtivo();
+
+  // Atualiza MES_ATIVO dinamicamente
+  MES_ATIVO.mes = PERIODO.mes;
+  MES_ATIVO.ano = PERIODO.ano;
+
   function verificarPrazo() {
-    var agora = new Date();
-    var diaHoje = agora.getDate();
-    var mesHoje = agora.getMonth() + 1;
-    var anoHoje = agora.getFullYear();
-
-    // Verifica se estamos no mês correto de inscrição
-    // As inscrições são para o mês SEGUINTE ao MES_ATIVO
-    var mesInscricao = MES_ATIVO.mes - 1; // mês anterior ao da escala
-    if (mesInscricao === 0) mesInscricao = 12;
-    var anoInscricao = MES_ATIVO.mes === 1 ? MES_ATIVO.ano - 1 : MES_ATIVO.ano;
-
-    var dentroDoMes = (mesHoje === mesInscricao && anoHoje === anoInscricao);
-    var dentroDoPrazo = dentroDoMes && diaHoje >= 20 && diaHoje <= 25;
-
-    if (!dentroDoPrazo) {
+    if (!PERIODO.aberto) {
       document.getElementById('form-area').style.display = 'none';
-      var prazoCard = document.getElementById('prazo-card');
-      prazoCard.style.display = 'block';
+      document.getElementById('prazo-card').style.display = 'block';
 
+      var nomeMesEscala = MESES[PERIODO.mes - 1];
       var info = document.getElementById('prazo-info');
-      if (dentroDoMes && diaHoje < 20) {
-        info.innerHTML = '📅 As inscrições para ' + MESES[MES_ATIVO.mes - 1] + ' ' + MES_ATIVO.ano +
-          ' abrem no dia <strong>20/' + String(mesInscricao).padStart(2,'0') + '/' + anoInscricao + '</strong>.';
-      } else if (dentroDoMes && diaHoje > 25) {
-        info.innerHTML = '⏰ O prazo de inscrição para ' + MESES[MES_ATIVO.mes - 1] + ' ' + MES_ATIVO.ano +
-          ' encerrou no dia <strong>25/' + String(mesInscricao).padStart(2,'0') + '/' + anoInscricao + '</strong>.';
+
+      if (PERIODO.dia < 20) {
+        // Ainda não abriu
+        info.innerHTML = '📅 As inscrições para <strong>' + nomeMesEscala + ' ' + PERIODO.ano +
+          '</strong> abrem no dia <strong>20/' +
+          String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.';
       } else {
-        info.innerHTML = '📅 As inscrições para ' + MESES[MES_ATIVO.mes - 1] + ' ' + MES_ATIVO.ano +
-          ' abrem entre os dias <strong>20 e 25 do mês anterior</strong>.';
+        // Já encerrou (dia > 25)
+        var mesAnterior = PERIODO.mes - 1 || 12;
+        var anoAnterior = PERIODO.mes === 1 ? PERIODO.ano - 1 : PERIODO.ano;
+        info.innerHTML = '⏰ O prazo de inscrição para <strong>' +
+          MESES[mesAnterior - 1] + ' ' + anoAnterior +
+          '</strong> encerrou no dia <strong>25/' +
+          String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.' +
+          '<br>As próximas inscrições abrem dia <strong>20/' +
+          String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong> para ' +
+          '<strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong>.';
       }
     }
   }
