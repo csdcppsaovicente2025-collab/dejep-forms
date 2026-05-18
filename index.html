@@ -129,13 +129,14 @@
       </div>
       <div class="field-group" style="margin-top:12px;">
         <div class="field required">
-          <label for="dejeps_mes">Quantas DEJEPs fez ou ainda vai fazer no mês atual?</label>
+          <label for="dejeps_mes">Total de DEJEPs realizadas e agendadas para o mês atual *</label>
           <select id="dejeps_mes" onchange="updatePreview()">
             <option value="">Selecione...</option>
-            <option>Nenhuma</option>
-            <option>Uma</option>
-            <option>Duas</option>
-            <option>Três ou mais</option>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
           </select>
         </div>
       </div>
@@ -281,7 +282,7 @@
     if (!genero) { mostrarAlerta('aviso', 'Selecione seu gênero.'); return; }
     if (!regime) { mostrarAlerta('aviso', 'Selecione seu regime de trabalho.'); return; }
     if (!turno) { mostrarAlerta('aviso', 'Selecione o regime da DEJEP.'); return; }
-    if (!dejeps_mes) { mostrarAlerta('aviso', 'Informe quantas DEJEPs fez no mês atual.'); return; }
+    if (!dejeps_mes) { mostrarAlerta('aviso', 'Informe o total de DEJEPs realizadas e agendadas no mês atual.'); return; }
     if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido.'); return; }
     if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível.'); return; }
 
