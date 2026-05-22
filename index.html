@@ -274,17 +274,29 @@ function calcularParidade(turno, ano, mes) {
   var aAlvo = ano, mAlvo = mes - 1; // converte para base 0
   var inversoes = 0;
   var a = aRef, m = mRef;
+
   if (aAlvo > aRef || (aAlvo === aRef && mAlvo > mRef)) {
+    // Avança: começa no mês seguinte à referência
+    // A inversão ocorre ao entrar em cada mês, contando os dias do mês anterior
+    m++; if (m > 11) { m = 0; a++; }
     while (a < aAlvo || (a === aAlvo && m < mAlvo)) {
-      var diasMes = new Date(a, m + 1, 0).getDate();
-      if (diasMes === 31) inversoes++;
+      var mAnt = m - 1; var aAnt = a;
+      if (mAnt < 0) { mAnt = 11; aAnt--; }
+      var diasAnt = new Date(aAnt, mAnt + 1, 0).getDate();
+      if (diasAnt === 31) inversoes++;
       m++; if (m > 11) { m = 0; a++; }
     }
+    // Conta o mês anterior ao alvo (o último passo)
+    var mAnt = mAlvo - 1; var aAnt = aAlvo;
+    if (mAnt < 0) { mAnt = 11; aAnt--; }
+    var diasAnt = new Date(aAnt, mAnt + 1, 0).getDate();
+    if (diasAnt === 31) inversoes++;
   } else if (aAlvo < aRef || (aAlvo === aRef && mAlvo < mRef)) {
+    // Volta: cada passo para trás inverte se o mês que estamos deixando tem 31 dias
     while (a > aAlvo || (a === aAlvo && m > mAlvo)) {
+      var diasAtual = new Date(a, m + 1, 0).getDate();
+      if (diasAtual === 31) inversoes++;
       m--; if (m < 0) { m = 11; a--; }
-      var diasMes = new Date(a, m + 1, 0).getDate();
-      if (diasMes === 31) inversoes++;
     }
   }
   return inversoes % 2 === 0 ? parRef : (parRef === 'par' ? 'impar' : 'par');
