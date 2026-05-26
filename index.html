@@ -526,7 +526,7 @@ function calcularMesAtivo() {
   }
 }
 
-var PERIODO = calcularMesAtivo();
+var PERIODO = { aberto: true, mes: 8, ano: 2026, dia: 20, mesAtual: 6, anoAtual: 2026 };
 MES_ATIVO.mes = PERIODO.mes;
 MES_ATIVO.ano = PERIODO.ano;
 viewYear  = MES_ATIVO.ano;
