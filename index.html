@@ -226,9 +226,9 @@ calendário acima.</div></div>
 <i class="fa-solid fa-paper-plane"></i> Enviar disponibilidade
 </button>
 <div class="instrucao">
-Após enviar, você receberá um <strong>e-mail de comprovante</strong> com
-todos os dias selecionados.
-Verifique sua caixa de entrada (e a pasta de spam).
+Após enviar, você receberá um <strong>e-mail de comprovante</strong> com todos os dias selecionados.
+Verifique sua caixa de entrada (e a pasta de spam).<br>
+<strong>⚠️ Atenção:</strong> Se você já se inscreveu antes, uma nova inscrição <strong>substituirá automaticamente</strong> a anterior.
 </div>
 </div>
 </div>
@@ -477,6 +477,10 @@ async function enviar() {
     if (json.sucesso) {
       document.getElementById('form-area').style.display = 'none';
       document.getElementById('sucesso').style.display = 'block';
+      var msgSucesso = json.mensagem.includes('atualizada')
+        ? '✅ Inscrição atualizada! Sua inscrição anterior foi substituída.'
+        : '✅ Disponibilidade registrada com sucesso!';
+      document.querySelector('#sucesso p').textContent = msgSucesso;
       document.getElementById('email-info').innerHTML = '<i class="fa-solid fa-envelope"></i> Comprovante enviado para <strong>' + email + '</strong>';
     } else {
       mostrarAlerta('erro', 'Erro ao salvar: ' + json.mensagem);
