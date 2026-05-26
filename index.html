@@ -126,8 +126,7 @@ SP" />
 
 <h2>Inscrições Encerradas</h2>
 <p>O período de inscrição para a escala DEJEP deste mês já foi encerrado.<br>
-As inscrições ficam abertas somente entre os dias <strong>20 e 25</strong> de cada
-mês.</p>
+As inscrições ficam abertas somente entre os dias <strong>18 e 25</strong> de cada mês.</p>
 <div class="prazo-info" id="prazo-info"></div>
 </div>
 
@@ -515,14 +514,14 @@ function calcularMesAtivo() {
   var ano = hoje.getFullYear();
 
   if (dia >= 18 && dia <= 25) {
-    var mesEscala = mes + 2; // +1 para 1-12, +1 para próximo mês
+    var mesEscala = mes + 3; // +1 para base 1, +2 para dois meses à frente
     var anoEscala = ano;
-    if (mesEscala > 12) { mesEscala = 1; anoEscala++; }
+    if (mesEscala > 12) { mesEscala = mesEscala - 12; anoEscala++; }
     return { aberto: true, mes: mesEscala, ano: anoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
   } else {
-    var proximoMesEscala = mes + 2;
+    var proximoMesEscala = mes + 3; // dois meses à frente
     var proximoAnoEscala = ano;
-    if (proximoMesEscala > 12) { proximoMesEscala = 1; proximoAnoEscala++; }
+    if (proximoMesEscala > 12) { proximoMesEscala = proximoMesEscala - 12; proximoAnoEscala++; }
     return { aberto: false, mes: proximoMesEscala, ano: proximoAnoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
   }
 }
@@ -537,14 +536,22 @@ function verificarPrazo() {
   if (!PERIODO.aberto) {
     document.getElementById('form-area').style.display = 'none';
     document.getElementById('prazo-card').style.display = 'block';
-    var nomeMesEscala = MESES[PERIODO.mes - 1];
+    var nomeMesEscala = MESES[PERIODO.mes - 1]; // mês da próxima escala (2 meses à frente)
     var info = document.getElementById('prazo-info');
     if (PERIODO.dia < 18) {
+      // Prazo ainda não abriu este mês — abre dia 18 do mês atual
       info.innerHTML = 'As inscrições para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong> abrem no dia <strong>18/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.';
     } else {
-      var mesAnterior = PERIODO.mes - 1 || 12;
-      var anoAnterior = PERIODO.mes === 1 ? PERIODO.ano - 1 : PERIODO.ano;
-      info.innerHTML = 'O prazo de inscrição para <strong>' + MESES[mesAnterior - 1] + ' ' + anoAnterior + '</strong> encerrou no dia <strong>25/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.<br>As próximas inscrições abrem dia <strong>18/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong> para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong>.';
+      // Próxima abertura: dia 18 do mês seguinte ao atual
+      var mesReabertura = PERIODO.mesAtual + 1;
+      var anoReabertura = PERIODO.anoAtual;
+      if (mesReabertura > 12) { mesReabertura = 1; anoReabertura++; }
+      // Prazo já encerrou (após dia 25)
+      // Mês que acabou de encerrar as inscrições = PERIODO.mes - 1
+      var mesEncerrado = PERIODO.mes - 1;
+      var anoEncerrado = PERIODO.ano;
+      if (mesEncerrado < 1) { mesEncerrado = 12; anoEncerrado--; }
+      info.innerHTML = 'O prazo de inscrição para <strong>' + MESES[mesEncerrado - 1] + ' ' + anoEncerrado + '</strong> encerrou no dia <strong>25/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.<br>As próximas inscrições abrem dia <strong>18/' + String(mesReabertura).padStart(2,'0') + '/' + anoReabertura + '</strong> para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong>.';
     }
   }
 }
