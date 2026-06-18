@@ -518,12 +518,12 @@ function calcularMesAtivo() {
   var ano = hoje.getFullYear();
 
   if (dia >= 18 && dia <= 25) {
-    var mesEscala = mes + 3; // +1 para base 1, +2 para dois meses à frente
+    var mesEscala = mes + 2; // +1 para base 1, +1 para o mes seguinte
     var anoEscala = ano;
     if (mesEscala > 12) { mesEscala = mesEscala - 12; anoEscala++; }
     return { aberto: true, mes: mesEscala, ano: anoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
   } else {
-    var proximoMesEscala = mes + 3; // dois meses à frente
+    var proximoMesEscala = mes + 2; // mes seguinte (base 1)
     var proximoAnoEscala = ano;
     if (proximoMesEscala > 12) { proximoMesEscala = proximoMesEscala - 12; proximoAnoEscala++; }
     return { aberto: false, mes: proximoMesEscala, ano: proximoAnoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
