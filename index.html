@@ -540,7 +540,7 @@ function verificarPrazo() {
   if (!PERIODO.aberto) {
     document.getElementById('form-area').style.display = 'none';
     document.getElementById('prazo-card').style.display = 'block';
-    var nomeMesEscala = MESES[PERIODO.mes - 1]; // mês da próxima escala (2 meses à frente)
+    var nomeMesEscala = MESES[PERIODO.mes - 1]; // mês da próxima escala (1 mês à frente)
     var info = document.getElementById('prazo-info');
     if (PERIODO.dia < 18) {
       // Prazo ainda não abriu este mês — abre dia 18 do mês atual
