@@ -546,7 +546,15 @@ function calcularMesAtivo() {
   }
 }
 
+// MODO DE TESTE: acrescente ?teste=1 na URL para forçar a abertura do formulário
+// independentemente da data atual. Não afeta o comportamento normal para os servidores.
+var urlParams = new URLSearchParams(window.location.search);
+var MODO_TESTE = urlParams.get('teste') === '1';
+
 var PERIODO = calcularMesAtivo();
+if (MODO_TESTE) {
+  PERIODO.aberto = true;
+}
 MES_ATIVO.mes = PERIODO.mes;
 MES_ATIVO.ano = PERIODO.ano;
 viewYear  = MES_ATIVO.ano;
