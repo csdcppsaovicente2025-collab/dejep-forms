@@ -41,7 +41,33 @@ border 0.15s; width: 100%; }
 padding: 4px 0; text-transform: uppercase; }
 .day-cell { border: 1px solid #dde4ed; border-radius: 8px; background: white; cursor:
 pointer; padding: 6px 2px; text-align: center; transition: border-color 0.12s, background
-0.12s; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+0.12s; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.day-horario { font-size: 0.6rem; font-weight: 700; color: white; background: #2d6a9f;
+border-radius: 4px; padding: 1px 5px; line-height: 1.3; }
+.day-cell.selected .day-horario { background: #ffffff; color: #1a3a5c; }
+
+/* MODAL DE SELEÇÃO DE HORÁRIO — SEGURANÇA EXTERNA */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(26,43,60,0.55); z-index: 1000; align-items: center; justify-content: center;
+padding: 1rem; }
+.modal-overlay.ativo { display: flex; }
+.modal-box { background: white; border-radius: 14px; padding: 1.5rem; max-width: 340px;
+width: 100%; border: 1px solid #dde4ed; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+.modal-titulo { font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+letter-spacing: 0.07em; color: #6b80a0; margin-bottom: 0.4rem; }
+.modal-data { font-size: 1.05rem; font-weight: 700; color: #1a3a5c; margin-bottom: 1.1rem; }
+.modal-opcoes { display: flex; flex-direction: column; gap: 8px; }
+.modal-opt { width: 100%; padding: 12px; font-size: 0.95rem; font-weight: 600;
+border-radius: 10px; border: 1.5px solid #d0d9e6; background: white; color: #1a2b3c;
+cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; }
+.modal-opt:hover { border-color: #2d6a9f; background: #f0f6ff; }
+.modal-opt.ativa { border-color: #2d6a9f; background: #1a3a5c; color: white; }
+.modal-acoes { display: flex; gap: 8px; margin-top: 1.1rem; }
+.modal-btn { flex: 1; padding: 10px; font-size: 0.88rem; font-weight: 600; border-radius: 8px;
+cursor: pointer; border: 1.5px solid #d0d9e6; background: white; color: #6b80a0; }
+.modal-btn:hover { background: #f0f4f8; }
+.modal-btn.remover { border-color: #f0b0b0; color: #a02020; }
+.modal-btn.remover:hover { background: #fde8e8; }
 .day-cell:hover:not(.empty):not(.past) { border-color: #2d6a9f; background: #f0f6ff; }
 .day-cell.empty { border: none; background: transparent; cursor: default; }
 .day-cell.past { opacity: 0.35; cursor: not-allowed; }
@@ -63,10 +89,6 @@ outline: none; font-family: inherit; }
 .obs-field textarea::placeholder { color: #aab8c8; }
 .preview-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; borderbottom: 1px solid #eef1f5; font-size: 0.85rem; }
 .preview-row:last-child { border-bottom: none; }
-.horario-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eef1f5; font-size: 0.85rem; }
-.horario-row:last-child { border-bottom: none; }
-.horario-row select { border: 1px solid #d0d9e6; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; color: #1a2b3c; background: white; outline: none; }
-.horario-row select:focus { border-color: #2d6a9f; }
 .pr-data { color: #6b80a0; min-width: 85px; font-size: 0.82rem; }
 .pr-dia { font-weight: 600; flex: 1; color: #1a2b3c; }
 .empty-msg { font-size: 0.88rem; color: #9aabbd; }
@@ -163,6 +185,18 @@ oninput="updatePreview()" />
 </select>
 </div>
 </div>
+<div class="field-group" style="margin-top:12px;" id="campo-regime-dejep">
+<div class="field required">
+<label for="turno">Regime da DEJEP *</label>
+
+<select id="turno" onchange="atualizarCalendario()">
+<option value="">Selecione...</option>
+<option value="Manha">Manhã</option>
+<option value="Noite">Noite</option>
+<option value="ManhaNoite">Manhã e Noite</option>
+</select>
+</div>
+</div>
 <div class="field-group" style="margin-top:12px;">
 <div class="field required">
 <label for="dejeps_mes">Total de DEJEPs realizadas e agendadas para o mês
@@ -211,10 +245,6 @@ atual *</label>
 </div>
 <div class="cal-grid" id="calendar" style="margin-top:5px;"></div>
 <div class="sel-count" id="sel-count"></div>
-<div id="horarios-externa-area" style="display:none; margin-top:12px;">
-<div class="card-title" style="margin-bottom:0.5rem;">Horário da DEJEP em cada dia selecionado (Segurança Externa)</div>
-<div id="horarios-externa-lista"></div>
-</div>
 <div class="obs-field">
 
 <label for="obs">Observações (opcional)</label>
@@ -256,6 +286,22 @@ disponibilidade</button>
 </div>
 </div>
 
+<div class="modal-overlay" id="modal-horario" onclick="fecharModalHorario(event)">
+<div class="modal-box" onclick="event.stopPropagation()">
+<div class="modal-titulo">Horário da DEJEP</div>
+<div class="modal-data" id="modal-data"></div>
+<div class="modal-opcoes">
+<button class="modal-opt" id="opt-10h" onclick="escolherHorario('10h')">10h às 18h</button>
+<button class="modal-opt" id="opt-22h" onclick="escolherHorario('22h')">22h às 06h</button>
+<button class="modal-opt" id="opt-Ambos" onclick="escolherHorario('Ambos')">Ambos os horários</button>
+</div>
+<div class="modal-acoes">
+<button class="modal-btn" onclick="fecharModalHorario()">Cancelar</button>
+<button class="modal-btn remover" id="btn-remover-dia" onclick="removerDiaExterna()">Remover dia</button>
+</div>
+</div>
+</div>
+
 <script>
 // Mês ativo calculado automaticamente — não precisa alterar mais!
 var MES_ATIVO = { ano: new Date().getFullYear(), mes: new Date().getMonth() + 1 };
@@ -269,31 +315,33 @@ const today = new Date();
 let selectedDays = new Set();
 // Segurança Externa: cada dia selecionado guarda o horário escolhido (10h, 22h ou Ambos)
 let selectedDaysExterna = new Map();
-// Valor fixo usado internamente para preservar as regras antigas de "Regime da DEJEP"
-// (campo removido do formulário — Segurança Interna sempre se comporta como "Manhã e Noite")
-const REGIME_DEJEP_PADRAO = 'ManhaNoite';
 
 function getTipoSeguranca() {
   var el = document.getElementById('tipo_seguranca');
   return el ? el.value : '';
 }
 
+function getRegimeDejep() {
+  var el = document.getElementById('turno');
+  return el ? el.value : '';
+}
+
 function onTipoSegurancaChange() {
   var tipo = getTipoSeguranca();
   var campoTurnoPlantao = document.getElementById('campo-turno-plantao');
-  var areaHorariosExterna = document.getElementById('horarios-externa-area');
+  var campoRegimeDejep = document.getElementById('campo-regime-dejep');
   if (tipo === 'Externa') {
     campoTurnoPlantao.style.display = 'none';
     document.getElementById('turno_plantao').value = '';
-    areaHorariosExterna.style.display = 'block';
+    campoRegimeDejep.style.display = 'none';
+    document.getElementById('turno').value = '';
   } else {
     campoTurnoPlantao.style.display = '';
-    areaHorariosExterna.style.display = 'none';
+    campoRegimeDejep.style.display = '';
     selectedDaysExterna.clear();
   }
   selectedDays.clear();
   render();
-  renderHorariosExterna();
   updatePreview();
 }
 
@@ -403,7 +451,7 @@ function atualizarCalendario() {
   var turnoPlantao = document.getElementById('turno_plantao').value;
   selectedDays.forEach(function(ds) {
     var d = new Date(ds + 'T12:00:00');
-    if (!isDiaPermitido(d.getDate(), d.getDay(), turnoPlantao, REGIME_DEJEP_PADRAO, viewYear, viewMonth + 1)) {
+    if (!isDiaPermitido(d.getDate(), d.getDay(), turnoPlantao, getRegimeDejep(), viewYear, viewMonth + 1)) {
       selectedDays.delete(ds);
     }
   });
@@ -432,7 +480,7 @@ function render() {
     const diaSemana = dt.getDay();
     var isPlantao = false;
     if (tipo !== 'Externa') {
-      isPlantao = !isDiaPermitido(d, diaSemana, turnoPlantao, REGIME_DEJEP_PADRAO, viewYear, viewMonth + 1);
+      isPlantao = !isDiaPermitido(d, diaSemana, turnoPlantao, getRegimeDejep(), viewYear, viewMonth + 1);
     }
     const estaSelecionado = tipo === 'Externa' ? selectedDaysExterna.has(ds) : selectedDays.has(ds);
     const cell = document.createElement('div');
@@ -441,7 +489,11 @@ function render() {
     else if (isPlantao) classes += ' plantao';
     else if (estaSelecionado) classes += ' selected';
     cell.className = classes;
-    cell.innerHTML = '<div class="day-num">' + d + '</div>';
+    var horarioLabel = '';
+    if (tipo === 'Externa' && estaSelecionado) {
+      horarioLabel = '<div class="day-horario">' + selectedDaysExterna.get(ds) + '</div>';
+    }
+    cell.innerHTML = '<div class="day-num">' + d + '</div>' + horarioLabel;
     if (!isPast && !isPlantao) {
       cell.onclick = tipo === 'Externa' ? (() => toggleDayExterna(ds, cell)) : (() => toggleDay(ds, cell));
     }
@@ -460,47 +512,53 @@ function toggleDay(ds, cell) {
   updateCount(); updatePreview();
 }
 
+// Dia atualmente aberto no modal de horário (Segurança Externa)
+var diaModalAtual = null;
+
 function toggleDayExterna(ds, cell) {
-  if (selectedDaysExterna.has(ds)) {
-    selectedDaysExterna.delete(ds);
-    cell.classList.remove('selected');
-  } else {
-    selectedDaysExterna.set(ds, '10h'); // padrão inicial — o servidor pode trocar na lista abaixo
-    cell.classList.add('selected');
-  }
+  abrirModalHorario(ds);
+}
+
+function abrirModalHorario(ds) {
+  diaModalAtual = ds;
+  var dt = new Date(ds + 'T12:00:00');
+  var dow = DIAS_EXT[dt.getDay()];
+  var fmt = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
+  document.getElementById('modal-data').textContent = fmt + ' — ' + dow.charAt(0).toUpperCase() + dow.slice(1);
+
+  var atual = selectedDaysExterna.get(ds) || null;
+  ['10h','22h','Ambos'].forEach(function(op) {
+    var btn = document.getElementById('opt-' + op);
+    if (atual === op) btn.classList.add('ativa');
+    else btn.classList.remove('ativa');
+  });
+
+  // O botão "Remover dia" só faz sentido se o dia já estiver marcado
+  document.getElementById('btn-remover-dia').style.display = atual ? '' : 'none';
+  document.getElementById('modal-horario').classList.add('ativo');
+}
+
+function escolherHorario(valor) {
+  if (diaModalAtual) selectedDaysExterna.set(diaModalAtual, valor);
+  fecharModalHorario();
+  render();
   updateCount();
-  renderHorariosExterna();
   updatePreview();
 }
 
-function renderHorariosExterna() {
-  var area = document.getElementById('horarios-externa-lista');
-  if (!area) return;
-  var entradas = [...selectedDaysExterna.entries()].sort(function(a,b){ return a[0] < b[0] ? -1 : 1; });
-  if (!entradas.length) {
-    area.innerHTML = '<div class="empty-msg">Nenhum dia selecionado ainda.</div>';
-    return;
-  }
-  area.innerHTML = entradas.map(function(entry) {
-    var ds = entry[0], horario = entry[1];
-    var dt = new Date(ds + 'T12:00:00');
-    var dow = DIAS_EXT[dt.getDay()];
-    var fmt = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
-    return '<div class="horario-row">' +
-      '<span class="pr-data">' + fmt + '</span>' +
-      '<span class="pr-dia" style="flex:1;">' + dow.charAt(0).toUpperCase() + dow.slice(1) + '</span>' +
-      '<select onchange="atualizarHorarioExterna(\'' + ds + '\', this.value)">' +
-        '<option value="10h"' + (horario === '10h' ? ' selected' : '') + '>10h</option>' +
-        '<option value="22h"' + (horario === '22h' ? ' selected' : '') + '>22h</option>' +
-        '<option value="Ambos"' + (horario === 'Ambos' ? ' selected' : '') + '>Ambos</option>' +
-      '</select>' +
-    '</div>';
-  }).join('');
+function removerDiaExterna() {
+  if (diaModalAtual) selectedDaysExterna.delete(diaModalAtual);
+  fecharModalHorario();
+  render();
+  updateCount();
+  updatePreview();
 }
 
-function atualizarHorarioExterna(ds, valor) {
-  selectedDaysExterna.set(ds, valor);
-  updatePreview();
+function fecharModalHorario(event) {
+  // Ao clicar no fundo escurecido, fecha; cliques dentro da caixa não fecham
+  if (event && event.target !== document.getElementById('modal-horario')) return;
+  document.getElementById('modal-horario').classList.remove('ativo');
+  diaModalAtual = null;
 }
 
 function updateCount() {
@@ -532,7 +590,7 @@ function getRows() {
     const dt = new Date(ds + 'T12:00:00');
     const dow = DIAS_EXT[dt.getDay()];
     const fmt = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
-    return { nome, tipo_seguranca: 'Interna', regime: regime_row, turno: REGIME_DEJEP_PADRAO, genero, dejeps_mes, dow, data: fmt, raw: ds };
+    return { nome, tipo_seguranca: 'Interna', regime: regime_row, turno: getRegimeDejep(), genero, dejeps_mes, dow, data: fmt, raw: ds };
   });
 }
 
@@ -567,6 +625,7 @@ async function enviar() {
 
   let turno_plantao_val = '';
   if (tipo === 'Interna') {
+    if (!getRegimeDejep()) { mostrarAlerta('aviso', 'Selecione o regime da DEJEP.'); return; }
     turno_plantao_val = document.getElementById('turno_plantao').value;
     if (!turno_plantao_val) { mostrarAlerta('aviso', 'Selecione seu turno de plantão.'); return; }
   }
@@ -586,7 +645,7 @@ async function enviar() {
 
   try {
     const regime = tipo === 'Externa' ? 'Sec. Ext' : (turno_plantao_val === 'Diarista' ? 'Diarista' : 'Plantonista');
-    const turno = tipo === 'Interna' ? REGIME_DEJEP_PADRAO : '';
+    const turno = tipo === 'Interna' ? getRegimeDejep() : '';
     const payload = { nome, email, tipo_seguranca: tipo, regime, turno, turno_plantao: turno_plantao_val, genero, dejeps_mes, obs, linhas: rows };
     console.log('PAYLOAD ENVIADO:', JSON.stringify(payload));
     const resp = await fetch(APPS_SCRIPT_URL, {
@@ -619,7 +678,7 @@ function reiniciar() {
   selectedDays.clear();
   selectedDaysExterna.clear();
   ['nome','email','obs'].forEach(id => document.getElementById(id).value = '');
-  ['turno_plantao','genero','dejeps_mes','tipo_seguranca'].forEach(id => {
+  ['turno','turno_plantao','genero','dejeps_mes','tipo_seguranca'].forEach(id => {
     if(document.getElementById(id)) document.getElementById(id).value = '';
   });
   document.getElementById('sucesso').style.display = 'none';
@@ -693,6 +752,14 @@ function verificarPrazo() {
     }
   }
 }
+
+// Fecha o modal de horário ao pressionar Esc
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.getElementById('modal-horario').classList.remove('ativo');
+    diaModalAtual = null;
+  }
+});
 
 verificarPrazo();
 render();
