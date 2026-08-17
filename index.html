@@ -330,12 +330,14 @@ function onTipoSegurancaChange() {
   // bloqueia a DEJEP no turno em que o servidor entra de plantão.
   var tipo = getTipoSeguranca();
   var campoDejepsMes = document.getElementById('campo-dejeps-mes');
-  if (tipo === 'Externa') {
-    // Segurança Externa tem cota própria (15 no mês) — não usa o total da Interna
-    campoDejepsMes.style.display = 'none';
-    document.getElementById('dejeps_mes').value = '';
-  } else {
-    campoDejepsMes.style.display = '';
+  if (campoDejepsMes) {
+    if (tipo === 'Externa') {
+      // Segurança Externa tem cota própria (15 no mês) — não usa o total da Interna
+      campoDejepsMes.setAttribute('style', 'display: none !important;');
+      document.getElementById('dejeps_mes').value = '';
+    } else {
+      campoDejepsMes.setAttribute('style', 'margin-top:12px;');
+    }
   }
   selectedDaysMap.clear();
   render();
@@ -772,6 +774,9 @@ document.addEventListener('keydown', function(e) {
 });
 
 verificarPrazo();
+// Aplica o estado inicial dos campos condicionais. Necessário porque o navegador
+// pode restaurar o valor dos seletores ao recarregar a página sem disparar o onchange.
+onTipoSegurancaChange();
 render();
 </script>
 </body>
