@@ -185,7 +185,7 @@ oninput="updatePreview()" />
 </select>
 </div>
 </div>
-<div class="field-group" style="margin-top:12px;">
+<div class="field-group" style="margin-top:12px;" id="campo-dejeps-mes">
 <div class="field required">
 <label for="dejeps_mes">Total de DEJEPs realizadas e agendadas para o mês
 atual *</label>
@@ -326,13 +326,16 @@ function getTextoCelula(tipo, valor) {
 }
 
 function onTipoSegurancaChange() {
+  // O turno de plantão é exigido nos dois tipos: a regra de paridade
+  // bloqueia a DEJEP no turno em que o servidor entra de plantão.
   var tipo = getTipoSeguranca();
-  var campoTurnoPlantao = document.getElementById('campo-turno-plantao');
+  var campoDejepsMes = document.getElementById('campo-dejeps-mes');
   if (tipo === 'Externa') {
-    campoTurnoPlantao.style.display = 'none';
-    document.getElementById('turno_plantao').value = '';
+    // Segurança Externa tem cota própria (15 no mês) — não usa o total da Interna
+    campoDejepsMes.style.display = 'none';
+    document.getElementById('dejeps_mes').value = '';
   } else {
-    campoTurnoPlantao.style.display = '';
+    campoDejepsMes.style.display = '';
   }
   selectedDaysMap.clear();
   render();
@@ -408,23 +411,25 @@ function isFeriado(dia, mes, ano) {
 }
 
 // ============================================================
-// OPÇÕES DISPONÍVEIS POR DIA — SEGURANÇA INTERNA
-// Retorna quais horários o servidor pode escolher naquele dia,
-// considerando o turno de plantão e a paridade do mês.
+// OPÇÕES DISPONÍVEIS POR DIA
 // A DEJEP é bloqueada no turno em que o servidor entra de plantão.
+// A regra vale para os DOIS tipos de segurança:
+//   Interna → 'Manha' (diurno) e 'Noite' (noturno)
+//   Externa → '10h'   (diurno) e '22h'   (noturno)
+// Turnos diurnos: I e III   |   Turnos noturnos: II e IV
 // ============================================================
-function getOpcoesDisponiveisInterna(dia, diaSemana, turnoPlantao, ano, mes) {
+function getDisponibilidadeTurnos(dia, diaSemana, turnoPlantao, ano, mes) {
   var eFDS = (diaSemana === 0 || diaSemana === 6);
   var eFeriado = isFeriado(dia, mes, ano);
   var eFDSouFeriado = eFDS || eFeriado;
 
-  var manhaOk = true;
-  var noiteOk = true;
+  var diurnoOk = true;
+  var noturnoOk = true;
 
   if (turnoPlantao === 'Diarista') {
-    // Diarista só faz DEJEP diurna em fim de semana ou feriado
-    manhaOk = eFDSouFeriado;
-    noiteOk = true;
+    // Diarista trabalha de dia nos dias úteis: só pode DEJEP diurna em FDS/feriado
+    diurnoOk = eFDSouFeriado;
+    noturnoOk = true;
   } else if (turnoPlantao) {
     var paridade = calcularParidade(turnoPlantao, ano, mes);
     if (paridade) {
@@ -432,28 +437,30 @@ function getOpcoesDisponiveisInterna(dia, diaSemana, turnoPlantao, ano, mes) {
       var diaEPlantao = (paridade === 'par' && ePar) || (paridade === 'impar' && !ePar);
       var turnoEDiurno = (turnoPlantao === 'I' || turnoPlantao === 'III');
       var turnoENoturno = (turnoPlantao === 'II' || turnoPlantao === 'IV');
-      if (turnoEDiurno && diaEPlantao) manhaOk = false;
-      if (turnoENoturno && diaEPlantao) noiteOk = false;
+      // No dia do próprio plantão, o turno correspondente fica bloqueado
+      if (turnoEDiurno && diaEPlantao) diurnoOk = false;
+      if (turnoENoturno && diaEPlantao) noturnoOk = false;
     }
   }
 
-  var disponiveis = [];
-  if (manhaOk) disponiveis.push('Manha');
-  if (noiteOk) disponiveis.push('Noite');
-  if (manhaOk && noiteOk) disponiveis.push('Ambos');
-  return disponiveis;
+  return { diurno: diurnoOk, noturno: noturnoOk };
 }
 
 // Opções disponíveis conforme o tipo de segurança selecionado
 function getOpcoesDisponiveis(dia, diaSemana, ano, mes) {
   var tipo = getTipoSeguranca();
-  if (tipo === 'Externa') {
-    // Segurança Externa: sem restrição de plantão (critério específico será definido depois)
-    return ['10h', '22h', 'Ambos'];
-  }
   var el = document.getElementById('turno_plantao');
   var turnoPlantao = el ? el.value : '';
-  return getOpcoesDisponiveisInterna(dia, diaSemana, turnoPlantao, ano, mes);
+  var disp = getDisponibilidadeTurnos(dia, diaSemana, turnoPlantao, ano, mes);
+
+  var valorDiurno = tipo === 'Externa' ? '10h' : 'Manha';
+  var valorNoturno = tipo === 'Externa' ? '22h' : 'Noite';
+
+  var disponiveis = [];
+  if (disp.diurno) disponiveis.push(valorDiurno);
+  if (disp.noturno) disponiveis.push(valorNoturno);
+  if (disp.diurno && disp.noturno) disponiveis.push('Ambos');
+  return disponiveis;
 }
 
 function atualizarCalendario() {
@@ -577,7 +584,9 @@ function getRows() {
   const genero = document.getElementById('genero').value;
   const dejeps_mes = document.getElementById('dejeps_mes').value;
   const tipo = getTipoSeguranca();
-  if (!nome || !genero || !dejeps_mes || !tipo) return [];
+  if (!nome || !genero || !tipo) return [];
+  // O total de DEJEPs do mês atual só se aplica à Segurança Interna
+  if (tipo === 'Interna' && !dejeps_mes) return [];
 
   const turno_plantao_val = document.getElementById('turno_plantao') ? document.getElementById('turno_plantao').value : '';
   const regime_row = tipo === 'Externa' ? 'Sec. Ext' : (turno_plantao_val === 'Diarista' ? 'Diarista' : 'Plantonista');
@@ -623,12 +632,10 @@ async function enviar() {
   if (!genero) { mostrarAlerta('aviso', 'Selecione seu gênero.'); return; }
   if (!tipo) { mostrarAlerta('aviso', 'Selecione o tipo de segurança (Interna ou Externa).'); return; }
 
-  let turno_plantao_val = '';
-  if (tipo === 'Interna') {
-    turno_plantao_val = document.getElementById('turno_plantao').value;
-    if (!turno_plantao_val) { mostrarAlerta('aviso', 'Selecione seu turno de plantão.'); return; }
-  }
-  if (!dejeps_mes) { mostrarAlerta('aviso', 'Informe o total de DEJEPs realizadas e agendadas no mês atual.'); return; }
+  // O turno de plantão é obrigatório nos dois tipos: define o bloqueio por paridade
+  const turno_plantao_val = document.getElementById('turno_plantao').value;
+  if (!turno_plantao_val) { mostrarAlerta('aviso', 'Selecione seu turno de plantão.'); return; }
+  if (tipo === 'Interna' && !dejeps_mes) { mostrarAlerta('aviso', 'Informe o total de DEJEPs realizadas e agendadas no mês atual.'); return; }
   if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido.'); return; }
   if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível.'); return; }
 
