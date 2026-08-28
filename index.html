@@ -734,13 +734,11 @@ function calcularMesAtivo() {
 }
 
 // ============================================================
-// ⚠️ VERSÃO TEMPORÁRIA DE TESTE — FORMULÁRIO SEMPRE ABERTO ⚠️
-// Esta linha ignora a checagem normal de datas (18-25).
-// REMOVER esta seção e restaurar "PERIODO.aberto" original
-// antes de publicar em produção definitiva.
+// CONTROLE DE PRAZO ATIVO
+// O formulário abre automaticamente apenas entre os dias 18 e 25
+// de cada mês. Fora desse período exibe o aviso de prazo encerrado.
 // ============================================================
 var PERIODO = calcularMesAtivo();
-PERIODO.aberto = true; // força abertura para testes
 MES_ATIVO.mes = PERIODO.mes;
 MES_ATIVO.ano = PERIODO.ano;
 viewYear  = MES_ATIVO.ano;
