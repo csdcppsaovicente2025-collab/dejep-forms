@@ -150,13 +150,25 @@ SP" />
 
 </div>
 
-<h2>Inscrições Encerradas</h2>
-<p>O período de inscrição para a escala DEJEP deste mês já foi encerrado.<br>
-As inscrições ficam abertas somente entre os dias <strong>18 e 25</strong> de cada mês.</p>
+<h2>Prazo Encerrado</h2>
+<p>O período para informar sua disponibilidade para a escala DEJEP deste mês já foi encerrado.<br>
+O formulário fica aberto somente entre os dias <strong>18 e 25</strong> de cada mês.</p>
 <div class="prazo-info" id="prazo-info"></div>
 </div>
 
 <div id="form-area">
+<div class="card" style="border-left: 4px solid #2d6a9f;">
+<div class="card-title">Aviso Importante</div>
+<p style="font-size:0.85rem; color:#4a5a6a; line-height:1.6; margin:0;">
+Este formulário <strong>não é a inscrição na lista unificada da DEJEP</strong>, que se dá
+exclusivamente pelo <strong>SISDRHU</strong>, nos termos do artigo 6º da Resolução SAP nº 065/2025,
+com redação dada pela Resolução SAP nº 048/2026.<br><br>
+A finalidade aqui é <strong>informar sua disponibilidade</strong>, como subsídio operacional
+para o planejamento da distribuição. A definição da <strong>data, do horário, da atividade e do
+posto de serviço</strong> compete à Administração, observadas a ordem da lista unificada, as
+habilitações exigidas, a necessidade operacional e os critérios de segurança.
+</p>
+</div>
 <div class="card">
 <div class="card-title">Identificação</div>
 <div class="field-group">
@@ -253,7 +265,8 @@ calendário acima.</div></div>
 <div class="instrucao">
 Após enviar, você receberá um <strong>e-mail de comprovante</strong> com todos os dias selecionados.
 Verifique sua caixa de entrada (e a pasta de spam).<br>
-<strong>⚠️ Atenção:</strong> Se você já se inscreveu antes, uma nova inscrição <strong>substituirá automaticamente</strong> a anterior.
+<strong>⚠️ Atenção:</strong> Um novo envio <strong>substitui automaticamente</strong> o anterior <strong>do mesmo tipo de segurança</strong>.<br>
+Se você é habilitado nas duas áreas, envie <strong>duas vezes</strong> — uma escolhendo Segurança Interna e outra escolhendo Segurança Externa. Uma não apaga a outra.
 </div>
 </div>
 </div>
@@ -306,6 +319,8 @@ const OPCOES_INTERNA = [
   { valor: 'Noite', textoModal: 'Noite',            textoCelula: 'Noite' },
   { valor: 'Ambos', textoModal: 'Manhã e Noite',    textoCelula: 'Ambos' }
 ];
+// Segurança Externa: horários próprios, 10h às 18h e 22h às 06h.
+// O horário das 07h é exclusivo da Segurança Interna.
 const OPCOES_EXTERNA = [
   { valor: '10h',   textoModal: '10h às 18h',       textoCelula: '10h'   },
   { valor: '22h',   textoModal: '22h às 06h',       textoCelula: '22h'   },
@@ -671,7 +686,7 @@ async function enviar() {
       document.getElementById('form-area').style.display = 'none';
       document.getElementById('sucesso').style.display = 'block';
       var msgSucesso = json.mensagem.includes('atualizada')
-        ? '✅ Inscrição atualizada! Sua inscrição anterior foi substituída.'
+        ? '✅ Disponibilidade atualizada! Seu envio anterior foi substituído.'
         : '✅ Disponibilidade registrada com sucesso!';
       document.querySelector('#sucesso p').textContent = msgSucesso;
       document.getElementById('email-info').innerHTML = '<i class="fa-solid fa-envelope"></i> Comprovante enviado para <strong>' + email + '</strong>';
@@ -752,13 +767,13 @@ function verificarPrazo() {
     var info = document.getElementById('prazo-info');
     if (PERIODO.dia < 18) {
       // Prazo ainda não abriu este mês — abre dia 18 do mês atual
-      info.innerHTML = 'As inscrições para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong> abrem no dia <strong>18/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.';
+      info.innerHTML = 'O formulário de disponibilidade para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong> abrem no dia <strong>18/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.';
     } else {
       // Próxima abertura: dia 18 do mês seguinte ao atual
       var mesReabertura = PERIODO.mesAtual + 1;
       var anoReabertura = PERIODO.anoAtual;
       if (mesReabertura > 12) { mesReabertura = 1; anoReabertura++; }
-      info.innerHTML = 'As próximas inscrições abrem dia <strong>18/' + String(mesReabertura).padStart(2,'0') + '/' + anoReabertura + '</strong> para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong>.';
+      info.innerHTML = 'O próximo período de envio abre dia <strong>18/' + String(mesReabertura).padStart(2,'0') + '/' + anoReabertura + '</strong> para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong>.';
     }
   }
 }
