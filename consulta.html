@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Consulta DEJEP — CPP São Vicente</title>
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --azul: #1a3a5c;
+  --azul-claro: #2d6a9f;
+  --borda: #dde4ed;
+  --fundo: #f4f7fa;
+  --texto: #1a2b3c;
+  --suave: #6b80a0;
+  --card: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fundo: #10161d; --texto: #e6ecf3; --card: #1a232e;
+    --borda: #2a3644; --suave: #92a4bd;
+  }
+}
+:root[data-theme="dark"] {
+  --fundo: #10161d; --texto: #e6ecf3; --card: #1a232e;
+  --borda: #2a3644; --suave: #92a4bd;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--fundo); color: var(--texto);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  line-height: 1.5;
+}
+.wrap { max-width: 900px; margin: 0 auto; padding: 1rem; }
+header {
+  background: var(--azul); color: #fff; padding: 1.25rem 1rem;
+  text-align: center; border-radius: 0 0 14px 14px;
+}
+header h1 { margin: 0; font-size: 1.05rem; letter-spacing: .02em; }
+header p { margin: .35rem 0 0; font-size: .82rem; opacity: .85; }
+.tabs { display: flex; gap: 6px; margin: 1rem 0; }
+.tab {
+  flex: 1; padding: .6rem; border: 1px solid var(--borda); background: var(--card);
+  color: var(--texto); border-radius: 9px; font-size: .88rem; font-weight: 600;
+  cursor: pointer; text-align: center;
+}
+.tab.ativa { background: var(--azul); color: #fff; border-color: var(--azul); }
+.card {
+  background: var(--card); border: 1px solid var(--borda);
+  border-radius: 12px; padding: 1rem; margin-bottom: 1rem;
+}
+.busca {
+  width: 100%; padding: .7rem .9rem; border: 1px solid var(--borda);
+  border-radius: 9px; font-size: .92rem; background: var(--card); color: var(--texto);
+  margin-bottom: .9rem;
+}
+.tabela-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+th {
+  background: var(--azul-claro); color: #fff; padding: .55rem .5rem;
+  text-align: left; font-weight: 600; white-space: nowrap;
+}
+td { padding: .55rem .5rem; border-bottom: 1px solid var(--borda); }
+tr:last-child td { border-bottom: none; }
+.pos {
+  display: inline-block; min-width: 26px; text-align: center;
+  background: var(--azul); color: #fff; border-radius: 6px;
+  padding: 1px 5px; font-size: .78rem; font-weight: 700;
+}
+.pos.topo { background: #1e7a46; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tag {
+  font-size: .72rem; padding: 1px 6px; border-radius: 5px;
+  background: #ead1dc; color: #7a2348; font-weight: 700;
+}
+.msg { text-align: center; color: var(--suave); padding: 1.5rem 1rem; font-size: .88rem; }
+.rodape { text-align: center; font-size: .74rem; color: var(--suave); padding: 1rem 0 2rem; }
+.aviso {
+  font-size: .78rem; color: var(--suave); border-left: 3px solid var(--azul-claro);
+  padding-left: .7rem; margin-top: .8rem;
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>DEJEP — Consulta Pública</h1>
+  <p>Centro de Progressão Penitenciária de São Vicente</p>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab ativa" id="tab-lista" onclick="mostrar('lista')">Lista Corrida</button>
+    <button class="tab" id="tab-escala" onclick="mostrar('escala')">Escala do Mês</button>
+  </div>
+
+  <input class="busca" id="busca" placeholder="Buscar por nome..." oninput="render()">
+
+  <div class="card">
+    <div id="conteudo"><div class="msg">Carregando dados...</div></div>
+  </div>
+
+  <div class="aviso" id="aviso"></div>
+  <div class="rodape">Desenvolvido pelo Policial Penal Jonatas Gomes Alves</div>
+</div>
+
+<script>
+const URL_API = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8po1JfLVJBYbf_CKjsJY1Gsp8E88EwWDYJ-CJW110GITNZDR3HS9oXQ/exec?acao=consulta';
+let dados = null;
+let aba = 'lista';
+
+function mostrar(qual) {
+  aba = qual;
+  document.getElementById('tab-lista').classList.toggle('ativa', qual === 'lista');
+  document.getElementById('tab-escala').classList.toggle('ativa', qual === 'escala');
+  render();
+}
+
+function rotuloHorario(h) {
+  if (h === '07h') return '07h às 15h';
+  if (h === '11h') return '11h às 19h';
+  if (h === '23h') return '23h às 07h';
+  if (h === '10h') return '10h às 18h';
+  if (h === '22h') return '22h às 06h';
+  return h;
+}
+
+function render() {
+  const alvo = document.getElementById('conteudo');
+  if (!dados) return;
+
+  const filtro = document.getElementById('busca').value.trim().toLowerCase();
+
+  if (aba === 'lista') {
+    let itens = dados.acumulado || [];
+    if (filtro) itens = itens.filter(i => i.nome.toLowerCase().includes(filtro));
+    if (!itens.length) {
+      alvo.innerHTML = '<div class="msg">' +
+        (dados.acumulado && dados.acumulado.length
+          ? 'Nenhum servidor encontrado com esse nome.'
+          : 'A lista corrida ainda não foi iniciada. Ela é criada quando a primeira escala é consolidada.') +
+        '</div>';
+      return;
+    }
+    alvo.innerHTML =
+      '<div class="tabela-wrap"><table><thead><tr>' +
+      '<th>#</th><th>Servidor</th><th class="num">DEJEPs</th><th class="num">Horas</th>' +
+      '</tr></thead><tbody>' +
+      itens.map(i =>
+        '<tr>' +
+        '<td><span class="pos' + (i.posicao <= 3 ? ' topo' : '') + '">' + i.posicao + '</span></td>' +
+        '<td>' + escapar(i.nome) + '</td>' +
+        '<td class="num">' + i.dejeps + '</td>' +
+        '<td class="num"><strong>' + i.horas + 'h</strong></td>' +
+        '</tr>'
+      ).join('') +
+      '</tbody></table></div>';
+  } else {
+    let itens = dados.escala || [];
+    if (filtro) itens = itens.filter(i => i.nome.toLowerCase().includes(filtro));
+    if (!itens.length) {
+      alvo.innerHTML = '<div class="msg">' +
+        (dados.escala && dados.escala.length
+          ? 'Nenhum servidor encontrado com esse nome.'
+          : 'Nenhuma escala consolidada até o momento.') +
+        '</div>';
+      return;
+    }
+    itens = itens.slice().sort((a, b) => {
+      const pa = a.data.split('/').reverse().join('');
+      const pb = b.data.split('/').reverse().join('');
+      if (pa !== pb) return pa < pb ? -1 : 1;
+      return a.horario < b.horario ? -1 : 1;
+    });
+    alvo.innerHTML =
+      '<div class="tabela-wrap"><table><thead><tr>' +
+      '<th>Data</th><th>Horário</th><th>Servidor</th>' +
+      '</tr></thead><tbody>' +
+      itens.map(i =>
+        '<tr>' +
+        '<td>' + escapar(i.data) + '</td>' +
+        '<td>' + rotuloHorario(i.horario) + '</td>' +
+        '<td>' + escapar(i.nome) +
+        (i.tipo === 'Externa' ? ' <span class="tag">Sec. Ext</span>' : '') +
+        '</td></tr>'
+      ).join('') +
+      '</tbody></table></div>';
+  }
+}
+
+function escapar(t) {
+  return String(t).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function carregar() {
+  try {
+    const resp = await fetch(URL_API);
+    dados = await resp.json();
+    const av = document.getElementById('aviso');
+    let txt = 'A ordem da lista corrida segue as horas acumuladas: quem realizou menos horas é convocado primeiro. Cada DEJEP equivale a 8 horas.';
+    if (dados.nomeEscala) txt += ' Escala exibida: ' + dados.nomeEscala + '.';
+    if (dados.atualizadoEm) txt += ' Última atualização: ' + dados.atualizadoEm + '.';
+    av.textContent = txt;
+    render();
+  } catch (err) {
+    document.getElementById('conteudo').innerHTML =
+      '<div class="msg">Não foi possível carregar os dados no momento.<br>Tente novamente em alguns instantes.</div>';
+  }
+}
+
+carregar();
+</script>
+</body>
+</html>
