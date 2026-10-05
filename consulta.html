@@ -194,13 +194,26 @@ function nomeCurto(n) {
 // Monta a grade do mês a partir dos agendamentos consolidados
 function montarCalendario(itens, filtro) {
   // Descobre mês e ano: o mês vem das próprias datas, o ano do nome da escala
+  // Aceita "dd/MM", "dd/MM/aaaa" ou uma data completa devolvida pela planilha
+  function diaMes(v) {
+    const t = String(v || '').trim();
+    const m = t.match(/^(\d{1,2})\/(\d{1,2})/);
+    if (m) return { dia: parseInt(m[1], 10), mes: parseInt(m[2], 10) };
+    const d = new Date(t);
+    if (!isNaN(d.getTime())) return { dia: d.getDate(), mes: d.getMonth() + 1 };
+    return null;
+  }
+
   const contagemMes = {};
   itens.forEach(function(i) {
-    const m = (i.data || '').split('/')[1];
-    if (m) contagemMes[m] = (contagemMes[m] || 0) + 1;
+    const dm = diaMes(i.data);
+    if (dm) contagemMes[dm.mes] = (contagemMes[dm.mes] || 0) + 1;
   });
   let mes = Object.keys(contagemMes).sort(function(a, b){ return contagemMes[b] - contagemMes[a]; })[0];
-  if (!mes) return '<div class="empty-msg">Não foi possível identificar o mês da escala.</div>';
+  if (!mes) {
+    return '<div class="empty-msg">Não foi possível identificar o mês da escala.<br>'
+      + 'Execute novamente "Consolidar Horas no Acumulado" na planilha.</div>';
+  }
   mes = parseInt(mes, 10);
 
   const anoMatch = (dados.nomeEscala || '').match(/(\d{4})/);
@@ -209,11 +222,10 @@ function montarCalendario(itens, filtro) {
   // Agrupa por dia
   const porDia = {};
   itens.forEach(function(i) {
-    const partes = (i.data || '').split('/');
-    if (parseInt(partes[1], 10) !== mes) return;
-    const dia = parseInt(partes[0], 10);
-    if (!porDia[dia]) porDia[dia] = [];
-    porDia[dia].push(i);
+    const dm = diaMes(i.data);
+    if (!dm || dm.mes !== mes) return;
+    if (!porDia[dm.dia]) porDia[dm.dia] = [];
+    porDia[dm.dia].push(i);
   });
 
   const ORDEM = { '07h': 1, '10h': 2, '11h': 3, '22h': 4, '23h': 5 };
