@@ -47,6 +47,40 @@ border-radius: 6px; padding: 2px 6px; font-size: 0.78rem; font-weight: 700; }
 padding: 0.85rem 1rem; font-size: 0.8rem; color: #45617f; line-height: 1.55; margin-bottom: 1.25rem; }
 .rodape { margin-top: 1.5rem; padding: 1rem; text-align: center; background: #1a3a5c; border-radius: 12px; }
 .rodape span { color: #ffffff; font-size: 0.95rem; font-weight: 700; }
+
+.cal-mes { text-align: center; font-weight: 700; font-size: 1.05rem; color: #1a3a5c;
+margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.cal-semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+.cal-dia-sem { text-align: center; font-size: 0.68rem; font-weight: 700; color: #6b80a0;
+text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 0; }
+.cal-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-cel { border: 1px solid #dde4ed; border-radius: 8px; background: white; padding: 4px 3px;
+min-height: 62px; display: flex; flex-direction: column; gap: 2px; }
+.cal-cel.vazia { border: none; background: transparent; }
+.cal-cel.fds { background: #f7f9fc; }
+.cal-cel.sem-escala { background: #fafbfc; border-style: dashed; }
+.cal-cel.hoje { border-color: #2d6a9f; border-width: 2px; }
+.cal-num { font-size: 0.72rem; font-weight: 700; color: #45617f; text-align: center; line-height: 1.2; }
+.cal-item { font-size: 0.58rem; line-height: 1.25; border-radius: 4px; padding: 2px 3px;
+color: #1a2b3c; overflow: hidden; }
+.cal-item.apagado { opacity: 0.22; }
+.cal-hora { font-weight: 700; }
+.cal-item.h07 { background: #d9ead3; }
+.cal-item.h11 { background: #fce5cd; }
+.cal-item.h23 { background: #cfe2f3; }
+.cal-item.h10 { background: #ead1dc; }
+.cal-item.h22 { background: #e0d4ea; }
+.cal-legenda { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+margin-top: 0.9rem; font-size: 0.7rem; color: #6b80a0; }
+.cal-legenda span { display: flex; align-items: center; gap: 4px; }
+.cal-legenda .pt { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.cal-legenda .pt.h07 { background: #d9ead3; } .cal-legenda .pt.h11 { background: #fce5cd; }
+.cal-legenda .pt.h23 { background: #cfe2f3; } .cal-legenda .pt.h10 { background: #ead1dc; }
+.cal-legenda .pt.h22 { background: #e0d4ea; }
+@media (max-width: 560px) {
+  .cal-cel { min-height: 52px; padding: 3px 2px; }
+  .cal-item { font-size: 0.5rem; }
+}
 </style>
 </head>
 <body>
@@ -141,33 +175,102 @@ function render() {
           '<td class="num"><strong>' + i.horas + 'h</strong></td></tr>';
       }).join('') + '</tbody></table></div>';
   } else {
-    let itens = dados.escala || [];
-    if (filtro) itens = itens.filter(function(i){ return i.nome.toLowerCase().includes(filtro); });
-    if (!itens.length) {
-      alvo.innerHTML = '<div class="empty-msg">' +
-        ((dados.escala && dados.escala.length)
-          ? 'Nenhum servidor encontrado com esse nome.'
-          : 'Nenhuma escala consolidada até o momento.') + '</div>';
+    const todos = dados.escala || [];
+    if (!todos.length) {
+      alvo.innerHTML = '<div class="empty-msg">Nenhuma escala consolidada até o momento.</div>';
       return;
     }
-    itens = itens.slice().sort(function(a, b) {
-      const pa = a.data.split('/').reverse().join('');
-      const pb = b.data.split('/').reverse().join('');
-      if (pa !== pb) return pa < pb ? -1 : 1;
-      return a.horario < b.horario ? -1 : 1;
-    });
-    alvo.innerHTML = '<div class="tabela-wrap"><table><thead><tr>' +
-      '<th>Data</th><th>Horário</th><th>Servidor</th>' +
-      '</tr></thead><tbody>' +
-      itens.map(function(i) {
-        return '<tr><td>' + escapar(i.data) + '</td>' +
-          '<td>' + rotuloHorario(i.horario) + '</td>' +
-          '<td>' + escapar(i.nome) +
-          (i.tipo === 'Externa' ? ' <span class="tag">Sec. Ext</span>' : '') +
-          '</td></tr>';
-      }).join('') + '</tbody></table></div>';
+    alvo.innerHTML = montarCalendario(todos, filtro);
   }
 }
+
+// Encurta o nome para caber na célula do calendário
+function nomeCurto(n) {
+  const p = String(n).trim().split(/\s+/);
+  if (p.length <= 2) return n;
+  return p[0] + ' ' + p[p.length - 1];
+}
+
+// Monta a grade do mês a partir dos agendamentos consolidados
+function montarCalendario(itens, filtro) {
+  // Descobre mês e ano: o mês vem das próprias datas, o ano do nome da escala
+  const contagemMes = {};
+  itens.forEach(function(i) {
+    const m = (i.data || '').split('/')[1];
+    if (m) contagemMes[m] = (contagemMes[m] || 0) + 1;
+  });
+  let mes = Object.keys(contagemMes).sort(function(a, b){ return contagemMes[b] - contagemMes[a]; })[0];
+  if (!mes) return '<div class="empty-msg">Não foi possível identificar o mês da escala.</div>';
+  mes = parseInt(mes, 10);
+
+  const anoMatch = (dados.nomeEscala || '').match(/(\d{4})/);
+  const ano = anoMatch ? parseInt(anoMatch[1], 10) : new Date().getFullYear();
+
+  // Agrupa por dia
+  const porDia = {};
+  itens.forEach(function(i) {
+    const partes = (i.data || '').split('/');
+    if (parseInt(partes[1], 10) !== mes) return;
+    const dia = parseInt(partes[0], 10);
+    if (!porDia[dia]) porDia[dia] = [];
+    porDia[dia].push(i);
+  });
+
+  const ORDEM = { '07h': 1, '10h': 2, '11h': 3, '22h': 4, '23h': 5 };
+  Object.keys(porDia).forEach(function(d) {
+    porDia[d].sort(function(a, b) {
+      return (ORDEM[a.horario] || 9) - (ORDEM[b.horario] || 9);
+    });
+  });
+
+  const primeiro = new Date(ano, mes - 1, 1).getDay();
+  const total = new Date(ano, mes, 0).getDate();
+  const hoje = new Date();
+  const ehMesAtual = (hoje.getFullYear() === ano && hoje.getMonth() === mes - 1);
+
+  let html = '<div class="cal-mes">' + MESES_NOME[mes - 1] + ' ' + ano + '</div>';
+  html += '<div class="cal-semana">' +
+    ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(function(d) {
+      return '<div class="cal-dia-sem">' + d + '</div>';
+    }).join('') + '</div>';
+  html += '<div class="cal-grade">';
+
+  for (let i = 0; i < primeiro; i++) html += '<div class="cal-cel vazia"></div>';
+
+  for (let d = 1; d <= total; d++) {
+    const lista = porDia[d] || [];
+    const dow = new Date(ano, mes - 1, d).getDay();
+    let classes = 'cal-cel';
+    if (dow === 0 || dow === 6) classes += ' fds';
+    if (!lista.length) classes += ' sem-escala';
+    if (ehMesAtual && d === hoje.getDate()) classes += ' hoje';
+
+    html += '<div class="' + classes + '"><div class="cal-num">' + d + '</div>';
+    lista.forEach(function(i) {
+      const combina = !filtro || i.nome.toLowerCase().includes(filtro);
+      const cls = 'cal-item h' + i.horario.replace('h','') + (combina ? '' : ' apagado');
+      html += '<div class="' + cls + '" title="' + escapar(i.nome) + ' — ' + rotuloHorario(i.horario) + '">'
+        + '<span class="cal-hora">' + escapar(i.horario) + '</span> '
+        + escapar(nomeCurto(i.nome))
+        + (i.tipo === 'Externa' ? ' <b>·Ext</b>' : '')
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  html += '<div class="cal-legenda">'
+    + '<span><i class="pt h07"></i>07h às 15h</span>'
+    + '<span><i class="pt h11"></i>11h às 19h</span>'
+    + '<span><i class="pt h23"></i>23h às 07h</span>'
+    + '<span><i class="pt h10"></i>10h às 18h</span>'
+    + '<span><i class="pt h22"></i>22h às 06h</span>'
+    + '</div>';
+  return html;
+}
+
+const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 function carregar() {
   fetch(URL_API).then(function(r){ return r.json(); }).then(function(d) {
