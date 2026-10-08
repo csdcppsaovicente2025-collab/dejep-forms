@@ -263,10 +263,20 @@ function renderPainel() {
         + '</div>';
     });
   }
-  html += '<div style="font-size:0.74rem;color:#8fb4d8;margin-top:0.7rem;line-height:1.5;">'
-    + 'Para trocar, escolha uma DEJEP de outro servidor na escala abaixo: ele receberá um '
-    + 'e-mail e a troca só se efetiva se aceitar. O cancelamento exige antecedência de 24 horas '
-    + 'e <strong>não altera a sua posição</strong> na lista.</div>';
+  const totalCompat = (dados.escala || []).reduce(function (s, i) {
+    return s + ((i.trocaCom || []).length ? 1 : 0);
+  }, 0);
+  html += '<div style="font-size:0.74rem;color:#8fb4d8;margin-top:0.7rem;line-height:1.5;">';
+  if (dados.minhas.length && totalCompat === 0) {
+    html += '<strong style="color:#ffd8a0;">Nenhuma troca compatível neste mês.</strong> '
+      + 'As demais DEJEPs esbarram no intervalo mínimo de descanso em relação ao seu '
+      + 'plantão, no posto ou na composição da vaga. ';
+  } else if (dados.minhas.length) {
+    html += 'Há <strong>' + totalCompat + '</strong> DEJEPs compatíveis para troca, '
+      + 'marcadas com "trocar" na escala abaixo. As incompatíveis aparecem sem o link. ';
+  }
+  html += 'O cancelamento exige antecedência de 24 horas e <strong>não altera a sua '
+    + 'posição</strong> na lista.</div>';
   html += '</div>';
   alvo.innerHTML = html;
 }
@@ -321,9 +331,11 @@ function renderEscala(filtro) {
     visiveis.forEach(function (i) {
       const ehMinha = meuNome && (i.nome || '').toLowerCase() === meuNome;
       const vaga = !i.nome || i.situacao === 'Vaga';
+      // O servidor já apurou com quais das minhas DEJEPs esta pode ser
+      // trocada. Vazio significa troca incompatível — não se oferece.
+      const compat = (i.trocaCom || []).length;
       const podeClicar = dados.eu && !ehMinha && !vaga &&
-        i.situacao === 'Agendada' &&
-        dados.minhas.some(function (m) { return m.data !== i.data; });
+        i.situacao === 'Agendada' && compat > 0;
 
       html += '<div class="linha-dejep' + (ehMinha ? ' minha' : '')
         + (podeClicar ? ' clicavel' : '') + '"'
@@ -333,7 +345,10 @@ function renderEscala(filtro) {
         + '<span class="ld-nome' + (vaga ? ' ld-vaga' : '') + '">'
         + (vaga ? 'VAGA' : escapar(i.nome)) + '</span>'
         + (ehMinha ? '<span style="font-size:0.7rem;color:#276221;font-weight:700;">você</span>'
-                   : (podeClicar ? '<span style="font-size:0.7rem;color:#2d6a9f;">trocar</span>' : ''))
+                   : (podeClicar ? '<span style="font-size:0.7rem;color:#2d6a9f;">trocar</span>'
+                   : (dados.eu && !vaga && dados.minhas.length
+                      ? '<span style="font-size:0.68rem;color:#c0ccd8;" title="Troca incompatível com o intervalo de descanso, o posto ou a sua situação">—</span>'
+                      : '')))
         + (i.situacao === 'Falta' ? '<span style="font-size:0.7rem;color:#a02020;font-weight:700;">falta</span>' : '')
         + '</div>';
     });
@@ -410,9 +425,10 @@ function abrirTrocaComAlvo(idAlvo) {
   }
   trocaAlvo = idAlvo;
 
-  const ofertaveis = dados.minhas.filter(function (m) { return m.data !== alvo.data; });
+  const compat = alvo.trocaCom || [];
+  const ofertaveis = dados.minhas.filter(function (m) { return compat.indexOf(m.id) !== -1; });
   if (!ofertaveis.length) {
-    toast('Suas DEJEPs são todas no mesmo dia dessa. A troca é de datas.', true);
+    toast('Nenhuma das suas DEJEPs é compatível com essa.', true);
     return;
   }
   const opcoes = ofertaveis.map(function (m) {
@@ -424,8 +440,8 @@ function abrirTrocaComAlvo(idAlvo) {
   abrirModal('Solicitar troca com ' + alvo.nome,
     'Você assumiria <strong>' + escapar(alvo.data) + '</strong> — ' + escapar(alvo.posto)
     + '. Escolha abaixo <strong>qual das suas DEJEPs</strong> oferece em troca. '
-    + 'O sistema confere o intervalo de descanso dos dois antes de enviar, e a troca só '
-    + 'se efetiva se o colega aceitar pelo e-mail.',
+    + 'Só aparecem as compatíveis: o intervalo de descanso dos dois já foi conferido. '
+    + 'A troca só se efetiva se o colega aceitar pelo e-mail.',
     opcoes,
     '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>');
 }
@@ -435,11 +451,10 @@ function abrirTrocaDaMinha(idMinha) {
   const minha = dados.minhas.find(function (m) { return m.id === idMinha; });
   if (!minha) return;
   const candidatos = (dados.escala || []).filter(function (i) {
-    return i.situacao === 'Agendada' && i.nome &&
-      i.nome.toLowerCase() !== dados.eu.nome.toLowerCase() && i.data !== minha.data;
+    return (i.trocaCom || []).indexOf(idMinha) !== -1;
   });
   if (!candidatos.length) {
-    toast('Não há outra DEJEP disponível para troca neste mês.', true);
+    toast('Nenhuma troca compatível com a sua DEJEP de ' + minha.data + ' neste mês.', true);
     return;
   }
   const opcoes = candidatos.map(function (c) {
@@ -450,8 +465,9 @@ function abrirTrocaDaMinha(idMinha) {
   }).join('');
 
   abrirModal('Trocar a DEJEP de ' + minha.data,
-    'Escolha com quem deseja trocar. O colega receberá um e-mail e a troca só se '
-    + 'efetiva se ele aceitar.',
+    'Estas são as <strong>' + candidatos.length + ' trocas compatíveis</strong> com a sua '
+    + 'DEJEP de ' + escapar(minha.data) + ' — o intervalo de descanso dos dois já foi '
+    + 'conferido. O colega receberá um e-mail e a troca só se efetiva se ele aceitar.',
     '<div style="max-height:320px;overflow-y:auto;">' + opcoes + '</div>',
     '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>');
 }
