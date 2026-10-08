@@ -138,117 +138,82 @@ SP" />
 <div class="header-texto">
 <h1>Polícia Penal do Estado de São Paulo</h1>
 <h2>Centro de Progressão Penitenciária de São Vicente</h2>
-<p>DEJEP &bull; Preencha sua disponibilidade para o mês</p>
+<p>DEJEP &bull; Cadastro na lista unificada</p>
 </div>
 </div>
 </div>
 
-<!-- PRAZO ENCERRADO -->
-<div class="prazo-card" id="prazo-card" style="display:none">
-
-<div class="prazo-icone">
-
-</div>
-
-<h2>Prazo Encerrado</h2>
-<p>O período para informar sua disponibilidade para a escala DEJEP deste mês já foi encerrado.<br>
-O formulário fica aberto somente entre os dias <strong>18 e 25</strong> de cada mês.</p>
-<div class="prazo-info" id="prazo-info"></div>
+<!-- INSCRIÇÕES ENCERRADAS -->
+<div class="card" id="encerrado" style="display:none;text-align:center;padding:2.5rem 1.5rem;">
+<div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
+<h2 style="font-size:1.15rem;color:#1a3a5c;margin-bottom:0.75rem;">Inscrições encerradas</h2>
+<p style="font-size:0.9rem;color:#5a6e8a;line-height:1.6;">
+A lista unificada da DEJEP já foi constituída e é <strong>contínua</strong> — não há nova
+inscrição a cada mês. A convocação segue a ordem da lista, e quem é escalado passa
+para o fim dela.<br><br>
+Para ingressar na lista ou corrigir seus dados, procure a
+<strong>Diretoria de Disciplina</strong>.
+</p>
 </div>
 
 <div id="form-area">
+
 <div class="card" style="border-left: 4px solid #2d6a9f;">
-<div class="card-title">Aviso Importante</div>
+<div class="card-title">Como funciona</div>
 <p style="font-size:0.85rem; color:#4a5a6a; line-height:1.6; margin:0;">
-Este formulário <strong>não é a inscrição na lista unificada da DEJEP</strong>, que se dá
-exclusivamente pelo <strong>SISDRHU</strong>, nos termos do artigo 6º da Resolução SAP nº 065/2025,
-com redação dada pela Resolução SAP nº 048/2026.<br><br>
-A finalidade aqui é <strong>informar sua disponibilidade</strong>, como subsídio operacional
-para o planejamento da distribuição. A definição da <strong>data, do horário, da atividade e do
-posto de serviço</strong> compete à Administração, observadas a ordem da lista unificada, as
-habilitações exigidas, a necessidade operacional e os critérios de segurança.
+Este é o <strong>cadastro único</strong> na lista unificada da DEJEP desta unidade.
+A <strong>ordem de chegada define a sua posição</strong> na lista corrida, e essa
+posição é permanente — não haverá nova inscrição nos meses seguintes.
 </p>
 <p style="font-size:0.85rem; color:#4a5a6a; line-height:1.6; margin:12px 0 0;">
-<strong>Você informa o período, não o horário.</strong> O horário de entrada é
-apurado pelo sistema a partir do intervalo mínimo de <strong>1 (uma) hora</strong>
-exigido entre o plantão e a DEJEP:
+A convocação segue a ordem da lista. Quando você é escalado, passa para o fim e
+volta a subir conforme os demais forem convocados. <strong>Você não escolhe a
+data</strong>: o sistema distribui os postos pela ordem da lista, respeitando o
+intervalo mínimo de <strong>1 (uma) hora</strong> entre o seu plantão e a DEJEP — é
+desse intervalo que sai o horário de entrada, apurado pelo próprio sistema.
 </p>
-<ul style="font-size:0.84rem; color:#4a5a6a; line-height:1.7; margin:6px 0 0; padding-left:1.2rem;">
-<li>posto diurno — entrada às <strong>11h</strong>, ou às <strong>10h</strong> quando a DEJEP antecede o seu plantão;</li>
-<li>posto noturno — entrada às <strong>23h</strong>, ou às <strong>22h</strong> quando a DEJEP antecede o seu plantão;</li>
-<li>posto das 07h — entrada às <strong>07h</strong>.</li>
-</ul>
-<p style="font-size:0.84rem; color:#4a5a6a; line-height:1.6; margin:8px 0 0;">
-Ao marcar um dia, o calendário já exibe o horário que você cumpriria. Os dias em
-que nenhum horário respeita esse intervalo aparecem bloqueados.
+<p style="font-size:0.85rem; color:#4a5a6a; line-height:1.6; margin:12px 0 0;">
+Precisando trocar ou cancelar uma DEJEP, você fará isso pelo <strong>link pessoal</strong>
+que receberá por e-mail — sem passar pela Disciplina.
 </p>
 </div>
+
+<div class="card" style="border-left: 4px solid #e0b040;">
+<div class="card-title">Aviso Importante</div>
+<p style="font-size:0.85rem; color:#4a5a6a; line-height:1.6; margin:0;">
+Este cadastro <strong>não é a inscrição na lista unificada perante o SISDRHU</strong>,
+que se dá exclusivamente por aquele sistema, nos termos do artigo 6º da Resolução
+SAP nº 065/2025, com redação dada pela Resolução SAP nº 048/2026, e permanece
+obrigatória.<br><br>
+A finalidade aqui é <strong>operacional</strong>: constituir a ordem de convocação e
+permitir a distribuição automática dos postos. A definição da data, do horário, da
+atividade e do posto de serviço compete à Administração, observadas a ordem da lista
+unificada, as habilitações exigidas, a necessidade operacional e os critérios de segurança.
+</p>
+</div>
+
 <div class="card">
 <div class="card-title">Identificação</div>
 <div class="field-group">
 <div class="field required" style="flex:2; min-width:200px;">
 <label for="nome">Nome completo</label>
-<input type="text" id="nome" placeholder="Seu nome completo"
-oninput="updatePreview()" />
+<input type="text" id="nome" placeholder="Seu nome completo" oninput="atualizar()" />
 </div>
 <div class="field required">
 <label for="genero">Gênero</label>
-<select id="genero" onchange="updatePreview()">
+<select id="genero" onchange="atualizar()">
 <option value="">Selecione...</option>
 <option>Masculino</option>
 <option>Feminino</option>
 </select>
 </div>
 </div>
+
 <div class="field-group" style="margin-top:12px;">
 <div class="field required">
-<label for="tipo_seguranca">Tipo de Segurança *</label>
-
-<select id="tipo_seguranca" onchange="onTipoSegurancaChange()">
-<option value="">Selecione...</option>
-<option value="Interna">Segurança Interna</option>
-<option value="Externa">Segurança Externa</option>
-</select>
-</div>
-</div>
-<div class="field-group" style="display: none !important;" id="campo-interesse">
-<div class="field required">
-<label for="interesse_interno">Manifesta interesse em atuar também nas atividades
-internas da unidade? *</label>
-<select id="interesse_interno" onchange="updatePreview()">
-<option value="">Selecione...</option>
-<option value="Sim">Sim — posso ser escalado em qualquer posto de serviço</option>
-<option value="Nao">Não — somente atividades de torre</option>
-</select>
-<p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;">
-Manifestado o interesse, o servidor da Segurança Externa poderá ser escalado em
-qualquer posto, cabendo ao responsável pela escala alocá-lo em conjunto com
-servidor da Segurança Interna, para instrução nas atividades. Não havendo
-manifestação, atuará exclusivamente nas torres.
-</p>
-</div>
-</div>
-<div class="field-group" style="margin-top:12px;" id="campo-dejeps-mes">
-<div class="field required">
-<label for="dejeps_mes">Total de DEJEPs realizadas e agendadas para o mês
-atual *</label>
-<select id="dejeps_mes" onchange="updatePreview()">
-<option value="">Selecione...</option>
-<option>0</option>
-<option>1</option>
-<option>2</option>
-<option>3</option>
-<option>4</option>
-<option>5</option>
-</select>
-</div>
-</div>
-<div class="field-group" style="margin-top:12px;" id="campo-turno-plantao">
-<div class="field required">
 <label for="turno_plantao">Turno de plantão</label>
-<select id="turno_plantao" onchange="atualizarCalendario()">
+<select id="turno_plantao" onchange="atualizar()">
 <option value="">Selecione...</option>
-
 <option value="I">Turno I</option>
 <option value="II">Turno II</option>
 <option value="III">Turno III</option>
@@ -256,61 +221,74 @@ atual *</label>
 <option value="Diarista">Diarista</option>
 </select>
 </div>
+<div class="field required">
+<label for="tipo_seguranca">Tipo de Segurança</label>
+<select id="tipo_seguranca" onchange="onTipoSeguranca()">
+<option value="">Selecione...</option>
+<option value="Interna">Segurança Interna</option>
+<option value="Externa">Segurança Externa</option>
+</select>
 </div>
+</div>
+
+<div class="field-group" style="display:none !important;" id="campo-interesse">
+<div class="field required">
+<label for="interesse_interno">Tem interesse em realizar DEJEP nas atribuições
+internas da unidade?</label>
+<select id="interesse_interno" onchange="atualizar()">
+<option value="">Selecione...</option>
+<option value="Sim">Sim — posso ser escalado em qualquer posto de serviço</option>
+<option value="Nao">Não — exclusivamente nos postos de torre</option>
+</select>
+<p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;">
+Manifestado o interesse, o servidor da Segurança Externa poderá ser escalado em
+qualquer posto, cabendo ao responsável pela escala alocá-lo em conjunto com servidor
+da Segurança Interna, para instrução nas atividades. <strong>Não havendo manifestação,
+o servidor será escalado exclusivamente nos postos da torre.</strong>
+</p>
+</div>
+</div>
+
 <div class="field-group" style="margin-top:12px;">
 <div class="field required">
-<label for="email">E-mail (para receber o comprovante)</label>
-<input type="email" id="email" placeholder="seu.email@exemplo.com" />
+<label for="email">E-mail</label>
+<input type="email" id="email" placeholder="seu.email@exemplo.com" oninput="atualizar()" />
+<p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;">
+É para este endereço que irão o comprovante, o seu <strong>link pessoal</strong> e os
+avisos de escala. Informe um e-mail que você acesse.
+</p>
 </div>
 </div>
 </div>
 
 <div class="card">
-<div class="card-title">Dias disponíveis — clique para marcar ou desmarcar</div>
-<div class="month-titulo" id="month-titulo"></div>
-<div class="cal-grid">
-<div class="cal-header">Dom</div><div class="cal-header">Seg</div>
-<div class="cal-header">Ter</div><div class="cal-header">Qua</div>
-<div class="cal-header">Qui</div><div class="cal-header">Sex</div>
-<div class="cal-header">Sáb</div>
-</div>
-<div class="cal-grid" id="calendar" style="margin-top:5px;"></div>
-<div class="sel-count" id="sel-count"></div>
-<div class="obs-field">
-
-<label for="obs">Observações (opcional)</label>
-<textarea id="obs" placeholder="Ex: não posso nas segundas pela manhã..."
-value=""></textarea>
-</div>
-</div>
-
-<div class="card">
-<div class="card-title">Resumo dos dias selecionados</div>
-<div id="preview-area"><div class="empty-msg">Selecione os dias disponíveis no
-calendário acima.</div></div>
+<div class="card-title">Confira antes de enviar</div>
+<div id="preview-area"><div class="empty-msg">Preencha os campos acima.</div></div>
 <div class="alerta aviso" id="alerta-aviso"></div>
 <div class="alerta erro" id="alerta-erro"></div>
 <button class="send-btn" id="send-btn" onclick="enviar()">
-<i class="fa-solid fa-paper-plane"></i> Enviar disponibilidade
+<i class="fa-solid fa-paper-plane"></i> Enviar cadastro
 </button>
 <div class="instrucao">
-Após enviar, você receberá um <strong>e-mail de comprovante</strong> com todos os dias selecionados.
-Verifique sua caixa de entrada (e a pasta de spam).<br>
-<strong>⚠️ Atenção:</strong> Um novo envio <strong>substitui integralmente</strong> o anterior.
-Com a lista unificada, cada servidor tem uma única disponibilidade.
+Após enviar, você receberá um <strong>e-mail de comprovante</strong> com a sua
+<strong>posição na lista</strong> e o seu link pessoal. Verifique a caixa de entrada e a
+pasta de spam.<br>
+<strong>⚠️ Atenção:</strong> um novo envio atualiza seus dados, mas
+<strong>preserva a posição</strong> já obtida na lista.
 </div>
 </div>
 </div>
 
 <div class="card sucesso" id="sucesso">
 <div class="sucesso-icone"><i class="fa-solid fa-circle-check"></i></div>
-<h2>Disponibilidade registrada!</h2>
-<p>Sua disponibilidade para DEJEP foi enviada com sucesso e já está na planilha da
-Disciplina.</p>
-<div class="email-info" id="email-info"></div>
-
-<button class="novo-btn" onclick="reiniciar()">Registrar nova
-disponibilidade</button>
+<h2>Cadastro registrado!</h2>
+<div style="margin:1.25rem auto;padding:1.25rem;background:#eef4fb;border-radius:10px;max-width:280px;">
+<div style="font-size:0.75rem;color:#6b80a0;text-transform:uppercase;letter-spacing:0.06em;">Sua posição na lista corrida</div>
+<div style="font-size:2.6rem;font-weight:800;color:#1a3a5c;line-height:1.2;" id="posicao-num">—</div>
+</div>
+<p id="msg-sucesso">Seu cadastro foi registrado na lista unificada da DEJEP.</p>
+<div class="email-info" id="email-info" style="margin-top:1rem;font-size:0.85rem;color:#5a6e8a;"></div>
+<button class="send-btn" style="max-width:260px;margin:1.5rem auto 0;" onclick="reiniciar()">Fazer outro cadastro</button>
 </div>
 
 <div style="margin-top:1.5rem;text-align:center;">
@@ -318,573 +296,155 @@ disponibilidade</button>
 </div>
 </div>
 
-<div class="modal-overlay" id="modal-horario" onclick="fecharModalHorario(event)">
-<div class="modal-box" onclick="event.stopPropagation()">
-<div class="modal-titulo" id="modal-titulo">Período da DEJEP</div>
-<div class="modal-data" id="modal-data"></div>
-<div class="modal-opcoes" id="modal-opcoes"></div>
-<div class="modal-acoes">
-<button class="modal-btn" onclick="fecharModalHorario()">Cancelar</button>
-<button class="modal-btn remover" id="btn-remover-dia" onclick="removerDiaSelecionado()">Remover dia</button>
-</div>
-</div>
-</div>
-
 <script>
-// Mês ativo calculado automaticamente — não precisa alterar mais!
-var MES_ATIVO = { ano: new Date().getFullYear(), mes: new Date().getMonth() + 1 };
+// ============================================================
+// CADASTRO ÚNICO NA LISTA UNIFICADA — DEJEP CPP SÃO VICENTE
+//
+// A ordem de chegada define a posição na lista corrida, que é
+// permanente. Não há mais inscrição mensal nem escolha de data.
+// ============================================================
 
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8po1JfLVJBYbf_CKjsJY1Gsp8E88EwWDYJ-CJW110GITNZDR3HS9oXQ/exec';
 
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const DIAS_EXT = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-var viewYear, viewMonth;
-const today = new Date();
-// Cada dia selecionado guarda o PERÍODO declarado:
-// 'Diurno' | 'Noturno' | 'Ambos'.
-// O HORÁRIO de entrada não é escolhido pelo servidor — é apurado
-// pelo intervalo mínimo de descanso em relação ao seu plantão.
-let selectedDaysMap = new Map();
+// ⚠️ Constituída a lista, altere para false e republique a página.
+// O cadastro passa a ser feito pela Diretoria de Disciplina.
+const INSCRICOES_ABERTAS = true;
 
-// LISTA ÚNICA: as mesmas opções para toda a unidade.
-const OPCOES = [
-  { valor: 'Diurno',  textoModal: 'Período diurno',      textoCelula: 'Diurno'  },
-  { valor: 'Noturno', textoModal: 'Período noturno',     textoCelula: 'Noturno' },
-  { valor: 'Ambos',   textoModal: 'Diurno e noturno',    textoCelula: 'Ambos'   }
-];
+function el(id) { return document.getElementById(id); }
 
-function getTipoSeguranca() {
-  var el = document.getElementById('tipo_seguranca');
-  return el ? el.value : '';
-}
-
-function getTextoCelula(valor) {
-  for (var i = 0; i < OPCOES.length; i++) {
-    if (OPCOES[i].valor === valor) return OPCOES[i].textoCelula;
+function onTipoSeguranca() {
+  var tipo = el('tipo_seguranca').value;
+  var campo = el('campo-interesse');
+  if (tipo === 'Externa') {
+    campo.setAttribute('style', 'margin-top:12px;');
+  } else {
+    campo.setAttribute('style', 'display:none !important;');
+    el('interesse_interno').value = '';
   }
-  return valor;
+  atualizar();
 }
 
-function onTipoSegurancaChange() {
-  // LISTA ÚNICA: o limite mensal e o turno de plantão valem para toda
-  // a unidade. O que distingue a Segurança Externa é apenas a
-  // manifestação de interesse nas atividades internas: sem ela, o
-  // servidor é escalado exclusivamente nas torres.
-  var tipo = getTipoSeguranca();
-  var campoInteresse = document.getElementById('campo-interesse');
-  if (campoInteresse) {
-    if (tipo === 'Externa') {
-      campoInteresse.setAttribute('style', 'margin-top:12px;');
-    } else {
-      campoInteresse.setAttribute('style', 'display: none !important;');
-      document.getElementById('interesse_interno').value = '';
-    }
+function dados() {
+  return {
+    nome: el('nome').value.trim(),
+    email: el('email').value.trim(),
+    genero: el('genero').value,
+    turno_plantao: el('turno_plantao').value,
+    tipo_seguranca: el('tipo_seguranca').value,
+    interesse_interno: el('interesse_interno').value
+  };
+}
+
+function atualizar() {
+  var d = dados();
+  var area = el('preview-area');
+  if (!d.nome && !d.turno_plantao && !d.tipo_seguranca) {
+    area.innerHTML = '<div class="empty-msg">Preencha os campos acima.</div>';
+    return;
   }
-  selectedDaysMap.clear();
-  render();
-  updatePreview();
-}
-
-// ============================================================
-// PARIDADE DOS TURNOS — referência Maio 2025 (mes=4, base 0)
-// Turno II = ímpar em Maio/2025 (confirmado pelo operador)
-// O loop propaga nos dois sentidos a partir da referência,
-// invertendo sempre que o mês em questão tem 31 dias.
-// ============================================================
-var REFERENCIA = { ano: 2026, mes: 4 }; // Maio 2026 (mes=4, base 0) — Turno II=ímpar confirmado
-var PARIDADE_REF = { 'I': 'impar', 'II': 'impar', 'III': 'par', 'IV': 'par' };
-
-function calcularParidade(turno, ano, mes) {
-  var parRef = PARIDADE_REF[turno];
-  if (!parRef) return null;
-  var aRef = REFERENCIA.ano, mRef = REFERENCIA.mes;
-  var aAlvo = ano, mAlvo = mes - 1; // converte para base 0
-  var inversoes = 0;
-  var a = aRef, m = mRef;
-
-  if (aAlvo > aRef || (aAlvo === aRef && mAlvo > mRef)) {
-    // Avança: começa no mês seguinte à referência
-    // A inversão ocorre ao entrar em cada mês, contando os dias do mês anterior
-    m++; if (m > 11) { m = 0; a++; }
-    while (a < aAlvo || (a === aAlvo && m < mAlvo)) {
-      var mAnt = m - 1; var aAnt = a;
-      if (mAnt < 0) { mAnt = 11; aAnt--; }
-      var diasAnt = new Date(aAnt, mAnt + 1, 0).getDate();
-      if (diasAnt === 31) inversoes++;
-      m++; if (m > 11) { m = 0; a++; }
-    }
-    // Conta o mês anterior ao alvo (o último passo)
-    var mAnt = mAlvo - 1; var aAnt = aAlvo;
-    if (mAnt < 0) { mAnt = 11; aAnt--; }
-    var diasAnt = new Date(aAnt, mAnt + 1, 0).getDate();
-    if (diasAnt === 31) inversoes++;
-  } else if (aAlvo < aRef || (aAlvo === aRef && mAlvo < mRef)) {
-    // Volta: cada passo para trás inverte se o mês que estamos deixando tem 31 dias
-    while (a > aAlvo || (a === aAlvo && m > mAlvo)) {
-      var diasAtual = new Date(a, m + 1, 0).getDate();
-      if (diasAtual === 31) inversoes++;
-      m--; if (m < 0) { m = 11; a--; }
-    }
+  var linhas = [
+    ['Nome', d.nome || '—'],
+    ['Gênero', d.genero || '—'],
+    ['Turno de plantão', d.turno_plantao || '—'],
+    ['Segurança', d.tipo_seguranca || '—']
+  ];
+  if (d.tipo_seguranca === 'Externa') {
+    linhas.push(['Atribuições internas',
+      d.interesse_interno === 'Sim' ? 'Sim — qualquer posto'
+      : d.interesse_interno === 'Nao' ? 'Não — somente torre' : '—']);
   }
-  return inversoes % 2 === 0 ? parRef : (parRef === 'par' ? 'impar' : 'par');
-}
+  linhas.push(['E-mail', d.email || '—']);
 
-function getFeriados(ano) {
-  function pascoa(a) {
-    var x = Math.floor(a/100), y = a % 19;
-    var b = Math.floor(x/4), c = x % 4;
-    var d = Math.floor((x+8)/25), e = Math.floor((x-d+1)/3);
-    var f = (19*y + x - b - e + 15) % 30;
-    var h = Math.floor((y+11*f)/319);
-    var i = Math.floor(a/4) + Math.floor(a/400) - Math.floor(a/100) + 2;
-    var j = (a + i + f - h + 114) % 7;
-    var mes = Math.floor((f - h + j + 211) / 32);
-    var dia = ((f - h + j + 211) % 32) + 1;
-    return new Date(a, mes-1, dia);
-  }
-  var p = pascoa(ano);
-  function addD(d, n) { var r = new Date(d); r.setDate(r.getDate()+n); return r; }
-  function fmt(d) { return (d.getMonth()+1)+'/'+d.getDate(); }
-  return ['1/1','4/21','5/1','9/7','10/12','11/2','11/15','11/20','12/25',
-    fmt(addD(p,-48)), fmt(addD(p,-47)), fmt(addD(p,-2)), fmt(p), fmt(addD(p,60))];
-}
-
-function isFeriado(dia, mes, ano) {
-  return getFeriados(ano).indexOf(mes+'/'+dia) !== -1;
-}
-
-// ============================================================
-// MOTOR DE DESCANSO — ESPELHO DO GerarEscala.gs
-//
-// Mantido idêntico ao do Apps Script para que o servidor nunca
-// declare um dia e período que a geração da escala venha a recusar.
-// Alterando um, altere o outro.
-//
-// O plantão é tratado como INTERVALO data-hora:
-//   turnos I e III  → 07h às 19h do próprio dia
-//   turnos II e IV  → 19h de um dia às 07h do dia seguinte
-//   diarista        → expediente de segunda a sexta
-// ============================================================
-var CFG_FORM = { DESCANSO_H: 1, DIARISTA_INI: 7, DIARISTA_FIM: 17, DUR: 8 };
-
-var POSTOS_FORM = {
-  P07:         { periodo: 'Diurno',  horarios: [7],
-                 vagas: function (ds) { return ds === 1 ? 2 : ((ds === 0 || ds === 6) ? 4 : 0); } },
-  TORRE_DIA:   { periodo: 'Diurno',  horarios: [11, 10], vagas: function () { return 1; } },
-  TORRE_NOITE: { periodo: 'Noturno', horarios: [23, 22], vagas: function () { return 1; } }
-};
-
-function emHoraF(dt, h) {
-  return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), h, 0, 0, 0);
-}
-
-function ehDiaDePlantaoF(turno, dt) {
-  var par = calcularParidade(turno, dt.getFullYear(), dt.getMonth() + 1);
-  if (!par) return false;
-  return (par === 'par') === (dt.getDate() % 2 === 0);
-}
-
-function intervalosOcupacaoF(turno, dtRef) {
-  var out = [];
-  if (!turno) return out;
-  for (var off = -1; off <= 1; off++) {
-    var d = new Date(dtRef.getFullYear(), dtRef.getMonth(), dtRef.getDate() + off);
-    if (turno === 'Diarista') {
-      var dow = d.getDay();
-      if (dow >= 1 && dow <= 5 && !isFeriado(d.getDate(), d.getMonth() + 1, d.getFullYear())) {
-        out.push({ ini: emHoraF(d, CFG_FORM.DIARISTA_INI), fim: emHoraF(d, CFG_FORM.DIARISTA_FIM) });
-      }
-      continue;
-    }
-    if (!ehDiaDePlantaoF(turno, d)) continue;
-    if (turno === 'II' || turno === 'IV') out.push({ ini: emHoraF(d, 19), fim: emHoraF(d, 31) });
-    else out.push({ ini: emHoraF(d, 7), fim: emHoraF(d, 19) });
-  }
-  return out;
-}
-
-function janelaLivreF(ivs, ini, fim, folga) {
-  for (var i = 0; i < ivs.length; i++) {
-    var antes  = (fim.getTime() + folga) <= ivs[i].ini.getTime();
-    var depois = (ini.getTime() - folga) >= ivs[i].fim.getTime();
-    if (!antes && !depois) return false;
-  }
-  return true;
-}
-
-function horarioDerivadoF(pk, turno, dt) {
-  var p = POSTOS_FORM[pk];
-  if (!p) return null;
-  var folga = CFG_FORM.DESCANSO_H * 3600000;
-  var ivs = intervalosOcupacaoF(turno, dt);
-  for (var i = 0; i < p.horarios.length; i++) {
-    var h = p.horarios[i];
-    if (janelaLivreF(ivs, emHoraF(dt, h), emHoraF(dt, h + CFG_FORM.DUR), folga)) {
-      return { hora: h, chave: (h < 10 ? '0' : '') + h + 'h', padrao: i === 0 };
-    }
-  }
-  return null;
-}
-
-function getTurnoPlantao() {
-  var el = document.getElementById('turno_plantao');
-  return el ? el.value : '';
-}
-
-// Horários que o servidor efetivamente cumpriria naquele dia e período
-function horariosApurados(dt, periodo) {
-  var turno = getTurnoPlantao();
-  var ds = dt.getDay();
-  var out = [];
-  Object.keys(POSTOS_FORM).forEach(function (pk) {
-    var p = POSTOS_FORM[pk];
-    if (p.vagas(ds) <= 0) return;
-    if (periodo !== 'Ambos' && p.periodo !== periodo) return;
-    var h = horarioDerivadoF(pk, turno, dt);
-    if (h && out.indexOf(h.chave) === -1) out.push(h.chave);
-  });
-  return out.sort();
-}
-
-// Períodos possíveis no dia: há posto com vaga e com horário que
-// respeite o intervalo mínimo de descanso.
-function getOpcoesDisponiveis(dia, diaSemana, ano, mes) {
-  var turno = getTurnoPlantao();
-  var dt = new Date(ano, mes - 1, dia);
-  var diurnoOk = false, noturnoOk = false;
-  Object.keys(POSTOS_FORM).forEach(function (pk) {
-    var p = POSTOS_FORM[pk];
-    if (p.vagas(diaSemana) <= 0) return;
-    if (!horarioDerivadoF(pk, turno, dt)) return;
-    if (p.periodo === 'Diurno') diurnoOk = true; else noturnoOk = true;
-  });
-  var out = [];
-  if (diurnoOk) out.push('Diurno');
-  if (noturnoOk) out.push('Noturno');
-  if (diurnoOk && noturnoOk) out.push('Ambos');
-  return out;
-}
-
-function atualizarCalendario() {
-  // Ao trocar o turno de plantão, remove seleções que deixaram de ser válidas
-  var novasSelecoes = new Map();
-  selectedDaysMap.forEach(function(valor, ds) {
-    var d = new Date(ds + 'T12:00:00');
-    var disponiveis = getOpcoesDisponiveis(d.getDate(), d.getDay(), viewYear, viewMonth + 1);
-    if (disponiveis.indexOf(valor) !== -1) novasSelecoes.set(ds, valor);
-  });
-  selectedDaysMap = novasSelecoes;
-  render();
-  updatePreview();
-}
-
-function render() {
-  document.getElementById('month-titulo').textContent = MESES[viewMonth] + ' ' + viewYear;
-  const cal = document.getElementById('calendar');
-  cal.innerHTML = '';
-  const first = new Date(viewYear, viewMonth, 1).getDay();
-  const total = new Date(viewYear, viewMonth + 1, 0).getDate();
-
-  var tipo = getTipoSeguranca();
-
-  for (let i = 0; i < first; i++) {
-    const e = document.createElement('div'); e.className = 'day-cell empty';
-    cal.appendChild(e);
-  }
-  for (let d = 1; d <= total; d++) {
-    const ds = dateStr(d);
-    const isPast = new Date(viewYear, viewMonth, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const dt = new Date(viewYear, viewMonth, d);
-    const diaSemana = dt.getDay();
-    // Dia fica bloqueado apenas se nenhuma opção estiver disponível
-    const disponiveis = getOpcoesDisponiveis(d, diaSemana, viewYear, viewMonth + 1);
-    const isPlantao = disponiveis.length === 0;
-    const estaSelecionado = selectedDaysMap.has(ds);
-    const cell = document.createElement('div');
-    var classes = 'day-cell';
-    if (isPast) classes += ' past';
-    else if (isPlantao) classes += ' plantao';
-    else if (estaSelecionado) classes += ' selected';
-    cell.className = classes;
-    var horarioLabel = '';
-    if (estaSelecionado) {
-      var periodoSel = selectedDaysMap.get(ds);
-      var hs = horariosApurados(dt, periodoSel);
-      horarioLabel = '<div class="day-horario">' + getTextoCelula(periodoSel)
-        + (hs.length ? '<br>' + hs.join(' / ') : '') + '</div>';
-    }
-    cell.innerHTML = '<div class="day-num">' + d + '</div>' + horarioLabel;
-    if (!isPast && !isPlantao) {
-      cell.onclick = () => abrirModalHorario(ds);
-    }
-    cal.appendChild(cell);
-  }
-  updateCount();
-}
-
-function dateStr(d) {
-  return viewYear + '-' + String(viewMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-}
-
-// Dia atualmente aberto no modal de horário
-var diaModalAtual = null;
-
-function abrirModalHorario(ds) {
-  diaModalAtual = ds;
-  var tipo = getTipoSeguranca();
-  var dt = new Date(ds + 'T12:00:00');
-  var dow = DIAS_EXT[dt.getDay()];
-  var fmt = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
-  document.getElementById('modal-data').textContent = fmt + ' — ' + dow.charAt(0).toUpperCase() + dow.slice(1);
-  document.getElementById('modal-titulo').textContent = tipo === 'Externa' ? 'Horário da DEJEP' : 'Período da DEJEP';
-
-  var lista = OPCOES;
-  var disponiveis = getOpcoesDisponiveis(dt.getDate(), dt.getDay(), viewYear, viewMonth + 1);
-  var atual = selectedDaysMap.get(ds) || null;
-
-  // Monta apenas as opções realmente permitidas naquele dia
-  var html = lista.filter(function(op) {
-    return disponiveis.indexOf(op.valor) !== -1;
-  }).map(function(op) {
-    var classe = 'modal-opt' + (atual === op.valor ? ' ativa' : '');
-    return '<button class="' + classe + '" onclick="escolherHorario(\'' + op.valor + '\')">' + op.textoModal + '</button>';
+  area.innerHTML = linhas.map(function (l) {
+    return '<div class="preview-row"><span style="color:#8fa3ba;min-width:140px;">'
+      + l[0] + '</span><strong>' + escapar(l[1]) + '</strong></div>';
   }).join('');
-  document.getElementById('modal-opcoes').innerHTML = html;
-
-  // O botão "Remover dia" só faz sentido se o dia já estiver marcado
-  document.getElementById('btn-remover-dia').style.display = atual ? '' : 'none';
-  document.getElementById('modal-horario').classList.add('ativo');
 }
 
-function escolherHorario(valor) {
-  if (diaModalAtual) selectedDaysMap.set(diaModalAtual, valor);
-  fecharModalHorario();
-  render();
-  updateCount();
-  updatePreview();
-}
-
-function removerDiaSelecionado() {
-  if (diaModalAtual) selectedDaysMap.delete(diaModalAtual);
-  fecharModalHorario();
-  render();
-  updateCount();
-  updatePreview();
-}
-
-function fecharModalHorario(event) {
-  // Ao clicar no fundo escurecido, fecha; cliques dentro da caixa não fecham
-  if (event && event.target !== document.getElementById('modal-horario')) return;
-  document.getElementById('modal-horario').classList.remove('ativo');
-  diaModalAtual = null;
-}
-
-function updateCount() {
-  const t = selectedDaysMap.size;
-  document.getElementById('sel-count').textContent = t > 0 ? t + ' dia(s) selecionado(s)' : '';
-}
-
-function getRows() {
-  const nome = document.getElementById('nome').value.trim();
-  const genero = document.getElementById('genero').value;
-  const dejeps_mes = document.getElementById('dejeps_mes').value;
-  const tipo = getTipoSeguranca();
-  if (!nome || !genero || !tipo) return [];
-  // Lista única: o limite mensal vale para toda a unidade
-  if (!dejeps_mes) return [];
-
-  const turno_plantao_val = getTurnoPlantao();
-  const regime_row = turno_plantao_val === 'Diarista' ? 'Diarista' : 'Plantonista';
-
-  return [...selectedDaysMap.entries()].sort(function(a,b){ return a[0] < b[0] ? -1 : 1; }).map(function(entry) {
-    const ds = entry[0], periodo = entry[1];
-    const dt = new Date(ds + 'T12:00:00');
-    const dow = DIAS_EXT[dt.getDay()];
-    const fmt = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
-    return { nome, tipo_seguranca: tipo, regime: regime_row, periodo,
-             horarios: horariosApurados(dt, periodo),
-             genero, dejeps_mes, dow, data: fmt, raw: ds };
-  });
-}
-
-function updatePreview() {
-  const rows = getRows();
-  const tipo = getTipoSeguranca();
-  const area = document.getElementById('preview-area');
-  if (!rows.length) { area.innerHTML = '<div class="empty-msg">Selecione os dias disponíveis no calendário acima.</div>'; return; }
-  area.innerHTML = rows.map(r => {
-    const suf = r.periodo ? ' — ' + getTextoCelula(r.periodo) : '';
-    const hs = (r.horarios && r.horarios.length)
-      ? ' <strong>(' + r.horarios.join(' / ') + ')</strong>' : '';
-    return '<div class="preview-row"><span class="pr-data">' + r.data + '</span><span class="pr-dia">'
-      + r.dow.charAt(0).toUpperCase() + r.dow.slice(1) + suf + hs + '</span></div>';
-  }).join('');
+function escapar(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function mostrarAlerta(tipo, msg) {
-  ['aviso','erro'].forEach(t => { const el = document.getElementById('alerta-'+t); el.style.display='none'; el.textContent=''; });
-  if (tipo && msg) { const el = document.getElementById('alerta-'+tipo); el.textContent=msg; el.style.display='block'; }
+  ['aviso', 'erro'].forEach(function (t) {
+    var e = el('alerta-' + t); e.style.display = 'none'; e.textContent = '';
+  });
+  if (tipo && msg) {
+    var e = el('alerta-' + tipo); e.textContent = msg; e.style.display = 'block';
+  }
 }
 
 async function enviar() {
   mostrarAlerta(null);
-  const nome = document.getElementById('nome').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const tipo = getTipoSeguranca();
-  const genero = document.getElementById('genero').value;
-  const dejeps_mes = document.getElementById('dejeps_mes').value;
-  const obs = document.getElementById('obs').value.trim();
-  const rows = getRows();
+  var d = dados();
 
-  if (!nome) { mostrarAlerta('aviso', 'Preencha seu nome completo.'); return; }
-  if (!genero) { mostrarAlerta('aviso', 'Selecione seu gênero.'); return; }
-  if (!tipo) { mostrarAlerta('aviso', 'Selecione o tipo de segurança (Interna ou Externa).'); return; }
-
-  // O turno de plantão é indispensável: é dele que o sistema apura o
-  // intervalo mínimo de descanso e, por consequência, o horário.
-  const turno_plantao_val = getTurnoPlantao();
-  if (!turno_plantao_val) { mostrarAlerta('aviso', 'Selecione seu turno de plantão.'); return; }
-  if (!dejeps_mes) { mostrarAlerta('aviso', 'Informe o total de DEJEPs realizadas e agendadas no mês atual.'); return; }
-  if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido.'); return; }
-  if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível.'); return; }
-
-  const interesse_interno = document.getElementById('interesse_interno').value;
-  if (tipo === 'Externa' && !interesse_interno) {
-    mostrarAlerta('aviso', 'Informe se manifesta interesse em atuar nas atividades internas da unidade.');
+  if (!d.nome || d.nome.split(/\s+/).length < 2) {
+    mostrarAlerta('aviso', 'Informe o seu nome completo.'); return;
+  }
+  if (!d.genero)        { mostrarAlerta('aviso', 'Selecione o seu gênero.'); return; }
+  if (!d.turno_plantao) { mostrarAlerta('aviso', 'Selecione o seu turno de plantão.'); return; }
+  if (!d.tipo_seguranca){ mostrarAlerta('aviso', 'Selecione o tipo de segurança.'); return; }
+  if (d.tipo_seguranca === 'Externa' && !d.interesse_interno) {
+    mostrarAlerta('aviso', 'Informe se tem interesse em realizar DEJEP nas atribuições internas.');
     return;
   }
-
-  const semPeriodo = rows.some(r => !r.periodo);
-  if (semPeriodo) {
-    mostrarAlerta('aviso', 'Selecione o período (diurno, noturno ou ambos) para todos os dias marcados.');
-    return;
+  if (!d.email || d.email.indexOf('@') === -1) {
+    mostrarAlerta('aviso', 'Informe um e-mail válido.'); return;
   }
 
-  const btn = document.getElementById('send-btn');
+  var btn = el('send-btn');
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
 
   try {
-    const regime = turno_plantao_val === 'Diarista' ? 'Diarista' : 'Plantonista';
-    const payload = { nome, email, tipo_seguranca: tipo, interesse_interno,
-                      regime, turno_plantao: turno_plantao_val, genero,
-                      dejeps_mes, obs, linhas: rows };
-    console.log('PAYLOAD ENVIADO:', JSON.stringify(payload));
-    const resp = await fetch(APPS_SCRIPT_URL, {
+    var resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(d)
     });
-    const json = await resp.json();
+    var json = await resp.json();
     if (json.sucesso) {
-      document.getElementById('form-area').style.display = 'none';
-      document.getElementById('sucesso').style.display = 'block';
-      var msgSucesso = json.mensagem.includes('atualizada')
-        ? '✅ Disponibilidade atualizada! Seu envio anterior foi substituído.'
-        : '✅ Disponibilidade registrada com sucesso!';
-      document.querySelector('#sucesso p').textContent = msgSucesso;
-      document.getElementById('email-info').innerHTML = '<i class="fa-solid fa-envelope"></i> Comprovante enviado para <strong>' + email + '</strong>';
+      el('form-area').style.display = 'none';
+      el('sucesso').style.display = 'block';
+      el('posicao-num').textContent = json.posicao + 'º';
+      el('msg-sucesso').textContent = json.atualizacao
+        ? 'Seus dados foram atualizados. A posição conquistada na lista foi preservada.'
+        : 'Seu cadastro foi registrado na lista unificada da DEJEP.';
+      el('email-info').innerHTML =
+        '<i class="fa-solid fa-envelope"></i> Comprovante e <strong>link pessoal</strong> enviados para <strong>'
+        + escapar(d.email) + '</strong>';
     } else {
-      mostrarAlerta('erro', 'Erro ao salvar: ' + json.mensagem);
+      mostrarAlerta('erro', json.mensagem || 'Não foi possível registrar o cadastro.');
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar disponibilidade';
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar cadastro';
     }
-  } catch(err) {
+  } catch (err) {
     mostrarAlerta('erro', 'Não foi possível conectar. Verifique sua internet e tente novamente.');
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar disponibilidade';
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar cadastro';
   }
 }
 
 function reiniciar() {
-  selectedDaysMap.clear();
-  ['nome','email','obs'].forEach(id => document.getElementById(id).value = '');
-  ['turno_plantao','genero','dejeps_mes','tipo_seguranca'].forEach(id => {
-    if(document.getElementById(id)) document.getElementById(id).value = '';
-  });
-  document.getElementById('sucesso').style.display = 'none';
-  document.getElementById('form-area').style.display = 'block';
+  ['nome', 'email'].forEach(function (id) { el(id).value = ''; });
+  ['genero', 'turno_plantao', 'tipo_seguranca', 'interesse_interno']
+    .forEach(function (id) { el(id).value = ''; });
+  onTipoSeguranca();
+  el('sucesso').style.display = 'none';
+  el('form-area').style.display = 'block';
+  var btn = el('send-btn');
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar cadastro';
   mostrarAlerta(null);
-  onTipoSegurancaChange();
-  render(); updatePreview();
+  atualizar();
 }
 
-// ============================================================
-// CONTROLE DE PRAZO E MÊS — 100% AUTOMÁTICO
-// Dias 18-25: inscrições abertas para o mês seguinte
-// Fora desse período: formulário bloqueado com aviso
-// ============================================================
-function calcularMesAtivo() {
-  var hoje = new Date();
-  var dia = hoje.getDate();
-  var mes = hoje.getMonth(); // 0-11
-  var ano = hoje.getFullYear();
-
-  if (dia >= 18 && dia <= 25) {
-    // Janela ABERTA agora: inscrições do mês atual valem para a escala do mês seguinte
-    var mesEscala = mes + 2; // +1 base 1, +1 mês seguinte
-    var anoEscala = ano;
-    if (mesEscala > 12) { mesEscala = mesEscala - 12; anoEscala++; }
-    return { aberto: true, mes: mesEscala, ano: anoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
-  } else if (dia < 18) {
-    // ANTES de abrir: janela abre dia 18 deste mês, para escala do mês seguinte
-    var proximoMesEscala = mes + 2; // mes seguinte (base 1)
-    var proximoAnoEscala = ano;
-    if (proximoMesEscala > 12) { proximoMesEscala = proximoMesEscala - 12; proximoAnoEscala++; }
-    return { aberto: false, fase: 'antes', mes: proximoMesEscala, ano: proximoAnoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
-  } else {
-    // DEPOIS do dia 25: janela já encerrou. Próxima abre dia 18 do mês seguinte,
-    // e essa próxima janela é para a escala de DOIS meses à frente do atual.
-    var proximoMesEscala = mes + 3; // +1 base 1, +2 meses à frente
-    var proximoAnoEscala = ano;
-    while (proximoMesEscala > 12) { proximoMesEscala -= 12; proximoAnoEscala++; }
-    return { aberto: false, fase: 'depois', mes: proximoMesEscala, ano: proximoAnoEscala, dia: dia, mesAtual: mes+1, anoAtual: ano };
-  }
+if (!INSCRICOES_ABERTAS) {
+  el('form-area').style.display = 'none';
+  el('encerrado').style.display = 'block';
 }
-
-// ============================================================
-// CONTROLE DE PRAZO ATIVO
-// O formulário abre automaticamente apenas entre os dias 18 e 25
-// de cada mês. Fora desse período exibe o aviso de prazo encerrado.
-// ============================================================
-var PERIODO = calcularMesAtivo();
-MES_ATIVO.mes = PERIODO.mes;
-MES_ATIVO.ano = PERIODO.ano;
-viewYear  = MES_ATIVO.ano;
-viewMonth = MES_ATIVO.mes - 1;
-
-function verificarPrazo() {
-  if (!PERIODO.aberto) {
-    document.getElementById('form-area').style.display = 'none';
-    document.getElementById('prazo-card').style.display = 'block';
-    var nomeMesEscala = MESES[PERIODO.mes - 1]; // mês da próxima escala (1 mês à frente)
-    var info = document.getElementById('prazo-info');
-    if (PERIODO.dia < 18) {
-      // Prazo ainda não abriu este mês — abre dia 18 do mês atual
-      info.innerHTML = 'O formulário de disponibilidade para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong> abre no dia <strong>18/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.';
-    } else {
-      // Próxima abertura: dia 18 do mês seguinte ao atual
-      var mesReabertura = PERIODO.mesAtual + 1;
-      var anoReabertura = PERIODO.anoAtual;
-      if (mesReabertura > 12) { mesReabertura = 1; anoReabertura++; }
-      info.innerHTML = 'O próximo período de envio abre dia <strong>18/' + String(mesReabertura).padStart(2,'0') + '/' + anoReabertura + '</strong> para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong>.';
-    }
-  }
-}
-
-// Fecha o modal de horário ao pressionar Esc
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    document.getElementById('modal-horario').classList.remove('ativo');
-    diaModalAtual = null;
-  }
-});
-
-verificarPrazo();
-// Aplica o estado inicial dos campos condicionais. Necessário porque o navegador
-// pode restaurar o valor dos seletores ao recarregar a página sem disparar o onchange.
-onTipoSegurancaChange();
-render();
+atualizar();
 </script>
 </body>
 </html>
