@@ -861,7 +861,7 @@ function verificarPrazo() {
     var info = document.getElementById('prazo-info');
     if (PERIODO.dia < 18) {
       // Prazo ainda não abriu este mês — abre dia 18 do mês atual
-      info.innerHTML = 'O formulário de disponibilidade para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong> abrem no dia <strong>18/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.';
+      info.innerHTML = 'O formulário de disponibilidade para <strong>' + nomeMesEscala + ' ' + PERIODO.ano + '</strong> abre no dia <strong>18/' + String(PERIODO.mesAtual).padStart(2,'0') + '/' + PERIODO.anoAtual + '</strong>.';
     } else {
       // Próxima abertura: dia 18 do mês seguinte ao atual
       var mesReabertura = PERIODO.mesAtual + 1;
