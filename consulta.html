@@ -82,11 +82,56 @@ margin-top: 0.9rem; font-size: 0.7rem; color: #6b80a0; }
   .cal-cel { min-height: 52px; padding: 3px 2px; }
   .cal-item { font-size: 0.5rem; }
 }
+
+/* ---- Painel pessoal e ações ---- */
+.painel { background: #1a3a5c; color: #fff; border-radius: 12px; padding: 1.1rem 1.25rem;
+margin-bottom: 1.25rem; }
+.painel-nome { font-size: 1rem; font-weight: 700; }
+.painel-pos { font-size: 0.8rem; color: #a8c4e0; margin-top: 2px; }
+.painel-item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 0.6rem 0.75rem;
+margin-top: 0.6rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.painel-item .pi-data { font-weight: 700; font-size: 0.9rem; min-width: 62px; }
+.painel-item .pi-info { font-size: 0.8rem; color: #c8dcf0; flex: 1; min-width: 120px; }
+.btn-acao { border: 0; border-radius: 6px; padding: 6px 11px; font-size: 0.76rem;
+font-weight: 700; cursor: pointer; background: #ffffff; color: #1a3a5c; }
+.btn-acao.cancelar { background: #e8a0a0; color: #6a1515; }
+.btn-acao:disabled { background: #7a8fa5; color: #dde4ed; cursor: not-allowed; }
+.dia-bloco { border: 1px solid #dde4ed; border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+.dia-cab { background: #f0f4f8; padding: 7px 12px; font-size: 0.8rem; font-weight: 700;
+color: #1a3a5c; display: flex; justify-content: space-between; }
+.dia-cab .dia-fds { color: #a0522d; }
+.linha-dejep { display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+border-top: 1px solid #eef1f5; font-size: 0.85rem; }
+.linha-dejep .ld-hora { font-weight: 700; color: #1a3a5c; min-width: 42px; }
+.linha-dejep .ld-posto { font-size: 0.72rem; color: #6b80a0; min-width: 96px; }
+.linha-dejep .ld-nome { flex: 1; min-width: 110px; }
+.linha-dejep.minha { background: #eef7ee; }
+.linha-dejep.clicavel { cursor: pointer; }
+.linha-dejep.clicavel:hover { background: #f5f9fd; }
+.linha-dejep .ld-vaga { color: #a02020; font-weight: 700; }
+.modal-fundo { position: fixed; inset: 0; background: rgba(12,26,44,0.55); display: none;
+align-items: center; justify-content: center; padding: 1rem; z-index: 50; }
+.modal-fundo.ativo { display: flex; }
+.modal-cx { background: #fff; border-radius: 14px; padding: 1.5rem; max-width: 420px; width: 100%; }
+.modal-tit { font-size: 1rem; font-weight: 700; color: #1a3a5c; margin-bottom: 0.4rem; }
+.modal-sub { font-size: 0.84rem; color: #5a6e8a; line-height: 1.5; margin-bottom: 1rem; }
+.modal-opt { display: block; width: 100%; text-align: left; border: 1px solid #d0d9e6;
+background: #fff; border-radius: 8px; padding: 10px 12px; margin-bottom: 7px;
+font-size: 0.85rem; cursor: pointer; color: #1a2b3c; }
+.modal-opt:hover { border-color: #2d6a9f; background: #f5f9fd; }
+.modal-acoes { display: flex; gap: 8px; margin-top: 0.75rem; }
+.modal-btn { flex: 1; border: 0; border-radius: 8px; padding: 10px; font-size: 0.85rem;
+font-weight: 700; cursor: pointer; background: #e8edf3; color: #45617f; }
+.modal-btn.principal { background: #1a3a5c; color: #fff; }
+.modal-btn.perigo { background: #a02020; color: #fff; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px;
+background: #1a3a5c; color: #fff; padding: 12px 18px; border-radius: 10px;
+font-size: 0.85rem; max-width: 92%; z-index: 60; display: none; box-shadow: 0 4px 18px rgba(0,0,0,0.25); }
+.toast.erro { background: #a02020; }
 </style>
 </head>
 <body>
 <div class="container">
-
 <div class="header">
 <div class="header-inner">
 <img class="header-brasao"
@@ -95,24 +140,26 @@ SP" />
 <div class="header-texto">
 <h1>Polícia Penal do Estado de São Paulo</h1>
 <h2>Centro de Progressão Penitenciária de São Vicente</h2>
-<p>DEJEP &bull; Consulta pública da escala e da lista corrida</p>
+<p>DEJEP &bull; Consulta da escala e da lista corrida</p>
 </div>
 </div>
 </div>
 
+<div id="painel"></div>
+
 <div class="aviso-info" id="aviso-info">
-A convocação segue a ordem da lista unificada. O acumulado de horas é registrado como
-demonstração de equidade — cada DEJEP equivale a 8 horas. O horário de entrada é apurado
-pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.
+A convocação segue a ordem da lista corrida, definida pela inscrição. Quem é escalado
+passa para o fim da lista. O horário de entrada é apurado pelo intervalo mínimo de
+1 hora entre o plantão e a DEJEP.
 </div>
 
 <div class="abas">
-<button class="aba ativa" id="aba-lista" onclick="mostrar('lista')">Lista Corrida</button>
-<button class="aba" id="aba-escala" onclick="mostrar('escala')">Escala do Mês</button>
+<button class="aba ativa" id="aba-escala" onclick="mostrar('escala')">Escala do Mês</button>
+<button class="aba" id="aba-lista" onclick="mostrar('lista')">Lista Corrida</button>
 </div>
 
 <div class="card">
-<div class="card-title" id="card-titulo">Lista Corrida</div>
+<div class="card-title" id="card-titulo">Escala do Mês</div>
 <input class="busca" id="busca" placeholder="Buscar por nome..." oninput="render()" />
 <div id="conteudo"><div class="empty-msg"><i class="fa-solid fa-spinner fa-spin"></i> Carregando dados...</div></div>
 </div>
@@ -120,194 +167,354 @@ pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.
 <div class="rodape">
 <span>Desenvolvido pelo Policial Penal Jonatas Gomes Alves</span>
 </div>
-
 </div>
 
-<script>
-const URL_API = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8po1JfLVJBYbf_CKjsJY1Gsp8E88EwWDYJ-CJW110GITNZDR3HS9oXQ/exec?acao=consulta';
-let dados = null;
-let aba = 'lista';
+<div class="modal-fundo" id="modal" onclick="fecharModal(event)">
+<div class="modal-cx" onclick="event.stopPropagation()">
+<div class="modal-tit" id="modal-tit"></div>
+<div class="modal-sub" id="modal-sub"></div>
+<div id="modal-corpo"></div>
+<div class="modal-acoes" id="modal-acoes"></div>
+</div>
+</div>
 
-function mostrar(qual) {
-  aba = qual;
-  document.getElementById('aba-lista').classList.toggle('ativa', qual === 'lista');
-  document.getElementById('aba-escala').classList.toggle('ativa', qual === 'escala');
-  document.getElementById('card-titulo').textContent = qual === 'lista' ? 'Lista Corrida' : 'Escala do Mês';
-  render();
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// CONSULTA DA ESCALA DEJEP — CPP SÃO VICENTE
+//
+// Sem token, a página é somente leitura. Com o token pessoal que
+// vai no e-mail de agendamento, o servidor passa a poder solicitar
+// troca e cancelar as próprias DEJEPs. O token nunca é exibido.
+// ============================================================
+const URL_BASE = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8po1JfLVJBYbf_CKjsJY1Gsp8E88EwWDYJ-CJW110GITNZDR3HS9oXQ/exec';
+
+const TOKEN = (new URLSearchParams(location.search).get('t') || '').trim();
+let dados = null;
+let aba = 'escala';
+
+function el(id) { return document.getElementById(id); }
+
+function escapar(t) {
+  return String(t === null || t === undefined ? '' : t).replace(/[&<>"']/g, function (c) {
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+  });
 }
 
 function rotuloHorario(h) {
-  if (h === '07h') return '07h às 15h';
-  if (h === '11h') return '11h às 19h';
-  if (h === '23h') return '23h às 07h';
-  if (h === '10h') return '10h às 18h';
-  if (h === '22h') return '22h às 06h';
-  return h;
+  const m = { '07h':'07h às 15h','10h':'10h às 18h','11h':'11h às 19h',
+              '22h':'22h às 06h','23h':'23h às 07h' };
+  return m[h] || h;
 }
 
-function escapar(t) {
-  return String(t).replace(/[&<>"']/g, function(c) {
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-  });
+function toast(msg, erro) {
+  const t = el('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (erro ? ' erro' : '');
+  t.style.display = 'block';
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function () { t.style.display = 'none'; }, 6000);
 }
 
-function render() {
-  const alvo = document.getElementById('conteudo');
-  if (!dados) return;
-  const filtro = document.getElementById('busca').value.trim().toLowerCase();
+function mostrar(qual) {
+  aba = qual;
+  el('aba-lista').classList.toggle('ativa', qual === 'lista');
+  el('aba-escala').classList.toggle('ativa', qual === 'escala');
+  el('card-titulo').textContent = qual === 'lista' ? 'Lista Corrida' : 'Escala do Mês';
+  render();
+}
 
-  if (aba === 'lista') {
-    let itens = dados.acumulado || [];
-    if (filtro) itens = itens.filter(function(i){ return i.nome.toLowerCase().includes(filtro); });
-    if (!itens.length) {
-      alvo.innerHTML = '<div class="empty-msg">' +
-        ((dados.acumulado && dados.acumulado.length)
-          ? 'Nenhum servidor encontrado com esse nome.'
-          : 'A lista corrida ainda não foi iniciada.<br>Ela é criada quando a primeira escala é consolidada.') +
-        '</div>';
-      return;
+// ------------------------------------------------------------
+// Painel pessoal
+// ------------------------------------------------------------
+function renderPainel() {
+  const alvo = el('painel');
+  if (!dados || !dados.eu) {
+    if (dados && dados.tokenInvalido) {
+      alvo.innerHTML = '<div class="aviso-info" style="border-left-color:#a02020;background:#fde8e8;color:#7a1a1a;">'
+        + 'O link usado não é válido. Abra esta página pelo link pessoal que consta no seu '
+        + 'e-mail de agendamento para solicitar troca ou cancelar uma DEJEP.</div>';
+    } else {
+      alvo.innerHTML = '';
     }
-    alvo.innerHTML = '<div class="tabela-wrap"><table><thead><tr>' +
-      '<th>#</th><th>Servidor</th><th class="num">DEJEPs</th><th class="num">Horas</th>' +
-      '</tr></thead><tbody>' +
-      itens.map(function(i) {
-        return '<tr><td><span class="pos' + (i.posicao <= 3 ? ' topo' : '') + '">' + i.posicao + '</span></td>' +
-          '<td>' + escapar(i.nome) + '</td>' +
-          '<td class="num">' + i.dejeps + '</td>' +
-          '<td class="num"><strong>' + i.horas + 'h</strong></td></tr>';
-      }).join('') + '</tbody></table></div>';
+    return;
+  }
+
+  const eu = dados.eu;
+  let html = '<div class="painel">'
+    + '<div class="painel-nome">' + escapar(eu.nome) + '</div>'
+    + '<div class="painel-pos">' + eu.posicao + 'º na lista corrida'
+    + (eu.soTorre ? ' &bull; escalado somente nos postos de torre' : '') + '</div>';
+
+  if (!dados.minhas.length) {
+    html += '<div class="painel-item"><span class="pi-info">'
+      + 'Você não tem DEJEP agendada neste mês.</span></div>';
   } else {
-    const todos = dados.escala || [];
-    if (!todos.length) {
-      alvo.innerHTML = '<div class="empty-msg">Nenhuma escala consolidada até o momento.</div>';
-      return;
-    }
-    alvo.innerHTML = montarCalendario(todos, filtro);
-  }
-}
-
-// Encurta o nome para caber na célula do calendário
-function nomeCurto(n) {
-  const p = String(n).trim().split(/\s+/);
-  if (p.length <= 2) return n;
-  return p[0] + ' ' + p[p.length - 1];
-}
-
-// Monta a grade do mês a partir dos agendamentos consolidados
-function montarCalendario(itens, filtro) {
-  // Descobre mês e ano: o mês vem das próprias datas, o ano do nome da escala
-  // Aceita "dd/MM", "dd/MM/aaaa" ou uma data completa devolvida pela planilha
-  function diaMes(v) {
-    const t = String(v || '').trim();
-    const m = t.match(/^(\d{1,2})\/(\d{1,2})/);
-    if (m) return { dia: parseInt(m[1], 10), mes: parseInt(m[2], 10) };
-    const d = new Date(t);
-    if (!isNaN(d.getTime())) return { dia: d.getDate(), mes: d.getMonth() + 1 };
-    return null;
-  }
-
-  const contagemMes = {};
-  itens.forEach(function(i) {
-    const dm = diaMes(i.data);
-    if (dm) contagemMes[dm.mes] = (contagemMes[dm.mes] || 0) + 1;
-  });
-  let mes = Object.keys(contagemMes).sort(function(a, b){ return contagemMes[b] - contagemMes[a]; })[0];
-  if (!mes) {
-    return '<div class="empty-msg">Não foi possível identificar o mês da escala.<br>'
-      + 'Execute novamente "Consolidar Horas no Acumulado" na planilha.</div>';
-  }
-  mes = parseInt(mes, 10);
-
-  const anoMatch = (dados.nomeEscala || '').match(/(\d{4})/);
-  const ano = anoMatch ? parseInt(anoMatch[1], 10) : new Date().getFullYear();
-
-  // Agrupa por dia
-  const porDia = {};
-  itens.forEach(function(i) {
-    const dm = diaMes(i.data);
-    if (!dm || dm.mes !== mes) return;
-    if (!porDia[dm.dia]) porDia[dm.dia] = [];
-    porDia[dm.dia].push(i);
-  });
-
-  const ORDEM = { '07h': 1, '10h': 2, '11h': 3, '22h': 4, '23h': 5 };
-  Object.keys(porDia).forEach(function(d) {
-    porDia[d].sort(function(a, b) {
-      return (ORDEM[a.horario] || 9) - (ORDEM[b.horario] || 9);
+    dados.minhas.forEach(function (m) {
+      html += '<div class="painel-item">'
+        + '<span class="pi-data">' + escapar(m.data) + '</span>'
+        + '<span class="pi-info">' + escapar(m.posto) + ' &bull; ' + rotuloHorario(m.horario) + '</span>'
+        + '<button class="btn-acao" onclick="abrirTrocaDaMinha(\'' + m.id + '\')">Trocar</button>'
+        + '<button class="btn-acao cancelar"' + (m.podeCancelar ? '' : ' disabled')
+        + ' onclick="confirmarCancelamento(\'' + m.id + '\')"'
+        + (m.podeCancelar ? '' : ' title="O cancelamento exige antecedência mínima de 24 horas"')
+        + '>Cancelar</button>'
+        + '</div>';
     });
+  }
+  html += '<div style="font-size:0.74rem;color:#8fb4d8;margin-top:0.7rem;line-height:1.5;">'
+    + 'Para trocar, escolha uma DEJEP de outro servidor na escala abaixo: ele receberá um '
+    + 'e-mail e a troca só se efetiva se aceitar. O cancelamento exige antecedência de 24 horas '
+    + 'e <strong>não altera a sua posição</strong> na lista.</div>';
+  html += '</div>';
+  alvo.innerHTML = html;
+}
+
+// ------------------------------------------------------------
+// Escala do mês, agrupada por dia
+// ------------------------------------------------------------
+const DIAS_SEM = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+function renderEscala(filtro) {
+  const itens = (dados.escala || []).slice();
+  if (!itens.length) {
+    return '<div class="empty-msg">Nenhuma escala publicada no momento.</div>';
+  }
+
+  const porDia = {};
+  itens.forEach(function (i) {
+    if (!porDia[i.data]) porDia[i.data] = [];
+    porDia[i.data].push(i);
   });
 
-  const primeiro = new Date(ano, mes - 1, 1).getDay();
-  const total = new Date(ano, mes, 0).getDate();
-  const hoje = new Date();
-  const ehMesAtual = (hoje.getFullYear() === ano && hoje.getMonth() === mes - 1);
+  const ordemPosto = { '07 às 15h': 1, 'Torre diurna': 2, 'Torre noturna': 3 };
+  const datas = Object.keys(porDia).sort(function (a, b) {
+    const pa = a.split('/'), pb = b.split('/');
+    return (pa[1] + pa[0]).localeCompare(pb[1] + pb[0]);
+  });
 
-  let html = '<div class="cal-mes">' + MESES_NOME[mes - 1] + ' ' + ano + '</div>';
-  html += '<div class="cal-semana">' +
-    ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(function(d) {
-      return '<div class="cal-dia-sem">' + d + '</div>';
-    }).join('') + '</div>';
-  html += '<div class="cal-grade">';
+  const meuNome = dados.eu ? dados.eu.nome.toLowerCase() : null;
+  let html = '';
 
-  for (let i = 0; i < primeiro; i++) html += '<div class="cal-cel vazia"></div>';
+  datas.forEach(function (d) {
+    const lista = porDia[d].slice().sort(function (a, b) {
+      return (ordemPosto[a.posto] || 9) - (ordemPosto[b.posto] || 9);
+    });
+    const visiveis = filtro
+      ? lista.filter(function (i) { return (i.nome || '').toLowerCase().includes(filtro); })
+      : lista;
+    if (!visiveis.length) return;
 
-  for (let d = 1; d <= total; d++) {
-    const lista = porDia[d] || [];
-    const dow = new Date(ano, mes - 1, d).getDay();
-    let classes = 'cal-cel';
-    if (dow === 0 || dow === 6) classes += ' fds';
-    if (!lista.length) classes += ' sem-escala';
-    if (ehMesAtual && d === hoje.getDate()) classes += ' hoje';
+    const p = d.split('/');
+    const dt = new Date(2000 + 0, parseInt(p[1], 10) - 1, parseInt(p[0], 10));
+    const dow = dados.anoRef
+      ? new Date(dados.anoRef, parseInt(p[1], 10) - 1, parseInt(p[0], 10)).getDay()
+      : dt.getDay();
+    const fds = (dow === 0 || dow === 6);
 
-    html += '<div class="' + classes + '"><div class="cal-num">' + d + '</div>';
-    lista.forEach(function(i) {
-      const combina = !filtro || i.nome.toLowerCase().includes(filtro);
-      const cls = 'cal-item h' + i.horario.replace('h','') + (combina ? '' : ' apagado');
-      var dica = escapar(i.nome) + ' — ' + rotuloHorario(i.horario)
-        + (i.posto ? ' — ' + escapar(i.posto) : '')
-        + (i.motivo ? ' (' + escapar(i.motivo) + ')' : '');
-      html += '<div class="' + cls + '" title="' + dica + '">'
-        + '<span class="cal-hora">' + escapar(i.horario) + '</span> '
-        + escapar(nomeCurto(i.nome))
-        + (i.posto && i.posto.toLowerCase().indexOf('torre') !== -1 ? ' <b>·T</b>' : '')
+    html += '<div class="dia-bloco"><div class="dia-cab">'
+      + '<span' + (fds ? ' class="dia-fds"' : '') + '>' + escapar(d) + ' &bull; '
+      + DIAS_SEM[dow] + '</span>'
+      + '<span style="color:#8fa3ba;font-weight:400;">' + visiveis.length + '</span></div>';
+
+    visiveis.forEach(function (i) {
+      const ehMinha = meuNome && (i.nome || '').toLowerCase() === meuNome;
+      const vaga = !i.nome || i.situacao === 'Vaga';
+      const podeClicar = dados.eu && !ehMinha && !vaga &&
+        i.situacao === 'Agendada' &&
+        dados.minhas.some(function (m) { return m.data !== i.data; });
+
+      html += '<div class="linha-dejep' + (ehMinha ? ' minha' : '')
+        + (podeClicar ? ' clicavel' : '') + '"'
+        + (podeClicar ? ' onclick="abrirTrocaComAlvo(\'' + i.id + '\')"' : '') + '>'
+        + '<span class="ld-hora">' + escapar(i.horario) + '</span>'
+        + '<span class="ld-posto">' + escapar(i.posto) + '</span>'
+        + '<span class="ld-nome' + (vaga ? ' ld-vaga' : '') + '">'
+        + (vaga ? 'VAGA' : escapar(i.nome)) + '</span>'
+        + (ehMinha ? '<span style="font-size:0.7rem;color:#276221;font-weight:700;">você</span>'
+                   : (podeClicar ? '<span style="font-size:0.7rem;color:#2d6a9f;">trocar</span>' : ''))
+        + (i.situacao === 'Falta' ? '<span style="font-size:0.7rem;color:#a02020;font-weight:700;">falta</span>' : '')
         + '</div>';
     });
     html += '</div>';
-  }
-  html += '</div>';
+  });
 
-  html += '<div class="cal-legenda">'
-    + '<span><i class="pt h07"></i>07h às 15h</span>'
-    + '<span><i class="pt h11"></i>11h às 19h</span>'
-    + '<span><i class="pt h10"></i>10h às 18h</span>'
-    + '<span><i class="pt h23"></i>23h às 07h</span>'
-    + '<span><i class="pt h22"></i>22h às 06h</span>'
-    + '<span><b>·T</b> torre</span>'
-    + '</div>'
-    + '<div style="font-size:0.76rem;color:#6b80a0;line-height:1.5;margin-top:8px;text-align:center;">'
-    + 'As entradas às 10h e às 22h correspondem a DEJEPs que antecedem o plantão do '
-    + 'servidor: a entrada é antecipada em uma hora para preservar o intervalo mínimo '
-    + 'de descanso exigido. Passe o cursor sobre o nome para ver o posto e o motivo.'
-    + '</div>';
+  return html || '<div class="empty-msg">Nenhum servidor encontrado com esse nome.</div>';
+}
+
+function renderLista(filtro) {
+  let itens = dados.fila || [];
+  if (filtro) itens = itens.filter(function (i) { return i.nome.toLowerCase().includes(filtro); });
+  if (!itens.length) {
+    return '<div class="empty-msg">' +
+      ((dados.fila && dados.fila.length) ? 'Nenhum servidor encontrado com esse nome.'
+       : 'A lista corrida ainda não foi constituída.') + '</div>';
+  }
+  const meuNome = dados.eu ? dados.eu.nome.toLowerCase() : null;
+  let html = '<div class="tabela-wrap"><table><thead><tr>'
+    + '<th style="width:60px;">#</th><th>Servidor</th><th style="width:90px;">Turno</th>'
+    + '</tr></thead><tbody>';
+  itens.forEach(function (i) {
+    const eu = meuNome && i.nome.toLowerCase() === meuNome;
+    html += '<tr' + (eu ? ' style="background:#eef7ee;font-weight:700;"' : '') + '>'
+      + '<td class="num">' + i.posicao + 'º</td>'
+      + '<td>' + escapar(i.nome) + (i.soTorre ? ' <span class="tag">torre</span>' : '') + '</td>'
+      + '<td>' + escapar(i.turno || '—') + '</td></tr>';
+  });
+  html += '</tbody></table></div>'
+    + '<div style="font-size:0.76rem;color:#6b80a0;line-height:1.5;margin-top:10px;">'
+    + 'A ordem foi definida na inscrição e é contínua: quem realiza uma DEJEP passa para o '
+    + 'fim da lista, e o mês seguinte começa de onde o anterior parou. A falta e a convocação '
+    + 'emergencial também recolocam o servidor no fim.</div>';
   return html;
 }
 
-const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function render() {
+  if (!dados) return;
+  const filtro = el('busca').value.trim().toLowerCase();
+  el('conteudo').innerHTML = (aba === 'escala') ? renderEscala(filtro) : renderLista(filtro);
+}
 
+// ------------------------------------------------------------
+// Troca
+// ------------------------------------------------------------
+let trocaAlvo = null;
+
+function abrirModal(tit, sub, corpo, acoes) {
+  el('modal-tit').textContent = tit;
+  el('modal-sub').innerHTML = sub;
+  el('modal-corpo').innerHTML = corpo || '';
+  el('modal-acoes').innerHTML = acoes || '';
+  el('modal').classList.add('ativo');
+}
+
+function fecharModal(ev) {
+  if (ev && ev.target !== el('modal')) return;
+  el('modal').classList.remove('ativo');
+}
+
+function fecharModalForcado() { el('modal').classList.remove('ativo'); }
+
+// Clique no nome de outro servidor na escala
+function abrirTrocaComAlvo(idAlvo) {
+  if (!dados.eu) {
+    toast('Abra a página pelo link do seu e-mail para solicitar troca.', true);
+    return;
+  }
+  const alvo = (dados.escala || []).find(function (i) { return i.id === idAlvo; });
+  if (!alvo) return;
+  if (!dados.minhas.length) {
+    toast('Você não tem DEJEP neste mês para oferecer em troca.', true);
+    return;
+  }
+  trocaAlvo = idAlvo;
+
+  const ofertaveis = dados.minhas.filter(function (m) { return m.data !== alvo.data; });
+  if (!ofertaveis.length) {
+    toast('Suas DEJEPs são todas no mesmo dia dessa. A troca é de datas.', true);
+    return;
+  }
+  const opcoes = ofertaveis.map(function (m) {
+    return '<button class="modal-opt" onclick="enviarTroca(\'' + m.id + '\')">'
+      + '<strong>' + escapar(m.data) + '</strong> &nbsp; ' + escapar(m.posto)
+      + ' &bull; ' + rotuloHorario(m.horario) + '</button>';
+  }).join('');
+
+  abrirModal('Solicitar troca com ' + alvo.nome,
+    'Você assumiria <strong>' + escapar(alvo.data) + '</strong> — ' + escapar(alvo.posto)
+    + '. Escolha abaixo <strong>qual das suas DEJEPs</strong> oferece em troca. '
+    + 'O sistema confere o intervalo de descanso dos dois antes de enviar, e a troca só '
+    + 'se efetiva se o colega aceitar pelo e-mail.',
+    opcoes,
+    '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>');
+}
+
+// Botão "Trocar" no painel pessoal: escolhe primeiro o alvo
+function abrirTrocaDaMinha(idMinha) {
+  const minha = dados.minhas.find(function (m) { return m.id === idMinha; });
+  if (!minha) return;
+  const candidatos = (dados.escala || []).filter(function (i) {
+    return i.situacao === 'Agendada' && i.nome &&
+      i.nome.toLowerCase() !== dados.eu.nome.toLowerCase() && i.data !== minha.data;
+  });
+  if (!candidatos.length) {
+    toast('Não há outra DEJEP disponível para troca neste mês.', true);
+    return;
+  }
+  const opcoes = candidatos.map(function (c) {
+    return '<button class="modal-opt" onclick="enviarTrocaCom(\'' + idMinha + '\',\'' + c.id + '\')">'
+      + '<strong>' + escapar(c.data) + '</strong> &nbsp; ' + escapar(c.posto)
+      + ' &bull; ' + rotuloHorario(c.horario) + '<br>'
+      + '<span style="color:#6b80a0;font-size:0.8rem;">' + escapar(c.nome) + '</span></button>';
+  }).join('');
+
+  abrirModal('Trocar a DEJEP de ' + minha.data,
+    'Escolha com quem deseja trocar. O colega receberá um e-mail e a troca só se '
+    + 'efetiva se ele aceitar.',
+    '<div style="max-height:320px;overflow-y:auto;">' + opcoes + '</div>',
+    '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>');
+}
+
+function enviarTroca(idMinha) { enviarTrocaCom(idMinha, trocaAlvo); }
+
+function enviarTrocaCom(idMinha, idAlvo) {
+  fecharModalForcado();
+  toast('Enviando solicitação...');
+  fetch(URL_BASE + '?acao=solicitar&t=' + encodeURIComponent(TOKEN)
+      + '&minha=' + encodeURIComponent(idMinha) + '&alvo=' + encodeURIComponent(idAlvo))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      toast(j.mensagem, !j.sucesso);
+      if (j.sucesso) carregar();
+    })
+    .catch(function () { toast('Não foi possível enviar a solicitação.', true); });
+}
+
+// ------------------------------------------------------------
+// Cancelamento
+// ------------------------------------------------------------
+function confirmarCancelamento(id) {
+  const m = dados.minhas.find(function (x) { return x.id === id; });
+  if (!m) return;
+  abrirModal('Cancelar a DEJEP de ' + m.data,
+    'Você deixará de cumprir <strong>' + escapar(m.data) + '</strong> — ' + escapar(m.posto)
+    + ', ' + rotuloHorario(m.horario) + '.<br><br>'
+    + 'A sua <strong>posição na lista corrida é preservada</strong>, e a vaga será '
+    + 'reconvocada pelo próximo da lista. A Diretoria de Disciplina é avisada.',
+    '',
+    '<button class="modal-btn" onclick="fecharModalForcado()">Voltar</button>'
+    + '<button class="modal-btn perigo" onclick="executarCancelamento(\'' + id + '\')">Confirmar cancelamento</button>');
+}
+
+function executarCancelamento(id) {
+  fecharModalForcado();
+  toast('Cancelando...');
+  fetch(URL_BASE + '?acao=cancelar_dejep&t=' + encodeURIComponent(TOKEN)
+      + '&id=' + encodeURIComponent(id))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      toast(j.mensagem, !j.sucesso);
+      if (j.sucesso) carregar();
+    })
+    .catch(function () { toast('Não foi possível cancelar.', true); });
+}
+
+// ------------------------------------------------------------
 function carregar() {
-  fetch(URL_API).then(function(r){ return r.json(); }).then(function(d) {
+  const url = URL_BASE + '?acao=consulta' + (TOKEN ? '&t=' + encodeURIComponent(TOKEN) : '');
+  fetch(url).then(function (r) { return r.json(); }).then(function (d) {
     dados = d;
-    let txt = 'A convocação segue a ordem da lista unificada. O acumulado de horas é '
-      + 'registrado como demonstração de equidade — cada DEJEP equivale a 8 horas. '
-      + 'O horário de entrada é apurado pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.';
-    if (d.nomeEscala) txt += ' Escala exibida: ' + d.nomeEscala + '.';
-    if (d.atualizadoEm) txt += ' Última atualização: ' + d.atualizadoEm + '.';
-    document.getElementById('aviso-info').textContent = txt;
+    if (d.mes) {
+      const partes = d.mes.split(' ');
+      dados.anoRef = parseInt(partes[partes.length - 1], 10) || new Date().getFullYear();
+      el('card-titulo').textContent = (aba === 'escala' ? 'Escala de ' + d.mes : 'Lista Corrida');
+    }
+    renderPainel();
     render();
-  }).catch(function() {
-    document.getElementById('conteudo').innerHTML =
-      '<div class="empty-msg">Não foi possível carregar os dados no momento.<br>Tente novamente em alguns instantes.</div>';
+  }).catch(function () {
+    el('conteudo').innerHTML = '<div class="empty-msg">Não foi possível carregar os dados '
+      + 'no momento.<br>Tente novamente em alguns instantes.</div>';
   });
 }
 
