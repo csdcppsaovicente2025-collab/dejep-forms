@@ -168,6 +168,20 @@ para o planejamento da distribuição. A definição da <strong>data, do horári
 posto de serviço</strong> compete à Administração, observadas a ordem da lista unificada, as
 habilitações exigidas, a necessidade operacional e os critérios de segurança.
 </p>
+<p style="font-size:0.85rem; color:#4a5a6a; line-height:1.6; margin:12px 0 0;">
+<strong>Você informa o período, não o horário.</strong> O horário de entrada é
+apurado pelo sistema a partir do intervalo mínimo de <strong>1 (uma) hora</strong>
+exigido entre o plantão e a DEJEP:
+</p>
+<ul style="font-size:0.84rem; color:#4a5a6a; line-height:1.7; margin:6px 0 0; padding-left:1.2rem;">
+<li>posto diurno — entrada às <strong>11h</strong>, ou às <strong>10h</strong> quando a DEJEP antecede o seu plantão;</li>
+<li>posto noturno — entrada às <strong>23h</strong>, ou às <strong>22h</strong> quando a DEJEP antecede o seu plantão;</li>
+<li>posto das 07h — entrada às <strong>07h</strong>.</li>
+</ul>
+<p style="font-size:0.84rem; color:#4a5a6a; line-height:1.6; margin:8px 0 0;">
+Ao marcar um dia, o calendário já exibe o horário que você cumpriria. Os dias em
+que nenhum horário respeita esse intervalo aparecem bloqueados.
+</p>
 </div>
 <div class="card">
 <div class="card-title">Identificação</div>
@@ -195,6 +209,23 @@ oninput="updatePreview()" />
 <option value="Interna">Segurança Interna</option>
 <option value="Externa">Segurança Externa</option>
 </select>
+</div>
+</div>
+<div class="field-group" style="display: none !important;" id="campo-interesse">
+<div class="field required">
+<label for="interesse_interno">Manifesta interesse em atuar também nas atividades
+internas da unidade? *</label>
+<select id="interesse_interno" onchange="updatePreview()">
+<option value="">Selecione...</option>
+<option value="Sim">Sim — posso ser escalado em qualquer posto de serviço</option>
+<option value="Nao">Não — somente atividades de torre</option>
+</select>
+<p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;">
+Manifestado o interesse, o servidor da Segurança Externa poderá ser escalado em
+qualquer posto, cabendo ao responsável pela escala alocá-lo em conjunto com
+servidor da Segurança Interna, para instrução nas atividades. Não havendo
+manifestação, atuará exclusivamente nas torres.
+</p>
 </div>
 </div>
 <div class="field-group" style="margin-top:12px;" id="campo-dejeps-mes">
@@ -265,8 +296,8 @@ calendário acima.</div></div>
 <div class="instrucao">
 Após enviar, você receberá um <strong>e-mail de comprovante</strong> com todos os dias selecionados.
 Verifique sua caixa de entrada (e a pasta de spam).<br>
-<strong>⚠️ Atenção:</strong> Um novo envio <strong>substitui automaticamente</strong> o anterior <strong>do mesmo tipo de segurança</strong>.<br>
-Se você é habilitado nas duas áreas, envie <strong>duas vezes</strong> — uma escolhendo Segurança Interna e outra escolhendo Segurança Externa. Uma não apaga a outra.
+<strong>⚠️ Atenção:</strong> Um novo envio <strong>substitui integralmente</strong> o anterior.
+Com a lista unificada, cada servidor tem uma única disponibilidade.
 </div>
 </div>
 </div>
@@ -289,7 +320,7 @@ disponibilidade</button>
 
 <div class="modal-overlay" id="modal-horario" onclick="fecharModalHorario(event)">
 <div class="modal-box" onclick="event.stopPropagation()">
-<div class="modal-titulo" id="modal-titulo">Horário da DEJEP</div>
+<div class="modal-titulo" id="modal-titulo">Período da DEJEP</div>
 <div class="modal-data" id="modal-data"></div>
 <div class="modal-opcoes" id="modal-opcoes"></div>
 <div class="modal-acoes">
@@ -309,22 +340,17 @@ const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Ag
 const DIAS_EXT = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 var viewYear, viewMonth;
 const today = new Date();
-// Cada dia selecionado guarda o horário escolhido.
-// Interna: 'Manha' | 'Noite' | 'Ambos'   |   Externa: '10h' | '22h' | 'Ambos'
+// Cada dia selecionado guarda o PERÍODO declarado:
+// 'Diurno' | 'Noturno' | 'Ambos'.
+// O HORÁRIO de entrada não é escolhido pelo servidor — é apurado
+// pelo intervalo mínimo de descanso em relação ao seu plantão.
 let selectedDaysMap = new Map();
 
-// Rótulos exibidos no modal e na etiqueta dentro da célula do calendário
-const OPCOES_INTERNA = [
-  { valor: 'Manha', textoModal: 'Manhã',            textoCelula: 'Manhã' },
-  { valor: 'Noite', textoModal: 'Noite',            textoCelula: 'Noite' },
-  { valor: 'Ambos', textoModal: 'Manhã e Noite',    textoCelula: 'Ambos' }
-];
-// Segurança Externa: horários próprios, 10h às 18h e 22h às 06h.
-// O horário das 07h é exclusivo da Segurança Interna.
-const OPCOES_EXTERNA = [
-  { valor: '10h',   textoModal: '10h às 18h',       textoCelula: '10h'   },
-  { valor: '22h',   textoModal: '22h às 06h',       textoCelula: '22h'   },
-  { valor: 'Ambos', textoModal: 'Ambos os horários',textoCelula: 'Ambos' }
+// LISTA ÚNICA: as mesmas opções para toda a unidade.
+const OPCOES = [
+  { valor: 'Diurno',  textoModal: 'Período diurno',      textoCelula: 'Diurno'  },
+  { valor: 'Noturno', textoModal: 'Período noturno',     textoCelula: 'Noturno' },
+  { valor: 'Ambos',   textoModal: 'Diurno e noturno',    textoCelula: 'Ambos'   }
 ];
 
 function getTipoSeguranca() {
@@ -332,26 +358,26 @@ function getTipoSeguranca() {
   return el ? el.value : '';
 }
 
-function getTextoCelula(tipo, valor) {
-  var lista = tipo === 'Externa' ? OPCOES_EXTERNA : OPCOES_INTERNA;
-  for (var i = 0; i < lista.length; i++) {
-    if (lista[i].valor === valor) return lista[i].textoCelula;
+function getTextoCelula(valor) {
+  for (var i = 0; i < OPCOES.length; i++) {
+    if (OPCOES[i].valor === valor) return OPCOES[i].textoCelula;
   }
   return valor;
 }
 
 function onTipoSegurancaChange() {
-  // O turno de plantão é exigido nos dois tipos: a regra de paridade
-  // bloqueia a DEJEP no turno em que o servidor entra de plantão.
+  // LISTA ÚNICA: o limite mensal e o turno de plantão valem para toda
+  // a unidade. O que distingue a Segurança Externa é apenas a
+  // manifestação de interesse nas atividades internas: sem ela, o
+  // servidor é escalado exclusivamente nas torres.
   var tipo = getTipoSeguranca();
-  var campoDejepsMes = document.getElementById('campo-dejeps-mes');
-  if (campoDejepsMes) {
+  var campoInteresse = document.getElementById('campo-interesse');
+  if (campoInteresse) {
     if (tipo === 'Externa') {
-      // Segurança Externa tem cota própria (15 no mês) — não usa o total da Interna
-      campoDejepsMes.setAttribute('style', 'display: none !important;');
-      document.getElementById('dejeps_mes').value = '';
+      campoInteresse.setAttribute('style', 'margin-top:12px;');
     } else {
-      campoDejepsMes.setAttribute('style', 'margin-top:12px;');
+      campoInteresse.setAttribute('style', 'display: none !important;');
+      document.getElementById('interesse_interno').value = '';
     }
   }
   selectedDaysMap.clear();
@@ -428,56 +454,115 @@ function isFeriado(dia, mes, ano) {
 }
 
 // ============================================================
-// OPÇÕES DISPONÍVEIS POR DIA
-// A DEJEP é bloqueada no turno em que o servidor entra de plantão.
-// A regra vale para os DOIS tipos de segurança:
-//   Interna → 'Manha' (diurno) e 'Noite' (noturno)
-//   Externa → '10h'   (diurno) e '22h'   (noturno)
-// Turnos diurnos: I e III   |   Turnos noturnos: II e IV
+// MOTOR DE DESCANSO — ESPELHO DO GerarEscala.gs
+//
+// Mantido idêntico ao do Apps Script para que o servidor nunca
+// declare um dia e período que a geração da escala venha a recusar.
+// Alterando um, altere o outro.
+//
+// O plantão é tratado como INTERVALO data-hora:
+//   turnos I e III  → 07h às 19h do próprio dia
+//   turnos II e IV  → 19h de um dia às 07h do dia seguinte
+//   diarista        → expediente de segunda a sexta
 // ============================================================
-function getDisponibilidadeTurnos(dia, diaSemana, turnoPlantao, ano, mes) {
-  var eFDS = (diaSemana === 0 || diaSemana === 6);
-  var eFeriado = isFeriado(dia, mes, ano);
-  var eFDSouFeriado = eFDS || eFeriado;
+var CFG_FORM = { DESCANSO_H: 1, DIARISTA_INI: 7, DIARISTA_FIM: 17, DUR: 8 };
 
-  var diurnoOk = true;
-  var noturnoOk = true;
+var POSTOS_FORM = {
+  P07:         { periodo: 'Diurno',  horarios: [7],
+                 vagas: function (ds) { return ds === 1 ? 2 : ((ds === 0 || ds === 6) ? 4 : 0); } },
+  TORRE_DIA:   { periodo: 'Diurno',  horarios: [11, 10], vagas: function () { return 1; } },
+  TORRE_NOITE: { periodo: 'Noturno', horarios: [23, 22], vagas: function () { return 1; } }
+};
 
-  if (turnoPlantao === 'Diarista') {
-    // Diarista trabalha de dia nos dias úteis: só pode DEJEP diurna em FDS/feriado
-    diurnoOk = eFDSouFeriado;
-    noturnoOk = true;
-  } else if (turnoPlantao) {
-    var paridade = calcularParidade(turnoPlantao, ano, mes);
-    if (paridade) {
-      var ePar = dia % 2 === 0;
-      var diaEPlantao = (paridade === 'par' && ePar) || (paridade === 'impar' && !ePar);
-      var turnoEDiurno = (turnoPlantao === 'I' || turnoPlantao === 'III');
-      var turnoENoturno = (turnoPlantao === 'II' || turnoPlantao === 'IV');
-      // No dia do próprio plantão, o turno correspondente fica bloqueado
-      if (turnoEDiurno && diaEPlantao) diurnoOk = false;
-      if (turnoENoturno && diaEPlantao) noturnoOk = false;
-    }
-  }
-
-  return { diurno: diurnoOk, noturno: noturnoOk };
+function emHoraF(dt, h) {
+  return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate(), h, 0, 0, 0);
 }
 
-// Opções disponíveis conforme o tipo de segurança selecionado
-function getOpcoesDisponiveis(dia, diaSemana, ano, mes) {
-  var tipo = getTipoSeguranca();
+function ehDiaDePlantaoF(turno, dt) {
+  var par = calcularParidade(turno, dt.getFullYear(), dt.getMonth() + 1);
+  if (!par) return false;
+  return (par === 'par') === (dt.getDate() % 2 === 0);
+}
+
+function intervalosOcupacaoF(turno, dtRef) {
+  var out = [];
+  if (!turno) return out;
+  for (var off = -1; off <= 1; off++) {
+    var d = new Date(dtRef.getFullYear(), dtRef.getMonth(), dtRef.getDate() + off);
+    if (turno === 'Diarista') {
+      var dow = d.getDay();
+      if (dow >= 1 && dow <= 5 && !isFeriado(d.getDate(), d.getMonth() + 1, d.getFullYear())) {
+        out.push({ ini: emHoraF(d, CFG_FORM.DIARISTA_INI), fim: emHoraF(d, CFG_FORM.DIARISTA_FIM) });
+      }
+      continue;
+    }
+    if (!ehDiaDePlantaoF(turno, d)) continue;
+    if (turno === 'II' || turno === 'IV') out.push({ ini: emHoraF(d, 19), fim: emHoraF(d, 31) });
+    else out.push({ ini: emHoraF(d, 7), fim: emHoraF(d, 19) });
+  }
+  return out;
+}
+
+function janelaLivreF(ivs, ini, fim, folga) {
+  for (var i = 0; i < ivs.length; i++) {
+    var antes  = (fim.getTime() + folga) <= ivs[i].ini.getTime();
+    var depois = (ini.getTime() - folga) >= ivs[i].fim.getTime();
+    if (!antes && !depois) return false;
+  }
+  return true;
+}
+
+function horarioDerivadoF(pk, turno, dt) {
+  var p = POSTOS_FORM[pk];
+  if (!p) return null;
+  var folga = CFG_FORM.DESCANSO_H * 3600000;
+  var ivs = intervalosOcupacaoF(turno, dt);
+  for (var i = 0; i < p.horarios.length; i++) {
+    var h = p.horarios[i];
+    if (janelaLivreF(ivs, emHoraF(dt, h), emHoraF(dt, h + CFG_FORM.DUR), folga)) {
+      return { hora: h, chave: (h < 10 ? '0' : '') + h + 'h', padrao: i === 0 };
+    }
+  }
+  return null;
+}
+
+function getTurnoPlantao() {
   var el = document.getElementById('turno_plantao');
-  var turnoPlantao = el ? el.value : '';
-  var disp = getDisponibilidadeTurnos(dia, diaSemana, turnoPlantao, ano, mes);
+  return el ? el.value : '';
+}
 
-  var valorDiurno = tipo === 'Externa' ? '10h' : 'Manha';
-  var valorNoturno = tipo === 'Externa' ? '22h' : 'Noite';
+// Horários que o servidor efetivamente cumpriria naquele dia e período
+function horariosApurados(dt, periodo) {
+  var turno = getTurnoPlantao();
+  var ds = dt.getDay();
+  var out = [];
+  Object.keys(POSTOS_FORM).forEach(function (pk) {
+    var p = POSTOS_FORM[pk];
+    if (p.vagas(ds) <= 0) return;
+    if (periodo !== 'Ambos' && p.periodo !== periodo) return;
+    var h = horarioDerivadoF(pk, turno, dt);
+    if (h && out.indexOf(h.chave) === -1) out.push(h.chave);
+  });
+  return out.sort();
+}
 
-  var disponiveis = [];
-  if (disp.diurno) disponiveis.push(valorDiurno);
-  if (disp.noturno) disponiveis.push(valorNoturno);
-  if (disp.diurno && disp.noturno) disponiveis.push('Ambos');
-  return disponiveis;
+// Períodos possíveis no dia: há posto com vaga e com horário que
+// respeite o intervalo mínimo de descanso.
+function getOpcoesDisponiveis(dia, diaSemana, ano, mes) {
+  var turno = getTurnoPlantao();
+  var dt = new Date(ano, mes - 1, dia);
+  var diurnoOk = false, noturnoOk = false;
+  Object.keys(POSTOS_FORM).forEach(function (pk) {
+    var p = POSTOS_FORM[pk];
+    if (p.vagas(diaSemana) <= 0) return;
+    if (!horarioDerivadoF(pk, turno, dt)) return;
+    if (p.periodo === 'Diurno') diurnoOk = true; else noturnoOk = true;
+  });
+  var out = [];
+  if (diurnoOk) out.push('Diurno');
+  if (noturnoOk) out.push('Noturno');
+  if (diurnoOk && noturnoOk) out.push('Ambos');
+  return out;
 }
 
 function atualizarCalendario() {
@@ -523,7 +608,10 @@ function render() {
     cell.className = classes;
     var horarioLabel = '';
     if (estaSelecionado) {
-      horarioLabel = '<div class="day-horario">' + getTextoCelula(tipo, selectedDaysMap.get(ds)) + '</div>';
+      var periodoSel = selectedDaysMap.get(ds);
+      var hs = horariosApurados(dt, periodoSel);
+      horarioLabel = '<div class="day-horario">' + getTextoCelula(periodoSel)
+        + (hs.length ? '<br>' + hs.join(' / ') : '') + '</div>';
     }
     cell.innerHTML = '<div class="day-num">' + d + '</div>' + horarioLabel;
     if (!isPast && !isPlantao) {
@@ -550,7 +638,7 @@ function abrirModalHorario(ds) {
   document.getElementById('modal-data').textContent = fmt + ' — ' + dow.charAt(0).toUpperCase() + dow.slice(1);
   document.getElementById('modal-titulo').textContent = tipo === 'Externa' ? 'Horário da DEJEP' : 'Período da DEJEP';
 
-  var lista = tipo === 'Externa' ? OPCOES_EXTERNA : OPCOES_INTERNA;
+  var lista = OPCOES;
   var disponiveis = getOpcoesDisponiveis(dt.getDate(), dt.getDay(), viewYear, viewMonth + 1);
   var atual = selectedDaysMap.get(ds) || null;
 
@@ -602,20 +690,20 @@ function getRows() {
   const dejeps_mes = document.getElementById('dejeps_mes').value;
   const tipo = getTipoSeguranca();
   if (!nome || !genero || !tipo) return [];
-  // O total de DEJEPs do mês atual só se aplica à Segurança Interna
-  if (tipo === 'Interna' && !dejeps_mes) return [];
+  // Lista única: o limite mensal vale para toda a unidade
+  if (!dejeps_mes) return [];
 
-  const turno_plantao_val = document.getElementById('turno_plantao') ? document.getElementById('turno_plantao').value : '';
-  const regime_row = tipo === 'Externa' ? 'Sec. Ext' : (turno_plantao_val === 'Diarista' ? 'Diarista' : 'Plantonista');
+  const turno_plantao_val = getTurnoPlantao();
+  const regime_row = turno_plantao_val === 'Diarista' ? 'Diarista' : 'Plantonista';
 
   return [...selectedDaysMap.entries()].sort(function(a,b){ return a[0] < b[0] ? -1 : 1; }).map(function(entry) {
-    const ds = entry[0], horario = entry[1];
+    const ds = entry[0], periodo = entry[1];
     const dt = new Date(ds + 'T12:00:00');
     const dow = DIAS_EXT[dt.getDay()];
     const fmt = String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear();
-    // "turno" mantém a nomenclatura antiga do backend para a Segurança Interna
-    const turno = tipo === 'Interna' ? (horario === 'Ambos' ? 'ManhaNoite' : horario) : '';
-    return { nome, tipo_seguranca: tipo, regime: regime_row, turno, horario, genero, dejeps_mes, dow, data: fmt, raw: ds };
+    return { nome, tipo_seguranca: tipo, regime: regime_row, periodo,
+             horarios: horariosApurados(dt, periodo),
+             genero, dejeps_mes, dow, data: fmt, raw: ds };
   });
 }
 
@@ -625,8 +713,11 @@ function updatePreview() {
   const area = document.getElementById('preview-area');
   if (!rows.length) { area.innerHTML = '<div class="empty-msg">Selecione os dias disponíveis no calendário acima.</div>'; return; }
   area.innerHTML = rows.map(r => {
-    const sufixoHorario = r.horario ? ' — ' + getTextoCelula(tipo, r.horario) : '';
-    return '<div class="preview-row"><span class="pr-data">' + r.data + '</span><span class="pr-dia">' + r.dow.charAt(0).toUpperCase() + r.dow.slice(1) + sufixoHorario + '</span></div>';
+    const suf = r.periodo ? ' — ' + getTextoCelula(r.periodo) : '';
+    const hs = (r.horarios && r.horarios.length)
+      ? ' <strong>(' + r.horarios.join(' / ') + ')</strong>' : '';
+    return '<div class="preview-row"><span class="pr-data">' + r.data + '</span><span class="pr-dia">'
+      + r.dow.charAt(0).toUpperCase() + r.dow.slice(1) + suf + hs + '</span></div>';
   }).join('');
 }
 
@@ -649,22 +740,23 @@ async function enviar() {
   if (!genero) { mostrarAlerta('aviso', 'Selecione seu gênero.'); return; }
   if (!tipo) { mostrarAlerta('aviso', 'Selecione o tipo de segurança (Interna ou Externa).'); return; }
 
-  // O turno de plantão é obrigatório nos dois tipos: define o bloqueio por paridade
-  const turno_plantao_val = document.getElementById('turno_plantao').value;
+  // O turno de plantão é indispensável: é dele que o sistema apura o
+  // intervalo mínimo de descanso e, por consequência, o horário.
+  const turno_plantao_val = getTurnoPlantao();
   if (!turno_plantao_val) { mostrarAlerta('aviso', 'Selecione seu turno de plantão.'); return; }
-  if (tipo === 'Interna' && !dejeps_mes) { mostrarAlerta('aviso', 'Informe o total de DEJEPs realizadas e agendadas no mês atual.'); return; }
+  if (!dejeps_mes) { mostrarAlerta('aviso', 'Informe o total de DEJEPs realizadas e agendadas no mês atual.'); return; }
   if (!email || !email.includes('@')) { mostrarAlerta('aviso', 'Informe um e-mail válido.'); return; }
   if (rows.length === 0) { mostrarAlerta('aviso', 'Selecione ao menos um dia disponível.'); return; }
 
-  const semHorario = rows.some(r => !r.horario);
-  if (semHorario) {
-    mostrarAlerta('aviso', tipo === 'Externa'
-      ? 'Selecione o horário (10h, 22h ou Ambos) para todos os dias marcados.'
-      : 'Selecione o período (Manhã, Noite ou Ambos) para todos os dias marcados.');
+  const interesse_interno = document.getElementById('interesse_interno').value;
+  if (tipo === 'Externa' && !interesse_interno) {
+    mostrarAlerta('aviso', 'Informe se manifesta interesse em atuar nas atividades internas da unidade.');
     return;
   }
-  if (tipo === 'Externa' && rows.length > 15) {
-    mostrarAlerta('aviso', 'Segurança Externa possui limite de 15 DEJEPs no mês. Reduza a quantidade de dias selecionados.');
+
+  const semPeriodo = rows.some(r => !r.periodo);
+  if (semPeriodo) {
+    mostrarAlerta('aviso', 'Selecione o período (diurno, noturno ou ambos) para todos os dias marcados.');
     return;
   }
 
@@ -673,8 +765,10 @@ async function enviar() {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
 
   try {
-    const regime = tipo === 'Externa' ? 'Sec. Ext' : (turno_plantao_val === 'Diarista' ? 'Diarista' : 'Plantonista');
-    const payload = { nome, email, tipo_seguranca: tipo, regime, turno_plantao: turno_plantao_val, genero, dejeps_mes, obs, linhas: rows };
+    const regime = turno_plantao_val === 'Diarista' ? 'Diarista' : 'Plantonista';
+    const payload = { nome, email, tipo_seguranca: tipo, interesse_interno,
+                      regime, turno_plantao: turno_plantao_val, genero,
+                      dejeps_mes, obs, linhas: rows };
     console.log('PAYLOAD ENVIADO:', JSON.stringify(payload));
     const resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
