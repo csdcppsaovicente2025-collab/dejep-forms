@@ -261,10 +261,13 @@ function montarCalendario(itens, filtro) {
     lista.forEach(function(i) {
       const combina = !filtro || i.nome.toLowerCase().includes(filtro);
       const cls = 'cal-item h' + i.horario.replace('h','') + (combina ? '' : ' apagado');
-      html += '<div class="' + cls + '" title="' + escapar(i.nome) + ' — ' + rotuloHorario(i.horario) + '">'
+      var dica = escapar(i.nome) + ' — ' + rotuloHorario(i.horario)
+        + (i.posto ? ' — ' + escapar(i.posto) : '')
+        + (i.motivo ? ' (' + escapar(i.motivo) + ')' : '');
+      html += '<div class="' + cls + '" title="' + dica + '">'
         + '<span class="cal-hora">' + escapar(i.horario) + '</span> '
         + escapar(nomeCurto(i.nome))
-        + (i.tipo === 'Externa' ? ' <b>·Ext</b>' : '')
+        + (i.posto && i.posto.toLowerCase().indexOf('torre') !== -1 ? ' <b>·T</b>' : '')
         + '</div>';
     });
     html += '</div>';
@@ -274,9 +277,15 @@ function montarCalendario(itens, filtro) {
   html += '<div class="cal-legenda">'
     + '<span><i class="pt h07"></i>07h às 15h</span>'
     + '<span><i class="pt h11"></i>11h às 19h</span>'
-    + '<span><i class="pt h23"></i>23h às 07h</span>'
     + '<span><i class="pt h10"></i>10h às 18h</span>'
+    + '<span><i class="pt h23"></i>23h às 07h</span>'
     + '<span><i class="pt h22"></i>22h às 06h</span>'
+    + '<span><b>·T</b> torre</span>'
+    + '</div>'
+    + '<div style="font-size:0.76rem;color:#6b80a0;line-height:1.5;margin-top:8px;text-align:center;">'
+    + 'As entradas às 10h e às 22h correspondem a DEJEPs que antecedem o plantão do '
+    + 'servidor: a entrada é antecipada em uma hora para preservar o intervalo mínimo '
+    + 'de descanso exigido. Passe o cursor sobre o nome para ver o posto e o motivo.'
     + '</div>';
   return html;
 }
@@ -287,7 +296,9 @@ const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
 function carregar() {
   fetch(URL_API).then(function(r){ return r.json(); }).then(function(d) {
     dados = d;
-    let txt = 'A ordem da lista corrida segue as horas acumuladas: quem realizou menos horas é convocado primeiro. Cada DEJEP equivale a 8 horas.';
+    let txt = 'A convocação segue a ordem da lista unificada. O acumulado de horas é '
+      + 'registrado como demonstração de equidade — cada DEJEP equivale a 8 horas. '
+      + 'O horário de entrada é apurado pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.';
     if (d.nomeEscala) txt += ' Escala exibida: ' + d.nomeEscala + '.';
     if (d.atualizadoEm) txt += ' Última atualização: ' + d.atualizadoEm + '.';
     document.getElementById('aviso-info').textContent = txt;
