@@ -148,14 +148,15 @@ SP" />
 <div id="painel"></div>
 
 <div class="aviso-info" id="aviso-info">
-A convocação segue a ordem da lista corrida, definida pela inscrição. Quem é escalado
-passa para o fim da lista. O horário de entrada é apurado pelo intervalo mínimo de
-1 hora entre o plantão e a DEJEP.
+São duas filas independentes: a diurna atende o posto das 07h e a torre diurna; a noturna
+atende a torre noturna. A convocação segue a ordem de cada uma, definida pela inscrição, e
+quem é escalado passa para o fim da fila daquele período. O horário de entrada é apurado
+pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.
 </div>
 
 <div class="abas">
 <button class="aba ativa" id="aba-escala" onclick="mostrar('escala')">Escala do Mês</button>
-<button class="aba" id="aba-lista" onclick="mostrar('lista')">Lista Corrida</button>
+<button class="aba" id="aba-lista" onclick="mostrar('lista')">Filas Corridas</button>
 </div>
 
 <div class="card">
@@ -221,7 +222,7 @@ function mostrar(qual) {
   aba = qual;
   el('aba-lista').classList.toggle('ativa', qual === 'lista');
   el('aba-escala').classList.toggle('ativa', qual === 'escala');
-  el('card-titulo').textContent = qual === 'lista' ? 'Lista Corrida' : 'Escala do Mês';
+  el('card-titulo').textContent = qual === 'lista' ? 'Filas Corridas' : 'Escala do Mês';
   render();
 }
 
@@ -242,10 +243,15 @@ function renderPainel() {
   }
 
   const eu = dados.eu;
+  const partes = [];
+  if (eu.posicaoDiurna)  partes.push(eu.posicaoDiurna + 'º na fila diurna');
+  if (eu.posicaoNoturna) partes.push(eu.posicaoNoturna + 'º na fila noturna');
+  if (!partes.length) partes.push('fora das filas');
   let html = '<div class="painel">'
     + '<div class="painel-nome">' + escapar(eu.nome) + '</div>'
-    + '<div class="painel-pos">' + eu.posicao + 'º na lista corrida'
-    + (eu.soTorre ? ' &bull; escalado somente nos postos de torre' : '') + '</div>';
+    + '<div class="painel-pos">' + partes.join(' &nbsp;•&nbsp; ')
+    + (eu.soTorre ? ' &bull; somente postos de torre' : '')
+    + (eu.genero === 'Feminino' ? ' &bull; somente posto das 07h' : '') + '</div>';
 
   if (!dados.minhas.length) {
     html += '<div class="painel-item"><span class="pi-info">'
@@ -358,31 +364,52 @@ function renderEscala(filtro) {
   return html || '<div class="empty-msg">Nenhum servidor encontrado com esse nome.</div>';
 }
 
-function renderLista(filtro) {
-  let itens = dados.fila || [];
-  if (filtro) itens = itens.filter(function (i) { return i.nome.toLowerCase().includes(filtro); });
-  if (!itens.length) {
-    return '<div class="empty-msg">' +
-      ((dados.fila && dados.fila.length) ? 'Nenhum servidor encontrado com esse nome.'
-       : 'A lista corrida ainda não foi constituída.') + '</div>';
+function tabelaFila(titulo, itens, filtro, subtitulo) {
+  const visiveis = filtro
+    ? itens.filter(function (i) { return i.nome.toLowerCase().includes(filtro); })
+    : itens;
+  let html = '<div style="font-size:0.78rem;font-weight:700;color:#1a3a5c;'
+    + 'text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 4px;">' + titulo
+    + ' <span style="color:#8fa3ba;font-weight:400;">(' + itens.length + ')</span></div>'
+    + '<div style="font-size:0.74rem;color:#6b80a0;margin-bottom:8px;">' + subtitulo + '</div>';
+
+  if (!visiveis.length) {
+    return html + '<div class="empty-msg">' + (itens.length
+      ? 'Nenhum servidor encontrado com esse nome.'
+      : 'Nenhum servidor nesta fila.') + '</div>';
   }
+
   const meuNome = dados.eu ? dados.eu.nome.toLowerCase() : null;
-  let html = '<div class="tabela-wrap"><table><thead><tr>'
+  html += '<div class="tabela-wrap"><table><thead><tr>'
     + '<th style="width:60px;">#</th><th>Servidor</th><th style="width:90px;">Turno</th>'
     + '</tr></thead><tbody>';
-  itens.forEach(function (i) {
+  visiveis.forEach(function (i) {
     const eu = meuNome && i.nome.toLowerCase() === meuNome;
     html += '<tr' + (eu ? ' style="background:#eef7ee;font-weight:700;"' : '') + '>'
       + '<td class="num">' + i.posicao + 'º</td>'
-      + '<td>' + escapar(i.nome) + (i.soTorre ? ' <span class="tag">torre</span>' : '') + '</td>'
-      + '<td>' + escapar(i.turno || '—') + '</td></tr>';
+      + '<td>' + escapar(i.nome)
+      + (i.soTorre ? ' <span class="tag">torre</span>' : '')
+      + (i.listas === 'Ambas' ? ' <span class="tag" style="background:#d9e8f5;color:#1a3a5c;">nas duas</span>' : '')
+      + '</td><td>' + escapar(i.turno || '—') + '</td></tr>';
   });
-  html += '</tbody></table></div>'
-    + '<div style="font-size:0.76rem;color:#6b80a0;line-height:1.5;margin-top:10px;">'
-    + 'A ordem foi definida na inscrição e é contínua: quem realiza uma DEJEP passa para o '
-    + 'fim da lista, e o mês seguinte começa de onde o anterior parou. A falta e a convocação '
-    + 'emergencial também recolocam o servidor no fim.</div>';
-  return html;
+  return html + '</tbody></table></div>';
+}
+
+function renderLista(filtro) {
+  const diurna  = dados.filaDiurna  || dados.fila || [];
+  const noturna = dados.filaNoturna || [];
+  if (!diurna.length && !noturna.length) {
+    return '<div class="empty-msg">As filas corridas ainda não foram constituídas.</div>';
+  }
+  return tabelaFila('Fila diurna', diurna, filtro,
+      'Atende o posto das 07h e a torre diurna.')
+    + tabelaFila('Fila noturna', noturna, filtro,
+      'Atende a torre noturna. A participação depende de manifestação na inscrição.')
+    + '<div style="font-size:0.76rem;color:#6b80a0;line-height:1.5;margin-top:14px;">'
+    + 'São <strong>duas filas independentes</strong>: ser escalado numa não altera a posição '
+    + 'na outra. A ordem foi definida na inscrição e é contínua — quem realiza uma DEJEP passa '
+    + 'para o fim da fila daquele período, e o mês seguinte começa de onde o anterior parou. '
+    + 'A falta e a convocação emergencial também recolocam o servidor no fim.</div>';
 }
 
 function render() {
@@ -524,7 +551,7 @@ function carregar() {
     if (d.mes) {
       const partes = d.mes.split(' ');
       dados.anoRef = parseInt(partes[partes.length - 1], 10) || new Date().getFullYear();
-      el('card-titulo').textContent = (aba === 'escala' ? 'Escala de ' + d.mes : 'Lista Corrida');
+      el('card-titulo').textContent = (aba === 'escala' ? 'Escala de ' + d.mes : 'Filas Corridas');
     }
     renderPainel();
     render();
