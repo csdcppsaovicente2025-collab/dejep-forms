@@ -128,6 +128,30 @@ font-weight: 700; cursor: pointer; background: #e8edf3; color: #45617f; }
 background: #1a3a5c; color: #fff; padding: 12px 18px; border-radius: 10px;
 font-size: 0.85rem; max-width: 92%; z-index: 60; display: none; box-shadow: 0 4px 18px rgba(0,0,0,0.25); }
 .toast.erro { background: #a02020; }
+
+/* ---- Impedimentos ---- */
+.imp-sec { border-top: 1px solid rgba(255,255,255,0.18); margin-top: 0.9rem; padding-top: 0.8rem; }
+.imp-tit { font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+letter-spacing: 0.06em; color: #8fb4d8; margin-bottom: 0.5rem; }
+.imp-item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 0.5rem 0.7rem;
+margin-bottom: 0.4rem; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+font-size: 0.8rem; }
+.imp-item .ii-per { font-weight: 700; white-space: nowrap; }
+.imp-item .ii-mot { color: #c8dcf0; flex: 1; min-width: 100px; }
+.imp-pend { font-size: 0.66rem; font-weight: 700; background: #e0b040; color: #4a3600;
+border-radius: 4px; padding: 2px 6px; white-space: nowrap; }
+.imp-vazio { font-size: 0.78rem; color: #a8c4e0; line-height: 1.5; margin-bottom: 0.5rem; }
+.btn-imp { border: 1px dashed rgba(255,255,255,0.45); background: transparent; color: #fff;
+border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700;
+cursor: pointer; width: 100%; font-family: inherit; }
+.btn-imp:hover { border-style: solid; background: rgba(255,255,255,0.08); }
+.campo-lbl { display: block; font-size: 0.74rem; font-weight: 700; color: #45617f;
+text-transform: uppercase; letter-spacing: 0.05em; margin: 0.7rem 0 0.25rem; }
+.campo-ent { width: 100%; border: 1px solid #d0d9e6; border-radius: 8px; padding: 9px 11px;
+font-size: 0.9rem; font-family: inherit; color: #1a2b3c; background: #fff; outline: none; }
+.campo-ent:focus { border-color: #2d6a9f; }
+.campo-dupla { display: flex; gap: 8px; }
+.campo-dupla > div { flex: 1; }
 </style>
 </head>
 <body>
@@ -151,7 +175,9 @@ SP" />
 São duas filas independentes: a diurna atende o posto das 07h e a torre diurna; a noturna
 atende a torre noturna. A convocação segue a ordem de cada uma, definida pela inscrição, e
 quem é escalado passa para o fim da fila daquele período. O horário de entrada é apurado
-pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.
+pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP. Pelo <strong>link pessoal</strong>
+do seu e-mail você declara os dias em que não pode ser convocado — férias, licença, troca de
+plantão — sem perder a posição na fila.
 </div>
 
 <div class="abas">
@@ -283,8 +309,136 @@ function renderPainel() {
   }
   html += 'O cancelamento exige antecedência de 24 horas e <strong>não altera a sua '
     + 'posição</strong> na lista.</div>';
+
+  html += renderImpedimentos();
   html += '</div>';
   alvo.innerHTML = html;
+}
+
+// ------------------------------------------------------------
+// Impedimentos — períodos em que o servidor não pode ser convocado
+//
+// Declarar impedimento não é escolher a data da DEJEP: a
+// Administração continua definindo o dia, entre aqueles em que o
+// servidor pode servir. A posição na fila é preservada.
+// ------------------------------------------------------------
+function renderImpedimentos() {
+  const lista = dados.impedimentos || [];
+  let h = '<div class="imp-sec"><div class="imp-tit">'
+    + '<i class="fa-solid fa-umbrella-beach"></i> &nbsp;Dias em que não posso ser convocado</div>';
+
+  if (!lista.length) {
+    h += '<div class="imp-vazio">Nenhum período declarado. Informe aqui férias, licença, '
+      + 'troca de plantão com colega, curso ou serviço externo — o sistema deixa de '
+      + 'escalar você nesses dias <strong>sem que você perca a posição</strong> na fila.</div>';
+  } else {
+    lista.forEach(function (i) {
+      h += '<div class="imp-item">'
+        + '<span class="ii-per">' + escapar(i.ini) + ' a ' + escapar(i.fim) + '</span>'
+        + '<span class="ii-mot">' + escapar(i.motivo) + '</span>'
+        + (i.situacao === 'Pendente'
+            ? '<span class="imp-pend" title="Passou do teto de dias no mês: só vale depois de validado pela Diretoria de Disciplina">aguarda validação</span>'
+            : '')
+        + '<button class="btn-acao cancelar" onclick="confirmarRemocaoImpedimento(\'' + i.id + '\')">Remover</button>'
+        + '</div>';
+    });
+  }
+  h += '<button class="btn-imp" onclick="abrirImpedimento()">'
+    + '<i class="fa-solid fa-plus"></i> &nbsp;Declarar período de impedimento</button>';
+  h += '</div>';
+  return h;
+}
+
+function hojeISO() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+
+function isoParaBR(iso) {
+  if (!iso || iso.indexOf('-') === -1) return '';
+  const p = iso.split('-');
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+function abrirImpedimento() {
+  const motivos = dados.motivosImpedimento || [
+    { valor: 'Ferias', texto: 'Férias' }, { valor: 'Outro', texto: 'Outro motivo' }];
+  const opts = motivos.map(function (m) {
+    return '<option value="' + escapar(m.valor) + '">' + escapar(m.texto)
+      + (m.isento ? '' : '') + '</option>';
+  }).join('');
+
+  const corpo =
+      '<div class="campo-dupla">'
+    + '<div><label class="campo-lbl" for="imp-ini">Primeiro dia</label>'
+    + '<input class="campo-ent" type="date" id="imp-ini" min="' + hojeISO() + '" /></div>'
+    + '<div><label class="campo-lbl" for="imp-fim">Último dia</label>'
+    + '<input class="campo-ent" type="date" id="imp-fim" min="' + hojeISO() + '" /></div>'
+    + '</div>'
+    + '<label class="campo-lbl" for="imp-motivo">Motivo</label>'
+    + '<select class="campo-ent" id="imp-motivo">' + opts + '</select>'
+    + '<label class="campo-lbl" for="imp-obs">Observação (opcional)</label>'
+    + '<input class="campo-ent" type="text" id="imp-obs" maxlength="140"'
+    + ' placeholder="Ex.: troca de plantão com o colega..." />';
+
+  abrirModal('Declarar período de impedimento',
+    'Informe o intervalo em que você <strong>não pode</strong> ser convocado. Você continua '
+    + 'na fila, na <strong>mesma posição</strong> — o sistema apenas segue para o próximo e '
+    + 'volta a você no dia seguinte disponível. Férias e licença valem de imediato; os demais '
+    + 'motivos acima de <strong>' + (dados.tetoImpedimento || 10) + ' dias no mês</strong> '
+    + 'passam pela validação da Diretoria de Disciplina.',
+    corpo,
+    '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>'
+    + '<button class="modal-btn principal" onclick="enviarImpedimento()">Declarar</button>');
+}
+
+function enviarImpedimento() {
+  const ini = isoParaBR(el('imp-ini').value);
+  const fim = isoParaBR(el('imp-fim').value);
+  const motivo = el('imp-motivo').value;
+  const obs = el('imp-obs').value.trim();
+
+  if (!ini || !fim) { toast('Informe o primeiro e o último dia.', true); return; }
+  if (el('imp-fim').value < el('imp-ini').value) {
+    toast('O último dia não pode ser anterior ao primeiro.', true); return;
+  }
+
+  fecharModalForcado();
+  toast('Registrando impedimento...');
+  fetch(URL_BASE + '?acao=impedir&t=' + encodeURIComponent(TOKEN)
+      + '&ini=' + encodeURIComponent(ini) + '&fim=' + encodeURIComponent(fim)
+      + '&motivo=' + encodeURIComponent(motivo) + '&obs=' + encodeURIComponent(obs))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      toast(j.mensagem, !j.sucesso);
+      if (j.sucesso) carregar();
+    })
+    .catch(function () { toast('Não foi possível registrar o impedimento.', true); });
+}
+
+function confirmarRemocaoImpedimento(id) {
+  const i = (dados.impedimentos || []).find(function (x) { return x.id === id; });
+  if (!i) return;
+  abrirModal('Remover impedimento',
+    'O período <strong>' + escapar(i.ini) + ' a ' + escapar(i.fim) + '</strong> deixará de '
+    + 'constar, e você volta a ser convocável nesses dias.',
+    '',
+    '<button class="modal-btn" onclick="fecharModalForcado()">Voltar</button>'
+    + '<button class="modal-btn perigo" onclick="executarRemocaoImpedimento(\'' + id + '\')">Confirmar</button>');
+}
+
+function executarRemocaoImpedimento(id) {
+  fecharModalForcado();
+  toast('Removendo...');
+  fetch(URL_BASE + '?acao=remover_impedimento&t=' + encodeURIComponent(TOKEN)
+      + '&id=' + encodeURIComponent(id))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      toast(j.mensagem, !j.sucesso);
+      if (j.sucesso) carregar();
+    })
+    .catch(function () { toast('Não foi possível remover.', true); });
 }
 
 // ------------------------------------------------------------
