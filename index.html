@@ -201,7 +201,7 @@ unificada, as habilitações exigidas, a necessidade operacional e os critérios
 </div>
 <div class="field required">
 <label for="genero">Gênero</label>
-<select id="genero" onchange="atualizar()">
+<select id="genero" onchange="onGenero()">
 <option value="">Selecione...</option>
 <option>Masculino</option>
 <option>Feminino</option>
@@ -228,6 +228,25 @@ unificada, as habilitações exigidas, a necessidade operacional e os critérios
 <option value="Interna">Segurança Interna</option>
 <option value="Externa">Segurança Externa</option>
 </select>
+</div>
+</div>
+
+<div class="field-group" style="margin-top:12px;">
+<div class="field required">
+<label for="listas">De quais listas deseja participar?</label>
+<select id="listas" onchange="atualizar()">
+<option value="">Selecione...</option>
+<option value="Diurna">Somente diurna</option>
+<option value="Noturna">Somente noturna</option>
+<option value="Ambas">Diurna e noturna</option>
+</select>
+<p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;" id="nota-listas">
+São <strong>duas filas independentes</strong>. A <strong>diurna</strong> atende o posto
+das 07h e a torre diurna; a <strong>noturna</strong> atende a torre noturna. Cada uma tem
+a sua posição e corre sozinha — ser escalado numa não altera a sua posição na outra.<br>
+A participação na lista noturna <strong>depende desta manifestação</strong>: sem ela, você
+é escalado apenas nas DEJEPs diurnas.
+</p>
 </div>
 </div>
 
@@ -282,10 +301,7 @@ pasta de spam.<br>
 <div class="card sucesso" id="sucesso">
 <div class="sucesso-icone"><i class="fa-solid fa-circle-check"></i></div>
 <h2>Cadastro registrado!</h2>
-<div style="margin:1.25rem auto;padding:1.25rem;background:#eef4fb;border-radius:10px;max-width:280px;">
-<div style="font-size:0.75rem;color:#6b80a0;text-transform:uppercase;letter-spacing:0.06em;">Sua posição na lista corrida</div>
-<div style="font-size:2.6rem;font-weight:800;color:#1a3a5c;line-height:1.2;" id="posicao-num">—</div>
-</div>
+<div style="margin:1.25rem auto;display:flex;gap:10px;max-width:380px;" id="caixa-posicoes"></div>
 <p id="msg-sucesso">Seu cadastro foi registrado na lista unificada da DEJEP.</p>
 <div class="email-info" id="email-info" style="margin-top:1rem;font-size:0.85rem;color:#5a6e8a;"></div>
 <button class="send-btn" style="max-width:260px;margin:1.5rem auto 0;" onclick="reiniciar()">Fazer outro cadastro</button>
@@ -312,6 +328,31 @@ const INSCRICOES_ABERTAS = true;
 
 function el(id) { return document.getElementById(id); }
 
+// A policial penal feminina atua exclusivamente no posto das 07h,
+// que ocorre às segundas, aos sábados e aos domingos. Esse posto é
+// diurno, de modo que a lista noturna não se lhe aplica.
+function onGenero() {
+  var fem = el('genero').value === 'Feminino';
+  var sel = el('listas');
+  if (fem) {
+    sel.value = 'Diurna';
+    sel.disabled = true;
+    el('nota-listas').innerHTML =
+      '<strong>Policial penal feminina</strong> atua exclusivamente no posto das '
+      + '<strong>07h</strong> — portanto às segundas-feiras, aos sábados e aos domingos. '
+      + 'Por isso a sua participação é somente na <strong>lista diurna</strong>.';
+  } else {
+    sel.disabled = false;
+    el('nota-listas').innerHTML =
+      'São <strong>duas filas independentes</strong>. A <strong>diurna</strong> atende o posto '
+      + 'das 07h e a torre diurna; a <strong>noturna</strong> atende a torre noturna. Cada uma '
+      + 'tem a sua posição e corre sozinha — ser escalado numa não altera a sua posição na outra.'
+      + '<br>A participação na lista noturna <strong>depende desta manifestação</strong>: sem ela, '
+      + 'você é escalado apenas nas DEJEPs diurnas.';
+  }
+  atualizar();
+}
+
 function onTipoSeguranca() {
   var tipo = el('tipo_seguranca').value;
   var campo = el('campo-interesse');
@@ -331,7 +372,8 @@ function dados() {
     genero: el('genero').value,
     turno_plantao: el('turno_plantao').value,
     tipo_seguranca: el('tipo_seguranca').value,
-    interesse_interno: el('interesse_interno').value
+    interesse_interno: el('interesse_interno').value,
+    listas: el('listas').value
   };
 }
 
@@ -342,10 +384,13 @@ function atualizar() {
     area.innerHTML = '<div class="empty-msg">Preencha os campos acima.</div>';
     return;
   }
+  var rotuloListas = { 'Diurna':'Somente diurna', 'Noturna':'Somente noturna',
+                       'Ambas':'Diurna e noturna' };
   var linhas = [
     ['Nome', d.nome || '—'],
     ['Gênero', d.genero || '—'],
     ['Turno de plantão', d.turno_plantao || '—'],
+    ['Listas', rotuloListas[d.listas] || '—'],
     ['Segurança', d.tipo_seguranca || '—']
   ];
   if (d.tipo_seguranca === 'Externa') {
@@ -385,6 +430,7 @@ async function enviar() {
   if (!d.genero)        { mostrarAlerta('aviso', 'Selecione o seu gênero.'); return; }
   if (!d.turno_plantao) { mostrarAlerta('aviso', 'Selecione o seu turno de plantão.'); return; }
   if (!d.tipo_seguranca){ mostrarAlerta('aviso', 'Selecione o tipo de segurança.'); return; }
+  if (!d.listas)        { mostrarAlerta('aviso', 'Informe de quais listas deseja participar.'); return; }
   if (d.tipo_seguranca === 'Externa' && !d.interesse_interno) {
     mostrarAlerta('aviso', 'Informe se tem interesse em realizar DEJEP nas atribuições internas.');
     return;
@@ -407,7 +453,20 @@ async function enviar() {
     if (json.sucesso) {
       el('form-area').style.display = 'none';
       el('sucesso').style.display = 'block';
-      el('posicao-num').textContent = json.posicao + 'º';
+      var cx = '';
+      if (json.posicaoDiurna) {
+        cx += '<div style="flex:1;padding:1.1rem;background:#eef4fb;border-radius:10px;">'
+          + '<div style="font-size:0.72rem;color:#6b80a0;text-transform:uppercase;letter-spacing:0.06em;">Lista diurna</div>'
+          + '<div style="font-size:2.2rem;font-weight:800;color:#1a3a5c;line-height:1.2;">'
+          + json.posicaoDiurna + 'º</div></div>';
+      }
+      if (json.posicaoNoturna) {
+        cx += '<div style="flex:1;padding:1.1rem;background:#e4ecf6;border-radius:10px;">'
+          + '<div style="font-size:0.72rem;color:#6b80a0;text-transform:uppercase;letter-spacing:0.06em;">Lista noturna</div>'
+          + '<div style="font-size:2.2rem;font-weight:800;color:#1a3a5c;line-height:1.2;">'
+          + json.posicaoNoturna + 'º</div></div>';
+      }
+      el('caixa-posicoes').innerHTML = cx;
       el('msg-sucesso').textContent = json.atualizacao
         ? 'Seus dados foram atualizados. A posição conquistada na lista foi preservada.'
         : 'Seu cadastro foi registrado na lista unificada da DEJEP.';
@@ -428,8 +487,10 @@ async function enviar() {
 
 function reiniciar() {
   ['nome', 'email'].forEach(function (id) { el(id).value = ''; });
-  ['genero', 'turno_plantao', 'tipo_seguranca', 'interesse_interno']
+  ['genero', 'turno_plantao', 'tipo_seguranca', 'interesse_interno', 'listas']
     .forEach(function (id) { el(id).value = ''; });
+  el('listas').disabled = false;
+  onGenero();
   onTipoSeguranca();
   el('sucesso').style.display = 'none';
   el('form-area').style.display = 'block';
