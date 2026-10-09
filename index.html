@@ -470,9 +470,32 @@ async function enviar() {
       el('msg-sucesso').textContent = json.atualizacao
         ? 'Seus dados foram atualizados. A posição conquistada na lista foi preservada.'
         : 'Seu cadastro foi registrado na lista unificada da DEJEP.';
-      el('email-info').innerHTML =
-        '<i class="fa-solid fa-envelope"></i> Comprovante e <strong>link pessoal</strong> enviados para <strong>'
-        + escapar(d.email) + '</strong>';
+      if (json.comprovanteEnviado === false) {
+        // O cadastro está gravado; apenas o e-mail não saiu. O link
+        // pessoal é a única via de acesso do servidor, então vai na tela.
+        el('email-info').innerHTML =
+          '<div style="background:#fff8e0;border-left:4px solid #e0b040;border-radius:8px;'
+          + 'padding:1rem;text-align:left;font-size:0.86rem;color:#5a4a20;line-height:1.6;">'
+          + '<strong>⚠️ Seu cadastro está registrado</strong>, mas o comprovante por e-mail '
+          + 'não pôde ser enviado agora — o provedor atingiu o limite diário de mensagens. '
+          + 'Isso <strong>não afeta a sua inscrição nem a sua posição</strong>.<br><br>'
+          + '<strong>Anote a sua posição acima</strong> e guarde o link pessoal abaixo: é por '
+          + 'ele que você consulta a escala, solicita troca e cancela uma DEJEP.'
+          + (json.link
+              ? '<div style="margin-top:10px;padding:10px;background:#fff;border-radius:6px;'
+                + 'word-break:break-all;font-size:0.78rem;font-family:monospace;">'
+                + escapar(json.link) + '</div>'
+                + '<button class="send-btn" style="margin-top:8px;padding:9px;font-size:0.85rem;" '
+                + 'onclick="copiarLink(\'' + json.link.replace(/'/g, "\\'") + '\')">'
+                + 'Copiar o meu link</button>'
+              : '')
+          + '<div style="margin-top:10px;font-size:0.8rem;">O comprovante será reenviado pela '
+          + 'Diretoria de Disciplina assim que o limite for reposto.</div></div>';
+      } else {
+        el('email-info').innerHTML =
+          '<i class="fa-solid fa-envelope"></i> Comprovante e <strong>link pessoal</strong> enviados para <strong>'
+          + escapar(d.email) + '</strong>';
+      }
     } else {
       mostrarAlerta('erro', json.mensagem || 'Não foi possível registrar o cadastro.');
       btn.disabled = false;
@@ -482,6 +505,18 @@ async function enviar() {
     mostrarAlerta('erro', 'Não foi possível conectar. Verifique sua internet e tente novamente.');
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar cadastro';
+  }
+}
+
+function copiarLink(link) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(function () {
+      mostrarAlerta('aviso', 'Link copiado. Guarde-o: é a sua via de acesso.');
+    }, function () {
+      mostrarAlerta('aviso', 'Não foi possível copiar. Selecione o texto e copie à mão.');
+    });
+  } else {
+    mostrarAlerta('aviso', 'Selecione o texto do link e copie à mão.');
   }
 }
 
