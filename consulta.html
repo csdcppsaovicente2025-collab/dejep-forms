@@ -238,7 +238,7 @@ plantão — sem perder a posição na fila.
 <div class="abas">
 <button class="aba ativa" id="aba-escala" onclick="mostrar('escala')">Escala do Mês</button>
 <button class="aba" id="aba-lista" onclick="mostrar('lista')">Filas Corridas</button>
-<button class="aba" id="aba-imp" onclick="mostrar('imp')" style="display:none;"
+<button class="aba" id="aba-imp" onclick="mostrar('imp')"
 ><span class="aba-longa">Declarar Impedimento</span
 ><span class="aba-curta">Impedimentos</span></button>
 </div>
@@ -463,7 +463,7 @@ function mesLimite(desloc) {
 // Dias já declarados, expandidos a partir dos períodos
 function diasDeclarados() {
   const mapa = {};
-  (dados.impedimentos || []).forEach(function (i) {
+  ((dados && dados.impedimentos) || []).forEach(function (i) {
     const ini = new Date(brParaChave(i.ini) + 'T12:00:00');
     const fim = new Date(brParaChave(i.fim) + 'T12:00:00');
     for (let d = new Date(ini); d <= fim; d.setDate(d.getDate() + 1)) {
@@ -474,9 +474,21 @@ function diasDeclarados() {
 }
 
 function renderImpedir() {
+  if (!dados) {
+    return '<div class="empty-msg">Não foi possível carregar os seus dados no momento.'
+      + '<br>Tente novamente em alguns instantes.</div>';
+  }
   if (!dados.eu) {
-    return '<div class="empty-msg">Abra esta página pelo link pessoal do seu e-mail '
-      + 'para declarar os dias em que não pode ser convocado.</div>';
+    return '<div class="aviso-info" style="border-left-color:#e0b040;background:#fff8e0;'
+      + 'color:#7a5800;"><strong>Esta página está aberta sem o seu link pessoal.</strong><br><br>'
+      + 'Para declarar os dias em que não pode ser convocado — férias, licença, troca de '
+      + 'plantão com colega, curso ou serviço externo — abra esta mesma página pelo botão '
+      + '<strong>"Abrir minha página da DEJEP"</strong> que consta no e-mail do seu cadastro '
+      + 'ou da escala do mês. É aquele link que identifica você.<br><br>'
+      + 'Declarar impedimento <strong>não faz perder a posição</strong> na fila: o sistema '
+      + 'apenas segue para o próximo e volta a você no dia seguinte disponível.</div>'
+      + '<div class="empty-msg">Se não encontrar o e-mail, procure a Diretoria de '
+      + 'Disciplina para reenviarem o seu link.</div>';
   }
   if (!impMes) impMes = mesLimite(0);
 
@@ -839,12 +851,13 @@ function renderLista(filtro) {
 }
 
 function render() {
-  if (!dados) return;
+  // A aba de impedimento se explica mesmo sem dados carregados
   if (aba === 'imp') {
     el('conteudo').innerHTML = renderImpedir();
     pintarGrade();
     return;
   }
+  if (!dados) return;
   const filtro = el('busca').value.trim().toLowerCase();
   el('conteudo').innerHTML = (aba === 'escala') ? renderEscala(filtro) : renderLista(filtro);
 }
@@ -985,8 +998,6 @@ function carregar() {
       el('card-titulo').textContent = (aba === 'escala')
         ? 'Escala de ' + d.mes : TITULO_ABA[aba];
     }
-    // A aba de impedimento só existe para quem abriu pelo link pessoal
-    el('aba-imp').style.display = d.eu ? '' : 'none';
     renderPainel();
     render();
   }).catch(function () {
