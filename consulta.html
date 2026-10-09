@@ -230,9 +230,9 @@ SP" />
 São duas filas independentes: a diurna atende o posto das 07h e a torre diurna; a noturna
 atende a torre noturna. A convocação segue a ordem de cada uma, definida pela inscrição, e
 quem é escalado passa para o fim da fila daquele período. O horário de entrada é apurado
-pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP. Pelo <strong>link pessoal</strong>
-do seu e-mail você declara os dias em que não pode ser convocado — férias, licença, troca de
-plantão — sem perder a posição na fila.
+pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP. Na aba
+<strong>Declarar Impedimento</strong> você informa os dias em que não pode ser convocado —
+férias, licença, troca de plantão — sem perder a posição na fila.
 </div>
 
 <div class="abas">
@@ -440,6 +440,68 @@ let impSel = {};        // 'aaaa-mm-dd' → true
 let impMes = null;      // {ano, mes} exibido
 let impMotivo = 'Ferias';
 let impObs = '';
+let impEu = null;       // identificação por e-mail, quando não há link
+let impEmail = '';
+
+// O calendário lê daqui: ou do link pessoal, ou da identificação
+// por e-mail. As duas devolvem o mesmo formato.
+function fonteImp() {
+  return impEu || dados || {};
+}
+
+function formularioEmail() {
+  return ''
+    + '<div class="aviso-info" style="margin-bottom:1.1rem;">'
+    + 'Informe o <strong>e-mail que você usou na inscrição</strong> para declarar os dias em '
+    + 'que não pode ser convocado — férias, licença, troca de plantão com colega, curso ou '
+    + 'serviço externo. Declarar impedimento <strong>não faz perder a posição</strong> na '
+    + 'fila: o sistema apenas segue para o próximo e volta a você no dia seguinte disponível.'
+    + '</div>'
+    + '<label class="campo-lbl" for="imp-email">E-mail cadastrado</label>'
+    + '<input class="campo-ent" type="email" id="imp-email" autocomplete="email"'
+    + ' inputmode="email" placeholder="seu.nome@exemplo.gov.br" value="' + escapar(impEmail) + '"'
+    + ' onkeydown="if(event.key===\'Enter\')identificar()" />'
+    + '<button class="dp-enviar" onclick="identificar()">Continuar</button>'
+    + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.9rem;line-height:1.5;">'
+    + 'Toda declaração feita por aqui gera um aviso por e-mail para você e para a Diretoria '
+    + 'de Disciplina. Se receber um aviso de algo que não fez, procure a Disciplina.</div>';
+}
+
+function identificar() {
+  const campo = el('imp-email');
+  const e = (campo ? campo.value : '').trim();
+  if (!e || e.indexOf('@') === -1) { toast('Informe o seu e-mail cadastrado.', true); return; }
+  impEmail = e;
+  toast('Conferindo o cadastro...');
+  fetch(URL_BASE + '?acao=identificar&email=' + encodeURIComponent(e))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (!j.sucesso) { toast(j.mensagem, true); return; }
+      impEu = j;
+      toast('Identificado: ' + j.primeiroNome + '.');
+      render();
+    })
+    .catch(function () { toast('Não foi possível conferir o cadastro agora.', true); });
+}
+
+function trocarIdentificacao() {
+  impEu = null; impSel = {}; impMes = null; render();
+}
+
+// O link pessoal, quando existe, tem precedência: é prova de identidade
+function identificacaoURL() {
+  return TOKEN ? '&t=' + encodeURIComponent(TOKEN)
+               : '&email=' + encodeURIComponent(impEmail);
+}
+
+// Depois de declarar ou remover, recarrega só o que mudou
+function recarregarImpedimentos() {
+  if (TOKEN) { carregar(); return; }
+  fetch(URL_BASE + '?acao=identificar&email=' + encodeURIComponent(impEmail))
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j.sucesso) { impEu = j; render(); } })
+    .catch(function () { /* a mensagem de sucesso já foi dada */ });
+}
 
 function chaveDia(ano, mes, dia) {
   const p = n => String(n).padStart(2, '0');
@@ -463,7 +525,7 @@ function mesLimite(desloc) {
 // Dias já declarados, expandidos a partir dos períodos
 function diasDeclarados() {
   const mapa = {};
-  ((dados && dados.impedimentos) || []).forEach(function (i) {
+  (fonteImp().impedimentos || []).forEach(function (i) {
     const ini = new Date(brParaChave(i.ini) + 'T12:00:00');
     const fim = new Date(brParaChave(i.fim) + 'T12:00:00');
     for (let d = new Date(ini); d <= fim; d.setDate(d.getDate() + 1)) {
@@ -478,27 +540,27 @@ function renderImpedir() {
     return '<div class="empty-msg">Não foi possível carregar os seus dados no momento.'
       + '<br>Tente novamente em alguns instantes.</div>';
   }
-  if (!dados.eu) {
-    return '<div class="aviso-info" style="border-left-color:#e0b040;background:#fff8e0;'
-      + 'color:#7a5800;"><strong>Esta página está aberta sem o seu link pessoal.</strong><br><br>'
-      + 'Para declarar os dias em que não pode ser convocado — férias, licença, troca de '
-      + 'plantão com colega, curso ou serviço externo — abra esta mesma página pelo botão '
-      + '<strong>"Abrir minha página da DEJEP"</strong> que consta no e-mail do seu cadastro '
-      + 'ou da escala do mês. É aquele link que identifica você.<br><br>'
-      + 'Declarar impedimento <strong>não faz perder a posição</strong> na fila: o sistema '
-      + 'apenas segue para o próximo e volta a você no dia seguinte disponível.</div>'
-      + '<div class="empty-msg">Se não encontrar o e-mail, procure a Diretoria de '
-      + 'Disciplina para reenviarem o seu link.</div>';
-  }
+  // Sem link pessoal, o servidor se identifica pelo e-mail cadastrado
+  if (!dados.eu && !impEu) return formularioEmail();
+
   if (!impMes) impMes = mesLimite(0);
 
-  const motivos = dados.motivosImpedimento || [];
+  const motivos = fonteImp().motivosImpedimento || [];
   const opts = motivos.map(function (m) {
     return '<option value="' + escapar(m.valor) + '"'
       + (m.valor === impMotivo ? ' selected' : '') + '>' + escapar(m.texto) + '</option>';
   }).join('');
 
   return ''
+    + (impEu
+        ? '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;'
+          + 'background:#eef7ee;border:1px solid #cfe3cf;border-radius:9px;'
+          + 'padding:0.7rem 0.9rem;margin-bottom:1rem;font-size:0.85rem;color:#276221;">'
+          + '<span style="flex:1;min-width:150px;">Identificado como <strong>'
+          + escapar(impEu.nome) + '</strong></span>'
+          + '<button class="btn-acao" style="background:#276221;color:#fff;"'
+          + ' onclick="trocarIdentificacao()">Não sou eu</button></div>'
+        : '')
     + '<div class="aviso-info" style="margin-bottom:1.1rem;">'
     + 'Marque no calendário os dias em que <strong>não pode</strong> ser convocado. '
     + 'Você continua na fila, na <strong>mesma posição</strong> — o sistema apenas segue '
@@ -534,7 +596,7 @@ function renderImpedir() {
     + ' placeholder="Ex.: troca de plantão com o colega Fulano" />'
     + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.7rem;line-height:1.5;">'
     + 'Férias e licença valem de imediato. Os demais motivos acima de <strong>'
-    + (dados.tetoImpedimento || 10) + ' dias no mês</strong> passam pela validação da '
+    + (fonteImp().tetoImpedimento || 10) + ' dias no mês</strong> passam pela validação da '
     + 'Diretoria de Disciplina — o limite considera o conjunto dos dias do mês, não cada '
     + 'bloco isolado.</div>'
 
@@ -544,7 +606,7 @@ function renderImpedir() {
 }
 
 function renderDeclarados() {
-  const lista = dados.impedimentos || [];
+  const lista = fonteImp().impedimentos || [];
   if (!lista.length) return '';
   let h = '<div style="margin-top:1.8rem;"><div class="card-title">Já declarados</div>';
   lista.forEach(function (i) {
@@ -575,7 +637,7 @@ function pintarGrade() {
   const hojeK = chaveDia(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
   const declarados = diasDeclarados();
   const comDejep = {};
-  (dados.meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
+  (fonteImp().meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
 
   const primeiro = new Date(impMes.ano, impMes.mes - 1, 1);
   const total = new Date(impMes.ano, impMes.mes, 0).getDate();
@@ -630,7 +692,7 @@ function pintarResumo() {
   });
 
   const comDejep = {};
-  (dados.meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
+  (fonteImp().meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
   const choques = chaves.filter(function (k) { return comDejep[k]; });
 
   let h = '<strong>' + chaves.length + (chaves.length === 1 ? ' dia marcado' : ' dias marcados')
@@ -685,14 +747,14 @@ function enviarDias() {
   if (botao) { botao.disabled = true; botao.textContent = 'Registrando...'; }
   toast('Registrando ' + chaves.length + (chaves.length === 1 ? ' dia...' : ' dias...'));
 
-  fetch(URL_BASE + '?acao=impedir_dias&t=' + encodeURIComponent(TOKEN)
+  fetch(URL_BASE + '?acao=impedir_dias' + identificacaoURL()
       + '&dias=' + encodeURIComponent(dias)
       + '&motivo=' + encodeURIComponent(impMotivo)
       + '&obs=' + encodeURIComponent(impObs))
     .then(function (r) { return r.json(); })
     .then(function (j) {
       toast(j.mensagem, !j.sucesso);
-      if (j.sucesso) { impSel = {}; impObs = ''; carregar(); }
+      if (j.sucesso) { impSel = {}; impObs = ''; recarregarImpedimentos(); }
       else if (botao) { botao.disabled = false; botao.textContent = 'Declarar'; }
     })
     .catch(function () {
@@ -702,10 +764,10 @@ function enviarDias() {
 }
 
 function confirmarRemocaoImpedimento(id) {
-  const i = (dados.impedimentos || []).find(function (x) { return x.id === id; });
+  const i = (fonteImp().impedimentos || []).find(function (x) { return x.id === id; });
   if (!i) return;
   abrirModal('Remover impedimento',
-    'O período <strong>' + escapar(i.ini) + ' a ' + escapar(i.fim) + '</strong> deixará de '
+    'O período <strong>' + escapar(periodoTexto(i)) + '</strong> deixará de '
     + 'constar, e você volta a ser convocável nesses dias.',
     '',
     '<button class="modal-btn" onclick="fecharModalForcado()">Voltar</button>'
@@ -715,12 +777,12 @@ function confirmarRemocaoImpedimento(id) {
 function executarRemocaoImpedimento(id) {
   fecharModalForcado();
   toast('Removendo...');
-  fetch(URL_BASE + '?acao=remover_impedimento&t=' + encodeURIComponent(TOKEN)
+  fetch(URL_BASE + '?acao=remover_impedimento' + identificacaoURL()
       + '&id=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
       toast(j.mensagem, !j.sucesso);
-      if (j.sucesso) carregar();
+      if (j.sucesso) recarregarImpedimentos();
     })
     .catch(function () { toast('Não foi possível remover.', true); });
 }
