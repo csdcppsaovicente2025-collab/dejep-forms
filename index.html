@@ -420,7 +420,8 @@ function mostrarAlerta(tipo, msg) {
   }
 }
 
-async function enviar() {
+async function enviar(tentativa) {
+  tentativa = tentativa || 1;
   mostrarAlerta(null);
   var d = dados();
 
@@ -496,6 +497,15 @@ async function enviar() {
           '<i class="fa-solid fa-envelope"></i> Comprovante e <strong>link pessoal</strong> enviados para <strong>'
           + escapar(d.email) + '</strong>';
       }
+    } else if (json.ocupado && tentativa < 3) {
+      // Outra inscrição está sendo gravada neste instante. Nada foi
+      // gravado desta, então repetir é seguro — e melhor do que pedir
+      // ao servidor que tente de novo sozinho.
+      mostrarAlerta('aviso', 'Há várias inscrições sendo enviadas ao mesmo tempo. '
+        + 'Aguarde, estamos tentando novamente (' + tentativa + ' de 3)...');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguardando a vez...';
+      setTimeout(function () { enviar(tentativa + 1); }, 3000 + tentativa * 2000);
+      return;
     } else {
       mostrarAlerta('erro', json.mensagem || 'Não foi possível registrar o cadastro.');
       btn.disabled = false;
