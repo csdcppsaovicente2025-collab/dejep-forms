@@ -152,6 +152,61 @@ font-size: 0.9rem; font-family: inherit; color: #1a2b3c; background: #fff; outli
 .campo-ent:focus { border-color: #2d6a9f; }
 .campo-dupla { display: flex; gap: 8px; }
 .campo-dupla > div { flex: 1; }
+
+/* ---- Calendário de impedimentos ---- */
+.dp-nav { display: flex; align-items: center; justify-content: space-between;
+margin-bottom: 0.8rem; gap: 8px; }
+.dp-nav button { border: 1px solid #d0d9e6; background: #fff; color: #1a3a5c;
+border-radius: 8px; width: 38px; height: 38px; font-size: 1rem; cursor: pointer;
+font-family: inherit; flex-shrink: 0; }
+.dp-nav button:hover:not(:disabled) { border-color: #2d6a9f; background: #f5f9fd; }
+.dp-nav button:disabled { color: #ccd5e0; cursor: not-allowed; }
+.dp-mes { flex: 1; text-align: center; font-weight: 700; font-size: 0.98rem;
+color: #1a3a5c; text-transform: uppercase; letter-spacing: 0.04em; }
+.dp-sem { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 5px; }
+.dp-sem span { text-align: center; font-size: 0.66rem; font-weight: 700; color: #6b80a0;
+text-transform: uppercase; letter-spacing: 0.04em; }
+.dp-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.dp-dia { min-height: 46px; border: 1px solid #dde4ed; border-radius: 8px; background: #fff;
+display: flex; flex-direction: column; align-items: center; justify-content: center;
+font-size: 0.9rem; font-weight: 600; color: #1a2b3c; cursor: pointer; position: relative;
+font-family: inherit; padding: 0; line-height: 1; }
+.dp-dia:hover:not(:disabled) { border-color: #2d6a9f; background: #f5f9fd; }
+.dp-dia.fora { visibility: hidden; }
+.dp-dia:disabled { cursor: not-allowed; }
+.dp-dia.passada { color: #c8d2de; background: #fafbfc; border-style: dashed; }
+.dp-dia.marcada { background: #1a3a5c; border-color: #1a3a5c; color: #fff; }
+.dp-dia.declarada { background: #fff2cc; border-color: #e0b040; color: #7a5800; }
+.dp-dia.declarada.pendente { background: #fdf6e3; border-style: dashed; }
+.dp-dia.hoje { box-shadow: inset 0 0 0 2px #2d6a9f; }
+.dp-dejep { position: absolute; bottom: 5px; width: 5px; height: 5px; border-radius: 50%;
+background: #1e7a46; }
+.dp-dia.marcada .dp-dejep { background: #ffd8a0; }
+.dp-leg { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+margin-top: 0.9rem; font-size: 0.7rem; color: #6b80a0; }
+.dp-leg span { display: flex; align-items: center; gap: 5px; }
+.dp-leg i.pt { width: 12px; height: 12px; border-radius: 4px; display: inline-block;
+border: 1px solid #dde4ed; }
+.dp-resumo { background: #eef4fb; border-left: 4px solid #2d6a9f; border-radius: 8px;
+padding: 0.8rem 1rem; margin: 1rem 0 0; font-size: 0.82rem; color: #1a3a5c; line-height: 1.55; }
+.dp-resumo.vazio { background: #f7f9fc; border-left-color: #c0ccd8; color: #6b80a0; }
+.dp-resumo.alerta { background: #fde8e8; border-left-color: #a02020; color: #7a1a1a; }
+.dp-atalhos { display: flex; gap: 8px; margin-top: 0.8rem; flex-wrap: wrap; }
+.dp-atalhos button { flex: 1; min-width: 130px; border: 1px solid #d0d9e6; background: #fff;
+color: #45617f; border-radius: 8px; padding: 9px; font-size: 0.78rem; font-weight: 600;
+cursor: pointer; font-family: inherit; }
+.dp-atalhos button:hover { border-color: #2d6a9f; color: #1a3a5c; }
+.dp-enviar { width: 100%; border: 0; border-radius: 9px; padding: 13px; margin-top: 1rem;
+background: #1a3a5c; color: #fff; font-size: 0.92rem; font-weight: 700; cursor: pointer;
+font-family: inherit; }
+.dp-enviar:disabled { background: #c0ccd8; cursor: not-allowed; }
+.aba-curta { display: none; }
+@media (max-width: 560px) {
+  .aba-longa { display: none; }
+  .aba-curta { display: inline; }
+  .aba { padding: 11px 4px; font-size: 0.84rem; }
+  .dp-dia { font-size: 0.82rem; }
+}
 </style>
 </head>
 <body>
@@ -183,6 +238,9 @@ plantão — sem perder a posição na fila.
 <div class="abas">
 <button class="aba ativa" id="aba-escala" onclick="mostrar('escala')">Escala do Mês</button>
 <button class="aba" id="aba-lista" onclick="mostrar('lista')">Filas Corridas</button>
+<button class="aba" id="aba-imp" onclick="mostrar('imp')" style="display:none;"
+><span class="aba-longa">Declarar Impedimento</span
+><span class="aba-curta">Impedimentos</span></button>
 </div>
 
 <div class="card">
@@ -244,11 +302,19 @@ function toast(msg, erro) {
   t._tm = setTimeout(function () { t.style.display = 'none'; }, 6000);
 }
 
+const TITULO_ABA = { escala: 'Escala do Mês', lista: 'Filas Corridas',
+                     imp: 'Declarar impedimento' };
+
 function mostrar(qual) {
   aba = qual;
-  el('aba-lista').classList.toggle('ativa', qual === 'lista');
-  el('aba-escala').classList.toggle('ativa', qual === 'escala');
-  el('card-titulo').textContent = qual === 'lista' ? 'Filas Corridas' : 'Escala do Mês';
+  ['escala','lista','imp'].forEach(function (k) {
+    const b = el('aba-' + (k === 'imp' ? 'imp' : k));
+    if (b) b.classList.toggle('ativa', qual === k);
+  });
+  el('card-titulo').textContent = (qual === 'escala' && dados && dados.mes)
+    ? 'Escala de ' + dados.mes : TITULO_ABA[qual];
+  // A busca por nome não serve ao calendário
+  el('busca').style.display = (qual === 'imp') ? 'none' : '';
   render();
 }
 
@@ -322,99 +388,305 @@ function renderPainel() {
 // Administração continua definindo o dia, entre aqueles em que o
 // servidor pode servir. A posição na fila é preservada.
 // ------------------------------------------------------------
+// Resumo no painel; a declaração em si mora na própria aba
 function renderImpedimentos() {
   const lista = dados.impedimentos || [];
   let h = '<div class="imp-sec"><div class="imp-tit">'
-    + '<i class="fa-solid fa-umbrella-beach"></i> &nbsp;Dias em que não posso ser convocado</div>';
+    + 'Dias em que não posso ser convocado</div>';
 
   if (!lista.length) {
-    h += '<div class="imp-vazio">Nenhum período declarado. Informe aqui férias, licença, '
-      + 'troca de plantão com colega, curso ou serviço externo — o sistema deixa de '
-      + 'escalar você nesses dias <strong>sem que você perca a posição</strong> na fila.</div>';
+    h += '<div class="imp-vazio">Nenhum dia declarado. Marque no calendário as férias, a '
+      + 'licença, a troca de plantão com colega ou o curso — o sistema deixa de escalar '
+      + 'você nesses dias <strong>sem que você perca a posição</strong> na fila.</div>';
   } else {
-    lista.forEach(function (i) {
-      h += '<div class="imp-item">'
-        + '<span class="ii-per">' + escapar(i.ini) + ' a ' + escapar(i.fim) + '</span>'
-        + '<span class="ii-mot">' + escapar(i.motivo) + '</span>'
-        + (i.situacao === 'Pendente'
-            ? '<span class="imp-pend" title="Passou do teto de dias no mês: só vale depois de validado pela Diretoria de Disciplina">aguarda validação</span>'
-            : '')
-        + '<button class="btn-acao cancelar" onclick="confirmarRemocaoImpedimento(\'' + i.id + '\')">Remover</button>'
-        + '</div>';
-    });
+    const dias = lista.reduce(function (s, i) {
+      const a = new Date(brParaChave(i.ini) + 'T12:00:00');
+      const b = new Date(brParaChave(i.fim) + 'T12:00:00');
+      return s + Math.round((b - a) / 86400000) + 1;
+    }, 0);
+    const pend = lista.filter(function (i) { return i.situacao === 'Pendente'; }).length;
+    h += '<div class="imp-vazio"><strong style="color:#fff;">' + dias
+      + (dias === 1 ? ' dia declarado' : ' dias declarados')
+      + '</strong> em ' + lista.length + (lista.length === 1 ? ' período' : ' períodos')
+      + ', entre ' + escapar(lista[0].ini) + ' e ' + escapar(lista[lista.length - 1].fim) + '.'
+      + (pend ? ' <strong style="color:#ffd8a0;">' + pend + ' aguarda'
+                + (pend === 1 ? '' : 'm') + ' validação.</strong>' : '')
+      + '</div>';
   }
-  h += '<button class="btn-imp" onclick="abrirImpedimento()">'
-    + '<i class="fa-solid fa-plus"></i> &nbsp;Declarar período de impedimento</button>';
+  h += '<button class="btn-imp" onclick="mostrar(\'imp\')">'
+    + (lista.length ? 'Ver e declarar no calendário' : 'Abrir o calendário para declarar')
+    + '</button>';
   h += '</div>';
   return h;
 }
 
-function hojeISO() {
-  const d = new Date();
-  const p = n => String(n).padStart(2, '0');
-  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+function periodoTexto(i) {
+  return i.ini === i.fim ? i.ini : i.ini + ' a ' + i.fim;
 }
 
-function isoParaBR(iso) {
-  if (!iso || iso.indexOf('-') === -1) return '';
-  const p = iso.split('-');
+// ------------------------------------------------------------
+// Aba "Declarar Impedimento": calendário de seleção
+//
+// A seleção é global, não do mês exibido: o servidor pode navegar
+// entre os meses marcando dias e enviar tudo de uma vez. Férias que
+// atravessam a virada do mês entram numa única declaração.
+// ------------------------------------------------------------
+const DIAS_SEM_LONGO = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+               'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const MESES_A_FRENTE = 12;
+
+let impSel = {};        // 'aaaa-mm-dd' → true
+let impMes = null;      // {ano, mes} exibido
+let impMotivo = 'Ferias';
+let impObs = '';
+
+function chaveDia(ano, mes, dia) {
+  const p = n => String(n).padStart(2, '0');
+  return ano + '-' + p(mes) + '-' + p(dia);
+}
+function chaveParaBR(k) {
+  const p = k.split('-');
   return p[2] + '/' + p[1] + '/' + p[0];
 }
-
-function abrirImpedimento() {
-  const motivos = dados.motivosImpedimento || [
-    { valor: 'Ferias', texto: 'Férias' }, { valor: 'Outro', texto: 'Outro motivo' }];
-  const opts = motivos.map(function (m) {
-    return '<option value="' + escapar(m.valor) + '">' + escapar(m.texto)
-      + (m.isento ? '' : '') + '</option>';
-  }).join('');
-
-  const corpo =
-      '<div class="campo-dupla">'
-    + '<div><label class="campo-lbl" for="imp-ini">Primeiro dia</label>'
-    + '<input class="campo-ent" type="date" id="imp-ini" min="' + hojeISO() + '" /></div>'
-    + '<div><label class="campo-lbl" for="imp-fim">Último dia</label>'
-    + '<input class="campo-ent" type="date" id="imp-fim" min="' + hojeISO() + '" /></div>'
-    + '</div>'
-    + '<label class="campo-lbl" for="imp-motivo">Motivo</label>'
-    + '<select class="campo-ent" id="imp-motivo">' + opts + '</select>'
-    + '<label class="campo-lbl" for="imp-obs">Observação (opcional)</label>'
-    + '<input class="campo-ent" type="text" id="imp-obs" maxlength="140"'
-    + ' placeholder="Ex.: troca de plantão com o colega..." />';
-
-  abrirModal('Declarar período de impedimento',
-    'Informe o intervalo em que você <strong>não pode</strong> ser convocado. Você continua '
-    + 'na fila, na <strong>mesma posição</strong> — o sistema apenas segue para o próximo e '
-    + 'volta a você no dia seguinte disponível. Férias e licença valem de imediato; os demais '
-    + 'motivos acima de <strong>' + (dados.tetoImpedimento || 10) + ' dias no mês</strong> '
-    + 'passam pela validação da Diretoria de Disciplina.',
-    corpo,
-    '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>'
-    + '<button class="modal-btn principal" onclick="enviarImpedimento()">Declarar</button>');
+function brParaChave(br) {
+  const p = br.split('/');
+  return p[2] + '-' + p[1] + '-' + p[0];
 }
 
-function enviarImpedimento() {
-  const ini = isoParaBR(el('imp-ini').value);
-  const fim = isoParaBR(el('imp-fim').value);
-  const motivo = el('imp-motivo').value;
-  const obs = el('imp-obs').value.trim();
+function mesLimite(desloc) {
+  const h = new Date();
+  const d = new Date(h.getFullYear(), h.getMonth() + desloc, 1);
+  return { ano: d.getFullYear(), mes: d.getMonth() + 1 };
+}
 
-  if (!ini || !fim) { toast('Informe o primeiro e o último dia.', true); return; }
-  if (el('imp-fim').value < el('imp-ini').value) {
-    toast('O último dia não pode ser anterior ao primeiro.', true); return;
+// Dias já declarados, expandidos a partir dos períodos
+function diasDeclarados() {
+  const mapa = {};
+  (dados.impedimentos || []).forEach(function (i) {
+    const ini = new Date(brParaChave(i.ini) + 'T12:00:00');
+    const fim = new Date(brParaChave(i.fim) + 'T12:00:00');
+    for (let d = new Date(ini); d <= fim; d.setDate(d.getDate() + 1)) {
+      mapa[chaveDia(d.getFullYear(), d.getMonth() + 1, d.getDate())] = i;
+    }
+  });
+  return mapa;
+}
+
+function renderImpedir() {
+  if (!dados.eu) {
+    return '<div class="empty-msg">Abra esta página pelo link pessoal do seu e-mail '
+      + 'para declarar os dias em que não pode ser convocado.</div>';
+  }
+  if (!impMes) impMes = mesLimite(0);
+
+  const motivos = dados.motivosImpedimento || [];
+  const opts = motivos.map(function (m) {
+    return '<option value="' + escapar(m.valor) + '"'
+      + (m.valor === impMotivo ? ' selected' : '') + '>' + escapar(m.texto) + '</option>';
+  }).join('');
+
+  return ''
+    + '<div class="aviso-info" style="margin-bottom:1.1rem;">'
+    + 'Marque no calendário os dias em que <strong>não pode</strong> ser convocado. '
+    + 'Você continua na fila, na <strong>mesma posição</strong> — o sistema apenas segue '
+    + 'para o próximo e volta a você no dia seguinte disponível. Pode navegar entre os meses: '
+    + 'a marcação de todos eles é enviada de uma só vez.</div>'
+
+    + '<div class="dp-nav">'
+    + '<button onclick="mudarMes(-1)" id="dp-ant" title="Mês anterior">&#8249;</button>'
+    + '<div class="dp-mes" id="dp-mes"></div>'
+    + '<button onclick="mudarMes(1)" id="dp-prox" title="Próximo mês">&#8250;</button>'
+    + '</div>'
+    + '<div class="dp-sem">' + DIAS_SEM_LONGO.map(function (d) {
+        return '<span>' + d + '</span>'; }).join('') + '</div>'
+    + '<div class="dp-grade" id="dp-grade"></div>'
+    + '<div class="dp-leg">'
+    + '<span><i class="pt" style="background:#1a3a5c;border-color:#1a3a5c;"></i> marcado agora</span>'
+    + '<span><i class="pt" style="background:#fff2cc;border-color:#e0b040;"></i> já declarado</span>'
+    + '<span><i class="pt" style="background:#fff;"></i><i class="dp-dejep" style="position:static;"></i> DEJEP sua</span>'
+    + '</div>'
+
+    + '<div class="dp-atalhos">'
+    + '<button onclick="marcarMesInteiro()">Marcar o mês inteiro</button>'
+    + '<button onclick="limparSelecao()">Limpar seleção</button>'
+    + '</div>'
+
+    + '<div id="dp-resumo"></div>'
+
+    + '<label class="campo-lbl" for="dp-motivo">Motivo</label>'
+    + '<select class="campo-ent" id="dp-motivo" onchange="impMotivo=this.value">' + opts + '</select>'
+    + '<label class="campo-lbl" for="dp-obs">Observação (opcional)</label>'
+    + '<input class="campo-ent" type="text" id="dp-obs" maxlength="140"'
+    + ' value="' + escapar(impObs) + '" oninput="impObs=this.value"'
+    + ' placeholder="Ex.: troca de plantão com o colega Fulano" />'
+    + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.7rem;line-height:1.5;">'
+    + 'Férias e licença valem de imediato. Os demais motivos acima de <strong>'
+    + (dados.tetoImpedimento || 10) + ' dias no mês</strong> passam pela validação da '
+    + 'Diretoria de Disciplina — o limite considera o conjunto dos dias do mês, não cada '
+    + 'bloco isolado.</div>'
+
+    + '<button class="dp-enviar" id="dp-enviar" onclick="enviarDias()">Declarar</button>'
+
+    + renderDeclarados();
+}
+
+function renderDeclarados() {
+  const lista = dados.impedimentos || [];
+  if (!lista.length) return '';
+  let h = '<div style="margin-top:1.8rem;"><div class="card-title">Já declarados</div>';
+  lista.forEach(function (i) {
+    h += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;'
+      + 'border:1px solid #dde4ed;border-radius:9px;padding:0.65rem 0.85rem;margin-bottom:7px;">'
+      + '<span style="font-weight:700;font-size:0.86rem;color:#1a3a5c;white-space:nowrap;">'
+      + escapar(periodoTexto(i)) + '</span>'
+      + '<span style="flex:1;min-width:110px;font-size:0.8rem;color:#6b80a0;">'
+      + escapar(i.motivo) + '</span>'
+      + (i.situacao === 'Pendente'
+          ? '<span class="imp-pend">aguarda validação</span>' : '')
+      + '<button class="btn-acao cancelar" onclick="confirmarRemocaoImpedimento(\''
+      + i.id + '\')">Remover</button></div>';
+  });
+  return h + '</div>';
+}
+
+function pintarGrade() {
+  const grade = el('dp-grade');
+  if (!grade) return;
+
+  const prim = mesLimite(0), ult = mesLimite(MESES_A_FRENTE);
+  el('dp-mes').textContent = MESES[impMes.mes - 1] + ' ' + impMes.ano;
+  el('dp-ant').disabled = (impMes.ano === prim.ano && impMes.mes === prim.mes);
+  el('dp-prox').disabled = (impMes.ano === ult.ano && impMes.mes === ult.mes);
+
+  const hoje = new Date();
+  const hojeK = chaveDia(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
+  const declarados = diasDeclarados();
+  const comDejep = {};
+  (dados.meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
+
+  const primeiro = new Date(impMes.ano, impMes.mes - 1, 1);
+  const total = new Date(impMes.ano, impMes.mes, 0).getDate();
+  let html = '';
+  for (let i = 0; i < primeiro.getDay(); i++) html += '<button class="dp-dia fora" disabled></button>';
+
+  for (let d = 1; d <= total; d++) {
+    const k = chaveDia(impMes.ano, impMes.mes, d);
+    const passada = k < hojeK;
+    const decl = declarados[k];
+    const cls = ['dp-dia'];
+    let titulo = '';
+    if (passada) { cls.push('passada'); titulo = 'dia já passado'; }
+    else if (decl) {
+      cls.push('declarada');
+      if (decl.situacao === 'Pendente') cls.push('pendente');
+      titulo = 'já declarado: ' + decl.motivo
+        + (decl.situacao === 'Pendente' ? ' (aguarda validação)' : '');
+    } else if (impSel[k]) { cls.push('marcada'); }
+    if (k === hojeK) cls.push('hoje');
+    if (comDejep[k]) titulo += (titulo ? ' — ' : '') + 'você tem DEJEP neste dia';
+
+    html += '<button class="' + cls.join(' ') + '"'
+      + (passada || decl ? ' disabled' : ' onclick="alternarDia(\'' + k + '\')"')
+      + (titulo ? ' title="' + titulo + '"' : '') + '>'
+      + d + (comDejep[k] ? '<i class="dp-dejep"></i>' : '') + '</button>';
+  }
+  grade.innerHTML = html;
+  pintarResumo();
+}
+
+function pintarResumo() {
+  const alvo = el('dp-resumo');
+  if (!alvo) return;
+  const chaves = Object.keys(impSel).sort();
+  const botao = el('dp-enviar');
+  if (botao) botao.disabled = !chaves.length;
+
+  if (!chaves.length) {
+    alvo.className = 'dp-resumo vazio';
+    alvo.innerHTML = 'Nenhum dia marcado. Toque nos dias do calendário para marcá-los.';
+    return;
   }
 
-  fecharModalForcado();
-  toast('Registrando impedimento...');
-  fetch(URL_BASE + '?acao=impedir&t=' + encodeURIComponent(TOKEN)
-      + '&ini=' + encodeURIComponent(ini) + '&fim=' + encodeURIComponent(fim)
-      + '&motivo=' + encodeURIComponent(motivo) + '&obs=' + encodeURIComponent(obs))
+  // Agrupa por mês para o servidor conferir o que está enviando
+  const porMes = {};
+  chaves.forEach(function (k) {
+    const p = k.split('-');
+    const rot = MESES[parseInt(p[1], 10) - 1] + '/' + p[0];
+    if (!porMes[rot]) porMes[rot] = [];
+    porMes[rot].push(parseInt(p[2], 10));
+  });
+
+  const comDejep = {};
+  (dados.meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
+  const choques = chaves.filter(function (k) { return comDejep[k]; });
+
+  let h = '<strong>' + chaves.length + (chaves.length === 1 ? ' dia marcado' : ' dias marcados')
+    + '</strong><br>';
+  h += Object.keys(porMes).map(function (m) {
+    return m + ': ' + porMes[m].join(', ');
+  }).join('<br>');
+
+  if (choques.length) {
+    alvo.className = 'dp-resumo alerta';
+    h += '<br><br><strong>Atenção:</strong> você já tem DEJEP agendada em '
+      + choques.map(chaveParaBR).join(', ') + '. O impedimento <strong>não cancela</strong> '
+      + 'a escala — cancele a DEJEP no seu painel ou procure a Diretoria de Disciplina.';
+  } else {
+    alvo.className = 'dp-resumo';
+  }
+  alvo.innerHTML = h;
+}
+
+function alternarDia(k) {
+  if (impSel[k]) delete impSel[k]; else impSel[k] = true;
+  pintarGrade();
+}
+
+function mudarMes(delta) {
+  const d = new Date(impMes.ano, impMes.mes - 1 + delta, 1);
+  impMes = { ano: d.getFullYear(), mes: d.getMonth() + 1 };
+  pintarGrade();
+}
+
+function marcarMesInteiro() {
+  const hoje = new Date();
+  const hojeK = chaveDia(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
+  const declarados = diasDeclarados();
+  const total = new Date(impMes.ano, impMes.mes, 0).getDate();
+  for (let d = 1; d <= total; d++) {
+    const k = chaveDia(impMes.ano, impMes.mes, d);
+    if (k < hojeK || declarados[k]) continue;
+    impSel[k] = true;
+  }
+  pintarGrade();
+}
+
+function limparSelecao() { impSel = {}; pintarGrade(); }
+
+function enviarDias() {
+  const chaves = Object.keys(impSel).sort();
+  if (!chaves.length) { toast('Marque ao menos um dia no calendário.', true); return; }
+
+  const dias = chaves.map(chaveParaBR).join(',');
+  const botao = el('dp-enviar');
+  if (botao) { botao.disabled = true; botao.textContent = 'Registrando...'; }
+  toast('Registrando ' + chaves.length + (chaves.length === 1 ? ' dia...' : ' dias...'));
+
+  fetch(URL_BASE + '?acao=impedir_dias&t=' + encodeURIComponent(TOKEN)
+      + '&dias=' + encodeURIComponent(dias)
+      + '&motivo=' + encodeURIComponent(impMotivo)
+      + '&obs=' + encodeURIComponent(impObs))
     .then(function (r) { return r.json(); })
     .then(function (j) {
       toast(j.mensagem, !j.sucesso);
-      if (j.sucesso) carregar();
+      if (j.sucesso) { impSel = {}; impObs = ''; carregar(); }
+      else if (botao) { botao.disabled = false; botao.textContent = 'Declarar'; }
     })
-    .catch(function () { toast('Não foi possível registrar o impedimento.', true); });
+    .catch(function () {
+      toast('Não foi possível registrar. Tente novamente.', true);
+      if (botao) { botao.disabled = false; botao.textContent = 'Declarar'; }
+    });
 }
 
 function confirmarRemocaoImpedimento(id) {
@@ -568,6 +840,11 @@ function renderLista(filtro) {
 
 function render() {
   if (!dados) return;
+  if (aba === 'imp') {
+    el('conteudo').innerHTML = renderImpedir();
+    pintarGrade();
+    return;
+  }
   const filtro = el('busca').value.trim().toLowerCase();
   el('conteudo').innerHTML = (aba === 'escala') ? renderEscala(filtro) : renderLista(filtro);
 }
@@ -705,8 +982,11 @@ function carregar() {
     if (d.mes) {
       const partes = d.mes.split(' ');
       dados.anoRef = parseInt(partes[partes.length - 1], 10) || new Date().getFullYear();
-      el('card-titulo').textContent = (aba === 'escala' ? 'Escala de ' + d.mes : 'Filas Corridas');
+      el('card-titulo').textContent = (aba === 'escala')
+        ? 'Escala de ' + d.mes : TITULO_ABA[aba];
     }
+    // A aba de impedimento só existe para quem abriu pelo link pessoal
+    el('aba-imp').style.display = d.eu ? '' : 'none';
     renderPainel();
     render();
   }).catch(function () {
