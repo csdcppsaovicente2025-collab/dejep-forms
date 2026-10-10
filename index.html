@@ -420,6 +420,30 @@ function mostrarAlerta(tipo, msg) {
   }
 }
 
+// O envio normal é por POST. Quando a implantação do Apps Script
+// responde com redirecionamento, o navegador refaz a chamada como GET
+// e o corpo da mensagem se perde — o script então responde "Ação não
+// reconhecida" e a inscrição falharia sem motivo aparente. Nesse caso,
+// reenvia por GET com os campos na própria URL, que o script também
+// aceita. O servidor não percebe diferença.
+async function enviarCadastro(d) {
+  try {
+    const r = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(d)
+    });
+    const j = await r.json();
+    if (j && (j.mensagem || '').indexOf('não reconhecida') === -1) return j;
+  } catch (e) { /* segue para o envio por URL */ }
+
+  const q = Object.keys(d).map(function (k) {
+    return k + '=' + encodeURIComponent(d[k] === null || d[k] === undefined ? '' : d[k]);
+  }).join('&');
+  const r2 = await fetch(APPS_SCRIPT_URL + '?acao=cadastro&' + q);
+  return await r2.json();
+}
+
 async function enviar(tentativa) {
   tentativa = tentativa || 1;
   mostrarAlerta(null);
@@ -445,12 +469,7 @@ async function enviar(tentativa) {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
 
   try {
-    var resp = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(d)
-    });
-    var json = await resp.json();
+    var json = await enviarCadastro(d);
     if (json.sucesso) {
       el('form-area').style.display = 'none';
       el('sucesso').style.display = 'block';
