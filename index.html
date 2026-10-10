@@ -270,6 +270,19 @@ o servidor será escalado exclusivamente nos postos da torre.</strong>
 
 <div class="field-group" style="margin-top:12px;">
 <div class="field required">
+<label for="rg">RG</label>
+<input type="text" id="rg" placeholder="00.000.000-0" inputmode="numeric" oninput="atualizar()" />
+<p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;">
+É por ele que você acessa o sistema para consultar a escala, trocar, cancelar e informar
+os dias em que não pode ser convocado. A <strong>senha</strong> é formada pelas três
+primeiras letras do seu primeiro nome e pelos três primeiros números do seu RG
+<span id="exemplo-senha"></span>.
+</p>
+</div>
+</div>
+
+<div class="field-group" style="margin-top:12px;">
+<div class="field required">
 <label for="email">E-mail</label>
 <input type="email" id="email" placeholder="seu.email@exemplo.com" oninput="atualizar()" />
 <p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;">
@@ -368,6 +381,7 @@ function onTipoSeguranca() {
 function dados() {
   return {
     nome: el('nome').value.trim(),
+    rg: el('rg').value.trim(),
     email: el('email').value.trim(),
     genero: el('genero').value,
     turno_plantao: el('turno_plantao').value,
@@ -377,8 +391,29 @@ function dados() {
   };
 }
 
+// A senha é derivada: mostrá-la enquanto digita evita a dúvida mais
+// provável no primeiro acesso — "qual é a minha senha?".
+function senhaPrevista(nome, rg) {
+  var semAcento = (nome || '').normalize ? (nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') : (nome || '');
+  var partes = semAcento.trim().split(/\s+/);
+  var letras = '';
+  for (var i = 0; i < partes.length && letras.length < 3; i++) {
+    letras += partes[i].replace(/[^A-Za-z]/g, '');
+  }
+  letras = letras.substring(0, 3).toUpperCase();
+  var numeros = (rg || '').replace(/[^0-9]/g, '').substring(0, 3);
+  return (letras.length === 3 && numeros.length === 3) ? letras + numeros : '';
+}
+
 function atualizar() {
   var d = dados();
+  var sp = senhaPrevista(d.nome, d.rg);
+  var alvo = el('exemplo-senha');
+  if (alvo) {
+    alvo.innerHTML = sp
+      ? '— no seu caso, <strong style="color:#1a3a5c;">' + sp + '</strong>'
+      : '';
+  }
   var area = el('preview-area');
   if (!d.nome && !d.turno_plantao && !d.tipo_seguranca) {
     area.innerHTML = '<div class="empty-msg">Preencha os campos acima.</div>';
@@ -459,6 +494,9 @@ async function enviar(tentativa) {
   if (d.tipo_seguranca === 'Externa' && !d.interesse_interno) {
     mostrarAlerta('aviso', 'Informe se tem interesse em realizar DEJEP nas atribuições internas.');
     return;
+  }
+  if (d.rg.replace(/[^0-9]/g, '').length < 3) {
+    mostrarAlerta('aviso', 'Informe o seu RG — é com ele que você acessa o sistema.'); return;
   }
   if (!d.email || d.email.indexOf('@') === -1) {
     mostrarAlerta('aviso', 'Informe um e-mail válido.'); return;
