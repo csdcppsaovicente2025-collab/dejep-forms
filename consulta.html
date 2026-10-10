@@ -224,23 +224,22 @@ SP" />
 </div>
 </div>
 
-<div id="painel"></div>
-
 <div class="aviso-info" id="aviso-info">
 São duas filas independentes: a diurna atende o posto das 07h e a torre diurna; a noturna
 atende a torre noturna. A convocação segue a ordem de cada uma, definida pela inscrição, e
 quem é escalado passa para o fim da fila daquele período. O horário de entrada é apurado
 pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP. Na aba
-<strong>Declarar Impedimento</strong> você informa os dias em que não pode ser convocado —
+<strong>Gerenciar DEJEPs</strong>, entrando com o seu RG e a sua senha, você vê as suas
+DEJEPs do mês, solicita troca, cancela e informa os dias em que não pode ser convocado —
 férias, licença, troca de plantão — sem perder a posição na fila.
 </div>
 
 <div class="abas">
 <button class="aba ativa" id="aba-escala" onclick="mostrar('escala')">Escala do Mês</button>
 <button class="aba" id="aba-lista" onclick="mostrar('lista')">Filas Corridas</button>
-<button class="aba" id="aba-imp" onclick="mostrar('imp')"
-><span class="aba-longa">Declarar Impedimento</span
-><span class="aba-curta">Impedimentos</span></button>
+<button class="aba" id="aba-ger" onclick="mostrar('ger')"
+><span class="aba-longa">Gerenciar DEJEPs</span
+><span class="aba-curta">Gerenciar</span></button>
 </div>
 
 <div class="card">
@@ -275,7 +274,20 @@ férias, licença, troca de plantão — sem perder a posição na fila.
 // ============================================================
 const URL_BASE = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8po1JfLVJBYbf_CKjsJY1Gsp8E88EwWDYJ-CJW110GITNZDR3HS9oXQ/exec';
 
-const TOKEN = (new URLSearchParams(location.search).get('t') || '').trim();
+// A identificação vem do login por RG e senha, guardada enquanto a
+// aba do navegador estiver aberta. O link pessoal antigo, que ainda
+// circula em e-mails já enviados, continua valendo.
+let TOKEN = (new URLSearchParams(location.search).get('t') || '').trim();
+if (!TOKEN) {
+  try { TOKEN = sessionStorage.getItem('dejep_token') || ''; } catch (e) { TOKEN = ''; }
+}
+function guardarToken(t) {
+  TOKEN = t || '';
+  try {
+    if (TOKEN) sessionStorage.setItem('dejep_token', TOKEN);
+    else sessionStorage.removeItem('dejep_token');
+  } catch (e) { /* navegador sem armazenamento: vale só nesta visita */ }
+}
 let dados = null;
 let aba = 'escala';
 
@@ -303,83 +315,24 @@ function toast(msg, erro) {
 }
 
 const TITULO_ABA = { escala: 'Escala do Mês', lista: 'Filas Corridas',
-                     imp: 'Declarar impedimento' };
+                     ger: 'Gerenciar as minhas DEJEPs' };
 
 function mostrar(qual) {
   aba = qual;
-  ['escala','lista','imp'].forEach(function (k) {
-    const b = el('aba-' + (k === 'imp' ? 'imp' : k));
+  ['escala','lista','ger'].forEach(function (k) {
+    const b = el('aba-' + k);
     if (b) b.classList.toggle('ativa', qual === k);
   });
   el('card-titulo').textContent = (qual === 'escala' && dados && dados.mes)
     ? 'Escala de ' + dados.mes : TITULO_ABA[qual];
-  // A busca por nome não serve ao calendário
-  el('busca').style.display = (qual === 'imp') ? 'none' : '';
+  // A busca por nome só serve às duas primeiras abas
+  el('busca').style.display = (qual === 'ger') ? 'none' : '';
   render();
 }
 
 // ------------------------------------------------------------
 // Painel pessoal
 // ------------------------------------------------------------
-function renderPainel() {
-  const alvo = el('painel');
-  if (!dados || !dados.eu) {
-    if (dados && dados.tokenInvalido) {
-      alvo.innerHTML = '<div class="aviso-info" style="border-left-color:#a02020;background:#fde8e8;color:#7a1a1a;">'
-        + 'O link usado não é válido. Abra esta página pelo link pessoal que consta no seu '
-        + 'e-mail de agendamento para solicitar troca ou cancelar uma DEJEP.</div>';
-    } else {
-      alvo.innerHTML = '';
-    }
-    return;
-  }
-
-  const eu = dados.eu;
-  const partes = [];
-  if (eu.posicaoDiurna)  partes.push(eu.posicaoDiurna + 'º na fila diurna');
-  if (eu.posicaoNoturna) partes.push(eu.posicaoNoturna + 'º na fila noturna');
-  if (!partes.length) partes.push('fora das filas');
-  let html = '<div class="painel">'
-    + '<div class="painel-nome">' + escapar(eu.nome) + '</div>'
-    + '<div class="painel-pos">' + partes.join(' &nbsp;•&nbsp; ')
-    + (eu.soTorre ? ' &bull; somente postos de torre' : '')
-    + (eu.genero === 'Feminino' ? ' &bull; somente posto das 07h' : '') + '</div>';
-
-  if (!dados.minhas.length) {
-    html += '<div class="painel-item"><span class="pi-info">'
-      + 'Você não tem DEJEP agendada neste mês.</span></div>';
-  } else {
-    dados.minhas.forEach(function (m) {
-      html += '<div class="painel-item">'
-        + '<span class="pi-data">' + escapar(m.data) + '</span>'
-        + '<span class="pi-info">' + escapar(m.posto) + ' &bull; ' + rotuloHorario(m.horario) + '</span>'
-        + '<button class="btn-acao" onclick="abrirTrocaDaMinha(\'' + m.id + '\')">Trocar</button>'
-        + '<button class="btn-acao cancelar"' + (m.podeCancelar ? '' : ' disabled')
-        + ' onclick="confirmarCancelamento(\'' + m.id + '\')"'
-        + (m.podeCancelar ? '' : ' title="O cancelamento exige antecedência mínima de 24 horas"')
-        + '>Cancelar</button>'
-        + '</div>';
-    });
-  }
-  const totalCompat = (dados.escala || []).reduce(function (s, i) {
-    return s + ((i.trocaCom || []).length ? 1 : 0);
-  }, 0);
-  html += '<div style="font-size:0.74rem;color:#8fb4d8;margin-top:0.7rem;line-height:1.5;">';
-  if (dados.minhas.length && totalCompat === 0) {
-    html += '<strong style="color:#ffd8a0;">Nenhuma troca compatível neste mês.</strong> '
-      + 'As demais DEJEPs esbarram no intervalo mínimo de descanso em relação ao seu '
-      + 'plantão, no posto ou na composição da vaga. ';
-  } else if (dados.minhas.length) {
-    html += 'Há <strong>' + totalCompat + '</strong> DEJEPs compatíveis para troca, '
-      + 'marcadas com "trocar" na escala abaixo. As incompatíveis aparecem sem o link. ';
-  }
-  html += 'O cancelamento exige antecedência de 24 horas e <strong>não altera a sua '
-    + 'posição</strong> na lista.</div>';
-
-  html += renderImpedimentos();
-  html += '</div>';
-  alvo.innerHTML = html;
-}
 
 // ------------------------------------------------------------
 // Impedimentos — períodos em que o servidor não pode ser convocado
@@ -389,36 +342,6 @@ function renderPainel() {
 // servidor pode servir. A posição na fila é preservada.
 // ------------------------------------------------------------
 // Resumo no painel; a declaração em si mora na própria aba
-function renderImpedimentos() {
-  const lista = dados.impedimentos || [];
-  let h = '<div class="imp-sec"><div class="imp-tit">'
-    + 'Dias em que não posso ser convocado</div>';
-
-  if (!lista.length) {
-    h += '<div class="imp-vazio">Nenhum dia declarado. Marque no calendário as férias, a '
-      + 'licença, a troca de plantão com colega ou o curso — o sistema deixa de escalar '
-      + 'você nesses dias <strong>sem que você perca a posição</strong> na fila.</div>';
-  } else {
-    const dias = lista.reduce(function (s, i) {
-      const a = new Date(brParaChave(i.ini) + 'T12:00:00');
-      const b = new Date(brParaChave(i.fim) + 'T12:00:00');
-      return s + Math.round((b - a) / 86400000) + 1;
-    }, 0);
-    const pend = lista.filter(function (i) { return i.situacao === 'Pendente'; }).length;
-    h += '<div class="imp-vazio"><strong style="color:#fff;">' + dias
-      + (dias === 1 ? ' dia declarado' : ' dias declarados')
-      + '</strong> em ' + lista.length + (lista.length === 1 ? ' período' : ' períodos')
-      + ', entre ' + escapar(lista[0].ini) + ' e ' + escapar(lista[lista.length - 1].fim) + '.'
-      + (pend ? ' <strong style="color:#ffd8a0;">' + pend + ' aguarda'
-                + (pend === 1 ? '' : 'm') + ' validação.</strong>' : '')
-      + '</div>';
-  }
-  h += '<button class="btn-imp" onclick="mostrar(\'imp\')">'
-    + (lista.length ? 'Ver e declarar no calendário' : 'Abrir o calendário para declarar')
-    + '</button>';
-  h += '</div>';
-  return h;
-}
 
 function periodoTexto(i) {
   return i.ini === i.fim ? i.ini : i.ini + ' a ' + i.fim;
@@ -440,67 +363,130 @@ let impSel = {};        // 'aaaa-mm-dd' → true
 let impMes = null;      // {ano, mes} exibido
 let impMotivo = 'Ferias';
 let impObs = '';
-let impEu = null;       // identificação por e-mail, quando não há link
-let impEmail = '';
+// O calendário e o painel leem daqui
+function dadosImp() { return dados || {}; }
 
-// O calendário lê daqui: ou do link pessoal, ou da identificação
-// por e-mail. As duas devolvem o mesmo formato.
-function fonteImp() {
-  return impEu || dados || {};
-}
-
-function formularioEmail() {
+// ------------------------------------------------------------
+// ENTRADA — RG e senha
+//
+// Confirmada a senha, o servidor passa a operar a página do mesmo
+// modo que operava pelo link pessoal do e-mail.
+// ------------------------------------------------------------
+function renderLogin() {
   return ''
-    + '<div class="aviso-info" style="margin-bottom:1.1rem;">'
-    + 'Informe o <strong>e-mail que você usou na inscrição</strong> para declarar os dias em '
-    + 'que não pode ser convocado — férias, licença, troca de plantão com colega, curso ou '
-    + 'serviço externo. Declarar impedimento <strong>não faz perder a posição</strong> na '
-    + 'fila: o sistema apenas segue para o próximo e volta a você no dia seguinte disponível.'
-    + '</div>'
-    + '<label class="campo-lbl" for="imp-email">E-mail cadastrado</label>'
-    + '<input class="campo-ent" type="email" id="imp-email" autocomplete="email"'
-    + ' inputmode="email" placeholder="seu.nome@exemplo.gov.br" value="' + escapar(impEmail) + '"'
-    + ' onkeydown="if(event.key===\'Enter\')identificar()" />'
-    + '<button class="dp-enviar" onclick="identificar()">Continuar</button>'
-    + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.9rem;line-height:1.5;">'
-    + 'Toda declaração feita por aqui gera um aviso por e-mail para você e para a Diretoria '
-    + 'de Disciplina. Se receber um aviso de algo que não fez, procure a Disciplina.</div>';
+    + '<div class="aviso-info" style="margin-bottom:1.2rem;">'
+    + 'Entre com o seu <strong>RG</strong> e a sua <strong>senha</strong> para ver as suas '
+    + 'DEJEPs do mês, solicitar troca com um colega, cancelar e informar os dias em que não '
+    + 'pode ser convocado — férias, licença, troca de plantão.</div>'
+
+    + '<label class="campo-lbl" for="lg-rg">RG</label>'
+    + '<input class="campo-ent" type="text" id="lg-rg" inputmode="numeric"'
+    + ' autocomplete="username" placeholder="00.000.000-0"'
+    + ' onkeydown="if(event.key===\'Enter\')document.getElementById(\'lg-senha\').focus()" />'
+
+    + '<label class="campo-lbl" for="lg-senha">Senha</label>'
+    + '<input class="campo-ent" type="password" id="lg-senha" autocomplete="current-password"'
+    + ' placeholder="Ex.: JOA123"'
+    + ' onkeydown="if(event.key===\'Enter\')entrar()" />'
+
+    + '<button class="dp-enviar" onclick="entrar()">Entrar</button>'
+
+    + '<div style="font-size:0.78rem;color:#6b80a0;margin-top:1.1rem;line-height:1.6;'
+    + 'background:#f7f9fc;border-radius:9px;padding:0.9rem 1rem;">'
+    + '<strong style="color:#1a3a5c;">Qual é a minha senha?</strong><br>'
+    + 'São as <strong>três primeiras letras do seu primeiro nome</strong> seguidas dos '
+    + '<strong>três primeiros números do seu RG</strong>. Quem se chama João e tem RG '
+    + '12.345.678-9 entra com <strong>JOA123</strong>.<br><br>'
+    + 'Se o seu RG não for encontrado, procure a Diretoria de Disciplina — pode ser que '
+    + 'ele ainda não conste do seu cadastro.</div>';
 }
 
-function identificar() {
-  const campo = el('imp-email');
-  const e = (campo ? campo.value : '').trim();
-  if (!e || e.indexOf('@') === -1) { toast('Informe o seu e-mail cadastrado.', true); return; }
-  impEmail = e;
-  toast('Conferindo o cadastro...');
-  fetch(URL_BASE + '?acao=identificar&email=' + encodeURIComponent(e))
+function entrar() {
+  const rg = (el('lg-rg') ? el('lg-rg').value : '').trim();
+  const senha = (el('lg-senha') ? el('lg-senha').value : '').trim();
+  if (!rg) { toast('Informe o seu RG.', true); return; }
+  if (!senha) { toast('Informe a sua senha.', true); return; }
+
+  toast('Conferindo...');
+  fetch(URL_BASE + '?acao=entrar&rg=' + encodeURIComponent(rg)
+      + '&senha=' + encodeURIComponent(senha))
     .then(function (r) { return r.json(); })
     .then(function (j) {
       if (!j.sucesso) { toast(j.mensagem, true); return; }
-      impEu = j;
-      toast('Identificado: ' + j.primeiroNome + '.');
-      render();
+      guardarToken(j.token);
+      toast('Bem-vindo, ' + j.primeiroNome + '.');
+      carregar();
     })
-    .catch(function () { toast('Não foi possível conferir o cadastro agora.', true); });
+    .catch(function () { toast('Não foi possível entrar agora. Tente novamente.', true); });
 }
 
-function trocarIdentificacao() {
-  impEu = null; impSel = {}; impMes = null; render();
+function sair() {
+  guardarToken('');
+  impSel = {}; impMes = null; impObs = '';
+  carregar();
 }
 
-// O link pessoal, quando existe, tem precedência: é prova de identidade
-function identificacaoURL() {
-  return TOKEN ? '&t=' + encodeURIComponent(TOKEN)
-               : '&email=' + encodeURIComponent(impEmail);
-}
+// ------------------------------------------------------------
+// Aba "Gerenciar DEJEPs": tudo o que o servidor faz, num lugar só
+// ------------------------------------------------------------
+function renderGerenciar() {
+  if (!TOKEN) return renderLogin();
+  if (!dados) return '<div class="empty-msg">Carregando os seus dados...</div>';
+  if (!dados.eu) {
+    return '<div class="aviso-info" style="border-left-color:#a02020;background:#fde8e8;'
+      + 'color:#7a1a1a;margin-bottom:1rem;">A sua sessão expirou. Entre novamente.</div>'
+      + renderLogin();
+  }
 
-// Depois de declarar ou remover, recarrega só o que mudou
-function recarregarImpedimentos() {
-  if (TOKEN) { carregar(); return; }
-  fetch(URL_BASE + '?acao=identificar&email=' + encodeURIComponent(impEmail))
-    .then(function (r) { return r.json(); })
-    .then(function (j) { if (j.sucesso) { impEu = j; render(); } })
-    .catch(function () { /* a mensagem de sucesso já foi dada */ });
+  const eu = dados.eu;
+  const partes = [];
+  if (eu.posicaoDiurna)  partes.push(eu.posicaoDiurna + 'º na fila diurna');
+  if (eu.posicaoNoturna) partes.push(eu.posicaoNoturna + 'º na fila noturna');
+  if (!partes.length) partes.push('fora das filas');
+
+  let h = '<div class="painel" style="margin-bottom:1.3rem;">'
+    + '<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">'
+    + '<div style="flex:1;min-width:170px;">'
+    + '<div class="painel-nome">' + escapar(eu.nome) + '</div>'
+    + '<div class="painel-pos">' + partes.join(' &nbsp;•&nbsp; ')
+    + (eu.soTorre ? ' &bull; somente postos de torre' : '')
+    + (eu.genero === 'Feminino' ? ' &bull; somente posto das 07h' : '') + '</div></div>'
+    + '<button class="btn-acao" onclick="sair()">Sair</button></div>';
+
+  if (!dados.minhas.length) {
+    h += '<div class="painel-item"><span class="pi-info">'
+      + 'Você não tem DEJEP agendada neste mês.</span></div>';
+  } else {
+    dados.minhas.forEach(function (m) {
+      h += '<div class="painel-item">'
+        + '<span class="pi-data">' + escapar(m.data) + '</span>'
+        + '<span class="pi-info">' + escapar(m.posto) + ' &bull; ' + rotuloHorario(m.horario) + '</span>'
+        + '<button class="btn-acao" onclick="abrirTrocaDaMinha(\'' + m.id + '\')">Trocar</button>'
+        + '<button class="btn-acao cancelar"' + (m.podeCancelar ? '' : ' disabled')
+        + ' onclick="confirmarCancelamento(\'' + m.id + '\')"'
+        + (m.podeCancelar ? '' : ' title="O cancelamento exige antecedência mínima de 24 horas"')
+        + '>Cancelar</button></div>';
+    });
+  }
+
+  const totalCompat = (dados.escala || []).reduce(function (s, i) {
+    return s + ((i.trocaCom || []).length ? 1 : 0);
+  }, 0);
+  h += '<div style="font-size:0.74rem;color:#8fb4d8;margin-top:0.7rem;line-height:1.5;">';
+  if (dados.minhas.length && totalCompat === 0) {
+    h += '<strong style="color:#ffd8a0;">Nenhuma troca compatível neste mês.</strong> '
+      + 'As demais DEJEPs esbarram no intervalo mínimo de descanso em relação ao seu '
+      + 'plantão, no posto ou na composição da vaga. ';
+  } else if (dados.minhas.length) {
+    h += 'Há <strong>' + totalCompat + '</strong> DEJEPs compatíveis para troca, marcadas '
+      + 'com "trocar" na aba Escala do Mês. As incompatíveis aparecem sem o link. ';
+  }
+  h += 'O cancelamento exige antecedência de 24 horas e <strong>não altera a sua '
+    + 'posição</strong> na lista.</div></div>';
+
+  h += '<div class="card-title" style="margin-bottom:0.3rem;">'
+    + 'Dias em que não posso ser convocado</div>';
+  return h + renderImpedir();
 }
 
 function chaveDia(ano, mes, dia) {
@@ -525,7 +511,7 @@ function mesLimite(desloc) {
 // Dias já declarados, expandidos a partir dos períodos
 function diasDeclarados() {
   const mapa = {};
-  (fonteImp().impedimentos || []).forEach(function (i) {
+  (dadosImp().impedimentos || []).forEach(function (i) {
     const ini = new Date(brParaChave(i.ini) + 'T12:00:00');
     const fim = new Date(brParaChave(i.fim) + 'T12:00:00');
     for (let d = new Date(ini); d <= fim; d.setDate(d.getDate() + 1)) {
@@ -536,31 +522,15 @@ function diasDeclarados() {
 }
 
 function renderImpedir() {
-  if (!dados) {
-    return '<div class="empty-msg">Não foi possível carregar os seus dados no momento.'
-      + '<br>Tente novamente em alguns instantes.</div>';
-  }
-  // Sem link pessoal, o servidor se identifica pelo e-mail cadastrado
-  if (!dados.eu && !impEu) return formularioEmail();
-
   if (!impMes) impMes = mesLimite(0);
 
-  const motivos = fonteImp().motivosImpedimento || [];
+  const motivos = dadosImp().motivosImpedimento || [];
   const opts = motivos.map(function (m) {
     return '<option value="' + escapar(m.valor) + '"'
       + (m.valor === impMotivo ? ' selected' : '') + '>' + escapar(m.texto) + '</option>';
   }).join('');
 
   return ''
-    + (impEu
-        ? '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;'
-          + 'background:#eef7ee;border:1px solid #cfe3cf;border-radius:9px;'
-          + 'padding:0.7rem 0.9rem;margin-bottom:1rem;font-size:0.85rem;color:#276221;">'
-          + '<span style="flex:1;min-width:150px;">Identificado como <strong>'
-          + escapar(impEu.nome) + '</strong></span>'
-          + '<button class="btn-acao" style="background:#276221;color:#fff;"'
-          + ' onclick="trocarIdentificacao()">Não sou eu</button></div>'
-        : '')
     + '<div class="aviso-info" style="margin-bottom:1.1rem;">'
     + 'Marque no calendário os dias em que <strong>não pode</strong> ser convocado. '
     + 'Você continua na fila, na <strong>mesma posição</strong> — o sistema apenas segue '
@@ -596,7 +566,7 @@ function renderImpedir() {
     + ' placeholder="Ex.: troca de plantão com o colega Fulano" />'
     + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.7rem;line-height:1.5;">'
     + 'Férias e licença valem de imediato. Os demais motivos acima de <strong>'
-    + (fonteImp().tetoImpedimento || 10) + ' dias no mês</strong> passam pela validação da '
+    + (dadosImp().tetoImpedimento || 10) + ' dias no mês</strong> passam pela validação da '
     + 'Diretoria de Disciplina — o limite considera o conjunto dos dias do mês, não cada '
     + 'bloco isolado.</div>'
 
@@ -606,7 +576,7 @@ function renderImpedir() {
 }
 
 function renderDeclarados() {
-  const lista = fonteImp().impedimentos || [];
+  const lista = dadosImp().impedimentos || [];
   if (!lista.length) return '';
   let h = '<div style="margin-top:1.8rem;"><div class="card-title">Já declarados</div>';
   lista.forEach(function (i) {
@@ -637,7 +607,7 @@ function pintarGrade() {
   const hojeK = chaveDia(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
   const declarados = diasDeclarados();
   const comDejep = {};
-  (fonteImp().meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
+  (dadosImp().meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
 
   const primeiro = new Date(impMes.ano, impMes.mes - 1, 1);
   const total = new Date(impMes.ano, impMes.mes, 0).getDate();
@@ -692,7 +662,7 @@ function pintarResumo() {
   });
 
   const comDejep = {};
-  (fonteImp().meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
+  (dadosImp().meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
   const choques = chaves.filter(function (k) { return comDejep[k]; });
 
   let h = '<strong>' + chaves.length + (chaves.length === 1 ? ' dia marcado' : ' dias marcados')
@@ -747,14 +717,14 @@ function enviarDias() {
   if (botao) { botao.disabled = true; botao.textContent = 'Registrando...'; }
   toast('Registrando ' + chaves.length + (chaves.length === 1 ? ' dia...' : ' dias...'));
 
-  fetch(URL_BASE + '?acao=impedir_dias' + identificacaoURL()
+  fetch(URL_BASE + '?acao=impedir_dias' + '&t=' + encodeURIComponent(TOKEN)
       + '&dias=' + encodeURIComponent(dias)
       + '&motivo=' + encodeURIComponent(impMotivo)
       + '&obs=' + encodeURIComponent(impObs))
     .then(function (r) { return r.json(); })
     .then(function (j) {
       toast(j.mensagem, !j.sucesso);
-      if (j.sucesso) { impSel = {}; impObs = ''; recarregarImpedimentos(); }
+      if (j.sucesso) { impSel = {}; impObs = ''; carregar(); }
       else if (botao) { botao.disabled = false; botao.textContent = 'Declarar'; }
     })
     .catch(function () {
@@ -764,7 +734,7 @@ function enviarDias() {
 }
 
 function confirmarRemocaoImpedimento(id) {
-  const i = (fonteImp().impedimentos || []).find(function (x) { return x.id === id; });
+  const i = (dadosImp().impedimentos || []).find(function (x) { return x.id === id; });
   if (!i) return;
   abrirModal('Remover impedimento',
     'O período <strong>' + escapar(periodoTexto(i)) + '</strong> deixará de '
@@ -777,12 +747,12 @@ function confirmarRemocaoImpedimento(id) {
 function executarRemocaoImpedimento(id) {
   fecharModalForcado();
   toast('Removendo...');
-  fetch(URL_BASE + '?acao=remover_impedimento' + identificacaoURL()
+  fetch(URL_BASE + '?acao=remover_impedimento' + '&t=' + encodeURIComponent(TOKEN)
       + '&id=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
       toast(j.mensagem, !j.sucesso);
-      if (j.sucesso) recarregarImpedimentos();
+      if (j.sucesso) carregar();
     })
     .catch(function () { toast('Não foi possível remover.', true); });
 }
@@ -913,10 +883,10 @@ function renderLista(filtro) {
 }
 
 function render() {
-  // A aba de impedimento se explica mesmo sem dados carregados
-  if (aba === 'imp') {
-    el('conteudo').innerHTML = renderImpedir();
-    pintarGrade();
+  // A aba de gerenciamento se explica mesmo sem dados carregados
+  if (aba === 'ger') {
+    el('conteudo').innerHTML = renderGerenciar();
+    if (dados && dados.eu) pintarGrade();
     return;
   }
   if (!dados) return;
@@ -1060,7 +1030,6 @@ function carregar() {
       el('card-titulo').textContent = (aba === 'escala')
         ? 'Escala de ' + d.mes : TITULO_ABA[aba];
     }
-    renderPainel();
     render();
   }).catch(function () {
     el('conteudo').innerHTML = '<div class="empty-msg">Não foi possível carregar os dados '
