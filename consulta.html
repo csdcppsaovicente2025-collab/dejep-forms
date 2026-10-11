@@ -288,6 +288,70 @@ function guardarToken(t) {
     else sessionStorage.removeItem('dejep_token');
   } catch (e) { /* navegador sem armazenamento: vale só nesta visita */ }
 }
+
+// ------------------------------------------------------------
+// SESSÃO — encerra sozinha depois de um tempo sem uso
+//
+// Os computadores da unidade são compartilhados. Sem isto, o servidor
+// que esquece de sair deixa a própria escala aberta para quem sentar
+// em seguida, com poder de cancelar e trocar DEJEP em nome dele.
+//
+// A contagem é por CARIMBO DE TEMPO, não por temporizador: se a
+// máquina hibernar ou a aba ficar em segundo plano, ao voltar o
+// sistema percebe o tempo passado e encerra do mesmo jeito.
+// ------------------------------------------------------------
+const SESSAO = { minutos: 10, avisoSegundos: 60 };
+// Conferência frequente: é só comparar dois carimbos de tempo,
+// não custa nada e garante que o aviso apareça na hora certa.
+const INTERVALO_CONFERE_MS = 5000;
+let avisoSessaoAberto = false;
+
+function ultimoUso() {
+  try { return parseInt(sessionStorage.getItem('dejep_visto'), 10) || 0; }
+  catch (e) { return 0; }
+}
+
+function marcarAtividade() {
+  if (!TOKEN) return;
+  try { sessionStorage.setItem('dejep_visto', String(Date.now())); } catch (e) { /* ok */ }
+  if (avisoSessaoAberto) { avisoSessaoAberto = false; fecharModalForcado(); }
+}
+
+function conferirSessao() {
+  if (!TOKEN) return;
+  const limite = SESSAO.minutos * 60000;
+  const parado = Date.now() - (ultimoUso() || Date.now());
+  if (parado >= limite) { encerrarPorInatividade(); return; }
+  if (parado >= limite - SESSAO.avisoSegundos * 1000 && !avisoSessaoAberto) {
+    avisarFimDeSessao();
+  }
+}
+
+function avisarFimDeSessao() {
+  avisoSessaoAberto = true;
+  abrirModal('A sua sessão vai encerrar',
+    'Por segurança, o acesso é encerrado depois de <strong>' + SESSAO.minutos
+    + ' minutos sem uso</strong> — estes computadores são compartilhados.',
+    '',
+    '<button class="modal-btn perigo" onclick="sair()">Sair agora</button>'
+    + '<button class="modal-btn principal" onclick="continuarConectado()">Continuar conectado</button>');
+}
+
+function continuarConectado() {
+  avisoSessaoAberto = false;
+  fecharModalForcado();
+  try { sessionStorage.setItem('dejep_visto', String(Date.now())); } catch (e) { /* ok */ }
+}
+
+function encerrarPorInatividade() {
+  avisoSessaoAberto = false;
+  fecharModalForcado();
+  guardarToken('');
+  impSel = {}; impMes = null; impObs = '';
+  if (aba === 'ger') mostrar('ger');
+  toast('Sessão encerrada por falta de uso. Entre novamente para gerenciar as suas DEJEPs.', true);
+  carregar();
+}
 let dados = null;
 let aba = 'escala';
 
@@ -414,6 +478,7 @@ function entrar() {
     .then(function (j) {
       if (!j.sucesso) { toast(j.mensagem, true); return; }
       guardarToken(j.token);
+      marcarAtividade();
       toast('Bem-vindo, ' + j.primeiroNome + '.');
       carregar();
     })
@@ -450,7 +515,9 @@ function renderGerenciar() {
     + '<div class="painel-nome">' + escapar(eu.nome) + '</div>'
     + '<div class="painel-pos">' + partes.join(' &nbsp;•&nbsp; ')
     + (eu.soTorre ? ' &bull; somente postos de torre' : '')
-    + (eu.genero === 'Feminino' ? ' &bull; somente posto das 07h' : '') + '</div></div>'
+    + (eu.genero === 'Feminino' ? ' &bull; somente posto das 07h' : '') + '</div>'
+    + '<div style="font-size:0.7rem;color:#8fb4d8;margin-top:4px;">'
+    + 'O acesso encerra sozinho após ' + SESSAO.minutos + ' minutos sem uso.</div></div>'
     + '<button class="btn-acao" onclick="sair()">Sair</button></div>';
 
   if (!dados.minhas.length) {
@@ -1035,6 +1102,20 @@ function carregar() {
     el('conteudo').innerHTML = '<div class="empty-msg">Não foi possível carregar os dados '
       + 'no momento.<br>Tente novamente em alguns instantes.</div>';
   });
+}
+
+// Qualquer interação do servidor adia o encerramento
+['click', 'keydown', 'touchstart', 'scroll'].forEach(function (ev) {
+  document.addEventListener(ev, marcarAtividade, { passive: true });
+});
+setInterval(conferirSessao, INTERVALO_CONFERE_MS);
+
+// Sessão deixada aberta num acesso anterior não vale: quem sentar
+// agora no computador começa deslogado.
+if (TOKEN) {
+  const parado = ultimoUso() ? (Date.now() - ultimoUso()) : 0;
+  if (parado >= SESSAO.minutos * 60000) guardarToken('');
+  else marcarAtividade();
 }
 
 carregar();
