@@ -241,8 +241,9 @@ unificada, as habilitações exigidas, a necessidade operacional e os critérios
 <option value="Ambas">Diurna e noturna</option>
 </select>
 <p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;" id="nota-listas">
-São <strong>duas filas independentes</strong>. A <strong>diurna</strong> atende o posto
-das 07h e a torre diurna; a <strong>noturna</strong> atende a torre noturna. Cada uma tem
+São <strong>duas filas independentes</strong>. A <strong>diurna</strong> atende os postos
+das 07h e das 08h, o jumbo e a torre diurna; a <strong>noturna</strong> atende a torre
+noturna. Cada uma tem
 a sua posição e corre sozinha — ser escalado numa não altera a sua posição na outra.<br>
 A participação na lista noturna <strong>depende desta manifestação</strong>: sem ela, você
 é escalado apenas nas DEJEPs diurnas.
@@ -341,9 +342,10 @@ const INSCRICOES_ABERTAS = true;
 
 function el(id) { return document.getElementById(id); }
 
-// A policial penal feminina atua exclusivamente no posto das 07h,
-// que ocorre às segundas, aos sábados e aos domingos. Esse posto é
-// diurno, de modo que a lista noturna não se lhe aplica.
+// A vaga das 07h do fim de semana é masculina. Resta à policial
+// penal feminina o posto das 08h — sábado e domingo — e o jumbo de
+// segunda-feira. Os dois são diurnos, de modo que a lista noturna
+// não se lhe aplica.
 function onGenero() {
   var fem = el('genero').value === 'Feminino';
   var sel = el('listas');
@@ -351,14 +353,16 @@ function onGenero() {
     sel.value = 'Diurna';
     sel.disabled = true;
     el('nota-listas').innerHTML =
-      '<strong>Policial penal feminina</strong> atua exclusivamente no posto das '
-      + '<strong>07h</strong> — portanto às segundas-feiras, aos sábados e aos domingos. '
-      + 'Por isso a sua participação é somente na <strong>lista diurna</strong>.';
+      '<strong>Policial penal feminina</strong> atua no posto das <strong>08h</strong> e '
+      + 'no <strong>jumbo</strong> — portanto aos sábados, aos domingos e às segundas-feiras. '
+      + 'A vaga das 07h do fim de semana é masculina. Por isso a sua participação é somente '
+      + 'na <strong>lista diurna</strong>.';
   } else {
     sel.disabled = false;
     el('nota-listas').innerHTML =
-      'São <strong>duas filas independentes</strong>. A <strong>diurna</strong> atende o posto '
-      + 'das 07h e a torre diurna; a <strong>noturna</strong> atende a torre noturna. Cada uma '
+      'São <strong>duas filas independentes</strong>. A <strong>diurna</strong> atende os '
+      + 'postos das 07h e das 08h, o jumbo e a torre diurna; a <strong>noturna</strong> atende '
+      + 'a torre noturna. Cada uma '
       + 'tem a sua posição e corre sozinha — ser escalado numa não altera a sua posição na outra.'
       + '<br>A participação na lista noturna <strong>depende desta manifestação</strong>: sem ela, '
       + 'você é escalado apenas nas DEJEPs diurnas.';
