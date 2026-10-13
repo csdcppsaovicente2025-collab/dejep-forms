@@ -126,6 +126,24 @@ font-size: 0.85rem; cursor: pointer; color: #1a2b3c; }
 font-weight: 700; cursor: pointer; background: #e8edf3; color: #45617f; }
 .modal-btn.principal { background: #1a3a5c; color: #fff; }
 .modal-btn.perigo { background: #a02020; color: #fff; }
+/* Resposta a um pedido de troca, dentro do cartão. Mesma aparência dos
+   botões do aviso, classe própria: são outro lugar e outra função. */
+.btn-resp { flex: 1; border: 0; border-radius: 8px; padding: 10px; font-size: 0.85rem;
+font-weight: 700; cursor: pointer; background: #e8edf3; color: #45617f; }
+.btn-resp.aceitar { background: #1a3a5c; color: #fff; }
+/* Indicador de carregamento no centro da tela. No telefone, um aviso
+   no rodapé passa despercebido — e o servidor clica de novo. */
+.aguardo { position: fixed; inset: 0; background: rgba(12,26,44,0.55); display: none;
+align-items: center; justify-content: center; z-index: 80; padding: 1rem; }
+.aguardo.ativo { display: flex; }
+.aguardo-cx { background: #fff; border-radius: 14px; padding: 1.6rem 2rem; text-align: center;
+box-shadow: 0 6px 26px rgba(0,0,0,0.3); max-width: 300px; }
+.aguardo-roda { width: 42px; height: 42px; margin: 0 auto 0.9rem; border-radius: 50%;
+border: 4px solid #dde4ed; border-top-color: #1a3a5c; animation: girar 0.9s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }
+.aguardo-txt { font-size: 0.9rem; font-weight: 600; color: #1a3a5c; }
+@media (prefers-reduced-motion: reduce) { .aguardo-roda { animation-duration: 2.4s; } }
+
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px;
 background: #1a3a5c; color: #fff; padding: 12px 18px; border-radius: 10px;
 font-size: 0.85rem; max-width: 92%; z-index: 60; display: none; box-shadow: 0 4px 18px rgba(0,0,0,0.25); }
@@ -264,6 +282,11 @@ férias, licença, troca de plantão — sem perder a posição na fila.
 </div>
 </div>
 
+<div class="aguardo" id="aguardo">
+<div class="aguardo-cx"><div class="aguardo-roda"></div>
+<div class="aguardo-txt" id="aguardo-txt">Carregando...</div></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -383,6 +406,12 @@ function toast(msg, erro) {
 const TITULO_ABA = { escala: 'Escala do Mês', lista: 'Filas Corridas',
                      ger: 'Gerenciar as minhas DEJEPs' };
 
+function mostrarAguardo(txt) {
+  el('aguardo-txt').textContent = txt || 'Carregando...';
+  el('aguardo').classList.add('ativo');
+}
+function esconderAguardo() { el('aguardo').classList.remove('ativo'); }
+
 function mostrar(qual) {
   aba = qual;
   ['escala','lista','ger'].forEach(function (k) {
@@ -473,18 +502,20 @@ function entrar() {
   if (!rg) { toast('Informe o seu RG.', true); return; }
   if (!senha) { toast('Informe a sua senha.', true); return; }
 
-  toast('Conferindo...');
+  mostrarAguardo('Entrando...');
   fetch(URL_BASE + '?acao=entrar&rg=' + encodeURIComponent(rg)
       + '&senha=' + encodeURIComponent(senha))
     .then(function (r) { return r.json(); })
     .then(function (j) {
+      esconderAguardo();
       if (!j.sucesso) { toast(j.mensagem, true); return; }
       guardarToken(j.token);
       marcarAtividade();
       toast('Bem-vindo, ' + j.primeiroNome + '.');
       carregar();
     })
-    .catch(function () { toast('Não foi possível entrar agora. Tente novamente.', true); });
+    .catch(function () {
+      esconderAguardo(); toast('Não foi possível entrar agora. Tente novamente.', true); });
 }
 
 function sair() {
@@ -553,9 +584,142 @@ function renderGerenciar() {
   h += 'O cancelamento exige antecedência de 24 horas e <strong>não altera a sua '
     + 'posição</strong> na lista.</div></div>';
 
+  h += renderSolicitacoes();
+
   h += '<div class="card-title" style="margin-bottom:0.3rem;">'
     + 'Dias em que não posso ser convocado</div>';
   return h + renderImpedir();
+}
+
+// ------------------------------------------------------------
+// Solicitações de troca do mês — dos dois lados
+//
+// Sem esta seção o servidor fica no escuro: não sabe se o pedido saiu,
+// se continua parado ou se foi recusado. E quem recebe um pedido só
+// descobre pelo e-mail, que nem sempre chega.
+// ------------------------------------------------------------
+const SITUACAO_TROCA = {
+  'Pendente':       { cor: '#8a6d1a', fundo: '#fff8e0', texto: 'aguardando resposta' },
+  'Aceita':         { cor: '#276221', fundo: '#eef7ee', texto: 'aceita — troca feita' },
+  'Recusada':       { cor: '#8a2020', fundo: '#fde8e8', texto: 'recusada' },
+  'Invalida':       { cor: '#8a2020', fundo: '#fde8e8', texto: 'não pôde ser efetivada' },
+  'Falha no envio': { cor: '#8a2020', fundo: '#fde8e8', texto: 'o e-mail não foi entregue' }
+};
+
+function etiquetaSituacao(sit, textoAlt) {
+  const e = SITUACAO_TROCA[sit] || { cor: '#45617f', fundo: '#eef1f5', texto: sit };
+  return '<span style="font-size:0.68rem;font-weight:700;border-radius:5px;padding:2px 8px;'
+    + 'white-space:nowrap;background:' + e.fundo + ';color:' + e.cor + ';">'
+    + escapar(textoAlt || e.texto) + '</span>';
+}
+
+function trechoDejep(d) {
+  if (!d) return 'DEJEP de outro mês';
+  return escapar(d.data) + ' — ' + escapar(d.posto);
+}
+
+function renderSolicitacoes() {
+  const s = dados.solicitacoes || { feitas: [], recebidas: [] };
+  if (!s.feitas.length && !s.recebidas.length) return '';
+
+  let h = '<div class="card-title" style="margin:1.6rem 0 0.5rem;">'
+    + 'Solicitações de troca deste mês</div>';
+
+  if (s.recebidas.length) {
+    h += '<div style="font-size:0.78rem;font-weight:700;color:#1a3a5c;margin-bottom:0.4rem;">'
+      + 'Pedidos que você recebeu</div>';
+    s.recebidas.forEach(function (r) {
+      const pendente = r.situacao === 'Pendente';
+      h += '<div style="border:1px solid ' + (pendente ? '#e0b040' : '#dde4ed') + ';'
+        + 'border-radius:10px;padding:0.8rem 0.9rem;margin-bottom:8px;'
+        + (pendente ? 'background:#fffdf5;' : '') + '">'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
+        + '<strong style="font-size:0.88rem;color:#1a3a5c;">' + escapar(r.outro) + '</strong>'
+        + etiquetaSituacao(r.situacao, pendente ? 'aguardando a sua resposta' : null)
+        + '</div>'
+        + '<div style="font-size:0.82rem;color:#45617f;line-height:1.6;">'
+        + 'Ele assumiria a sua DEJEP de <strong>' + trechoDejep(r.minha) + '</strong><br>'
+        + 'e você ficaria com a dele de <strong>' + trechoDejep(r.dele) + '</strong></div>'
+        + (r.observacao ? '<div style="font-size:0.76rem;color:#8a2020;margin-top:5px;">'
+            + escapar(r.observacao) + '</div>' : '')
+        + (pendente
+            ? '<div style="display:flex;gap:8px;margin-top:0.7rem;">'
+              + '<button class="btn-resp"'
+              + ' onclick="confirmarResposta(\'' + r.id + '\',\'nao\')">Recusar</button>'
+              + '<button class="btn-resp aceitar"'
+              + ' onclick="confirmarResposta(\'' + r.id + '\',\'sim\')">Aceitar a troca</button>'
+              + '</div>'
+            : '<div style="font-size:0.72rem;color:#8fa3ba;margin-top:5px;">respondida em '
+              + escapar(r.respondidaEm || '—') + '</div>')
+        + '</div>';
+    });
+  }
+
+  if (s.feitas.length) {
+    h += '<div style="font-size:0.78rem;font-weight:700;color:#1a3a5c;'
+      + 'margin:' + (s.recebidas.length ? '1rem' : '0') + ' 0 0.4rem;">'
+      + 'Pedidos que você fez</div>';
+    s.feitas.forEach(function (r) {
+      h += '<div style="border:1px solid #dde4ed;border-radius:10px;'
+        + 'padding:0.8rem 0.9rem;margin-bottom:8px;">'
+        + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
+        + '<strong style="font-size:0.88rem;color:#1a3a5c;">' + escapar(r.outro) + '</strong>'
+        + etiquetaSituacao(r.situacao) + '</div>'
+        + '<div style="font-size:0.82rem;color:#45617f;line-height:1.6;">'
+        + 'Você ofereceu a sua DEJEP de <strong>' + trechoDejep(r.minha) + '</strong><br>'
+        + 'em troca da dele de <strong>' + trechoDejep(r.dele) + '</strong></div>'
+        + (r.observacao ? '<div style="font-size:0.76rem;color:#8a2020;margin-top:5px;">'
+            + escapar(r.observacao) + '</div>' : '')
+        + '<div style="font-size:0.72rem;color:#8fa3ba;margin-top:5px;">'
+        + 'enviado em ' + escapar(r.criadaEm)
+        + (r.respondidaEm ? ' &bull; respondido em ' + escapar(r.respondidaEm) : '')
+        + (r.situacao === 'Falha no envio'
+            ? ' &bull; avise o colega por outro meio ou procure a Diretoria de Disciplina' : '')
+        + '</div></div>';
+    });
+  }
+  return h;
+}
+
+function confirmarResposta(id, resposta) {
+  const s = dados.solicitacoes || { recebidas: [] };
+  const r = s.recebidas.find(function (x) { return x.id === id; });
+  if (!r) return;
+
+  if (resposta !== 'sim') {
+    abrirModal('Recusar a troca',
+      'A escala permanece como está e <strong>' + escapar(r.outro)
+      + '</strong> será avisado(a).', '',
+      '<button class="modal-btn" onclick="fecharModalForcado()">Voltar</button>'
+      + '<button class="modal-btn perigo" onclick="responderTroca(\'' + id + '\',\'nao\')">'
+      + 'Confirmar recusa</button>');
+    return;
+  }
+  abrirModal('Aceitar a troca',
+    'Você passa a cumprir <strong>' + trechoDejep(r.dele) + '</strong> e '
+    + escapar(r.outro) + ' assume a sua de <strong>' + trechoDejep(r.minha) + '</strong>.'
+    + '<br><br>O horário de entrada é reapurado pelo intervalo de descanso de cada um, e a '
+    + 'posição de vocês na fila <strong>não muda</strong>.', '',
+    '<button class="modal-btn" onclick="fecharModalForcado()">Voltar</button>'
+    + '<button class="modal-btn principal" onclick="responderTroca(\'' + id + '\',\'sim\')">'
+    + 'Confirmar a troca</button>');
+}
+
+function responderTroca(id, resposta) {
+  fecharModalForcado();
+  mostrarAguardo(resposta === 'sim' ? 'Efetivando a troca...' : 'Registrando a recusa...');
+  fetch(URL_BASE + '?acao=responder_troca&t=' + encodeURIComponent(TOKEN)
+      + '&s=' + encodeURIComponent(id) + '&r=' + encodeURIComponent(resposta))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      esconderAguardo();
+      toast(j.mensagem, !j.sucesso);
+      carregar();
+    })
+    .catch(function () {
+      esconderAguardo();
+      toast('Não foi possível responder agora. Tente novamente.', true);
+    });
 }
 
 function chaveDia(ano, mes, dia) {
@@ -784,7 +948,7 @@ function enviarDias() {
   const dias = chaves.map(chaveParaBR).join(',');
   const botao = el('dp-enviar');
   if (botao) { botao.disabled = true; botao.textContent = 'Registrando...'; }
-  toast('Registrando ' + chaves.length + (chaves.length === 1 ? ' dia...' : ' dias...'));
+  mostrarAguardo('Registrando ' + chaves.length + (chaves.length === 1 ? ' dia...' : ' dias...'));
 
   fetch(URL_BASE + '?acao=impedir_dias' + '&t=' + encodeURIComponent(TOKEN)
       + '&dias=' + encodeURIComponent(dias)
@@ -792,11 +956,13 @@ function enviarDias() {
       + '&obs=' + encodeURIComponent(impObs))
     .then(function (r) { return r.json(); })
     .then(function (j) {
+      esconderAguardo();
       toast(j.mensagem, !j.sucesso);
       if (j.sucesso) { impSel = {}; impObs = ''; carregar(); }
       else if (botao) { botao.disabled = false; botao.textContent = 'Declarar'; }
     })
     .catch(function () {
+      esconderAguardo();
       toast('Não foi possível registrar. Tente novamente.', true);
       if (botao) { botao.disabled = false; botao.textContent = 'Declarar'; }
     });
@@ -815,15 +981,17 @@ function confirmarRemocaoImpedimento(id) {
 
 function executarRemocaoImpedimento(id) {
   fecharModalForcado();
-  toast('Removendo...');
+  mostrarAguardo('Removendo...');
   fetch(URL_BASE + '?acao=remover_impedimento' + '&t=' + encodeURIComponent(TOKEN)
       + '&id=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
+      esconderAguardo();
       toast(j.mensagem, !j.sucesso);
       if (j.sucesso) carregar();
     })
-    .catch(function () { toast('Não foi possível remover.', true); });
+    .catch(function () {
+      esconderAguardo(); toast('Não foi possível remover.', true); });
 }
 
 // ------------------------------------------------------------
@@ -1013,7 +1181,8 @@ function abrirTrocaComAlvo(idAlvo) {
     'Você assumiria <strong>' + escapar(alvo.data) + '</strong> — ' + escapar(alvo.posto)
     + '. Escolha abaixo <strong>qual das suas DEJEPs</strong> oferece em troca. '
     + 'Só aparecem as compatíveis: o intervalo de descanso dos dois já foi conferido. '
-    + 'A troca só se efetiva se o colega aceitar pelo e-mail.',
+    + 'A troca só se efetiva se o colega aceitar — pelo e-mail ou na aba '
+    + 'Gerenciar DEJEPs dele. Enquanto isso, o pedido fica visível aqui.',
     opcoes,
     '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>');
 }
@@ -1048,15 +1217,17 @@ function enviarTroca(idMinha) { enviarTrocaCom(idMinha, trocaAlvo); }
 
 function enviarTrocaCom(idMinha, idAlvo) {
   fecharModalForcado();
-  toast('Enviando solicitação...');
+  mostrarAguardo('Enviando solicitação...');
   fetch(URL_BASE + '?acao=solicitar&t=' + encodeURIComponent(TOKEN)
       + '&minha=' + encodeURIComponent(idMinha) + '&alvo=' + encodeURIComponent(idAlvo))
     .then(function (r) { return r.json(); })
     .then(function (j) {
+      esconderAguardo();
       toast(j.mensagem, !j.sucesso);
       if (j.sucesso) carregar();
     })
-    .catch(function () { toast('Não foi possível enviar a solicitação.', true); });
+    .catch(function () {
+      esconderAguardo(); toast('Não foi possível enviar a solicitação.', true); });
 }
 
 // ------------------------------------------------------------
@@ -1077,21 +1248,25 @@ function confirmarCancelamento(id) {
 
 function executarCancelamento(id) {
   fecharModalForcado();
-  toast('Cancelando...');
+  mostrarAguardo('Cancelando...');
   fetch(URL_BASE + '?acao=cancelar_dejep&t=' + encodeURIComponent(TOKEN)
       + '&id=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
+      esconderAguardo();
       toast(j.mensagem, !j.sucesso);
       if (j.sucesso) carregar();
     })
-    .catch(function () { toast('Não foi possível cancelar.', true); });
+    .catch(function () {
+      esconderAguardo(); toast('Não foi possível cancelar.', true); });
 }
 
 // ------------------------------------------------------------
 function carregar() {
+  if (!dados) mostrarAguardo('Carregando...');
   const url = URL_BASE + '?acao=consulta' + (TOKEN ? '&t=' + encodeURIComponent(TOKEN) : '');
   fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+    esconderAguardo();
     dados = d;
     if (d.mes) {
       const partes = d.mes.split(' ');
@@ -1101,6 +1276,7 @@ function carregar() {
     }
     render();
   }).catch(function () {
+    esconderAguardo();
     el('conteudo').innerHTML = '<div class="empty-msg">Não foi possível carregar os dados '
       + 'no momento.<br>Tente novamente em alguns instantes.</div>';
   });
