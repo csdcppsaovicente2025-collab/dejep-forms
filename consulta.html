@@ -245,8 +245,9 @@ SP" />
 </div>
 
 <div class="aviso-info" id="aviso-info">
-São duas filas independentes: a diurna atende o posto das 07h e a torre diurna; a noturna
-atende a torre noturna. A convocação segue a ordem de cada uma, definida pela inscrição, e
+São duas filas independentes: a diurna atende os postos das 07h e das 08h, o jumbo e a
+torre diurna; a noturna atende a torre noturna. A convocação segue a ordem de cada uma,
+definida pela inscrição, e
 quem é escalado passa para o fim da fila daquele período. O horário de entrada é apurado
 pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP. Na aba
 <strong>Gerenciar DEJEPs</strong>, entrando com o seu RG e a sua senha, você vê as suas
@@ -389,8 +390,8 @@ function escapar(t) {
 }
 
 function rotuloHorario(h) {
-  const m = { '07h':'07h às 15h','10h':'10h às 18h','11h':'11h às 19h',
-              '22h':'22h às 06h','23h':'23h às 07h' };
+  const m = { '07h':'07h às 15h','08h':'08h às 16h','11h':'11h às 19h',
+              '23h':'23h às 07h' };
   return m[h] || h;
 }
 
@@ -548,7 +549,7 @@ function renderGerenciar() {
     + '<div class="painel-nome">' + escapar(eu.nome) + '</div>'
     + '<div class="painel-pos">' + partes.join(' &nbsp;•&nbsp; ')
     + (eu.soTorre ? ' &bull; somente postos de torre' : '')
-    + (eu.genero === 'Feminino' ? ' &bull; somente posto das 07h' : '') + '</div>'
+    + (eu.genero === 'Feminino' ? ' &bull; posto das 08h e jumbo' : '') + '</div>'
     + '<div style="font-size:0.7rem;color:#8fb4d8;margin-top:4px;">'
     + 'O acesso encerra sozinho após ' + SESSAO.minutos + ' minutos sem uso.</div></div>'
     + '<button class="btn-acao" onclick="sair()">Sair</button></div>';
@@ -1011,7 +1012,8 @@ function renderEscala(filtro) {
     porDia[i.data].push(i);
   });
 
-  const ordemPosto = { '07 às 15h': 1, 'Torre diurna': 2, 'Torre noturna': 3 };
+  const ordemPosto = { '07 às 15h': 1, '08 às 16h': 2, 'Jumbo 08 às 16h': 3,
+                       'Torre diurna': 4, 'Torre noturna': 5 };
   const datas = Object.keys(porDia).sort(function (a, b) {
     const pa = a.split('/'), pb = b.split('/');
     return (pa[1] + pa[0]).localeCompare(pb[1] + pb[0]);
@@ -1109,7 +1111,7 @@ function renderLista(filtro) {
     return '<div class="empty-msg">As filas corridas ainda não foram constituídas.</div>';
   }
   return tabelaFila('Fila diurna', diurna, filtro,
-      'Atende o posto das 07h e a torre diurna.')
+      'Atende os postos das 07h e das 08h, o jumbo e a torre diurna.')
     + tabelaFila('Fila noturna', noturna, filtro,
       'Atende a torre noturna. A participação depende de manifestação na inscrição.')
     + '<div style="font-size:0.76rem;color:#6b80a0;line-height:1.5;margin-top:14px;">'
