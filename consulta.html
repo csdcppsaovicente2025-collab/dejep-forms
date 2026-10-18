@@ -174,6 +174,17 @@ font-size: 0.9rem; font-family: inherit; color: #1a2b3c; background: #fff; outli
 .campo-dupla > div { flex: 1; }
 
 /* ---- Calendário de impedimentos ---- */
+/* Seletor do mês de referência, no topo das abas. */
+.barra-mes { display: flex; align-items: center; gap: 10px; background: #fff;
+border: 1px solid #dde4ed; border-radius: 10px; padding: 8px 10px; margin-bottom: 1.1rem; }
+.barra-mes button { border: 1px solid #d0d9e6; background: #fff; color: #1a3a5c;
+border-radius: 8px; width: 40px; height: 40px; font-size: 1.15rem; cursor: pointer;
+font-family: inherit; flex-shrink: 0; }
+.barra-mes button:hover:not(:disabled) { border-color: #2d6a9f; background: #f5f9fd; }
+.barra-mes button:disabled { color: #ccd5e0; cursor: not-allowed; }
+.bm-centro { flex: 1; text-align: center; min-width: 0; }
+.bm-mes { font-size: 1rem; font-weight: 700; color: #1a3a5c; }
+.bm-sub { font-size: 0.68rem; color: #8fa3ba; margin-top: 1px; }
 .dp-nav { display: flex; align-items: center; justify-content: space-between;
 margin-bottom: 0.8rem; gap: 8px; }
 .dp-nav button { border: 1px solid #d0d9e6; background: #fff; color: #1a3a5c;
@@ -455,6 +466,11 @@ const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const MESES_A_FRENTE = 12;
 
+// Mês de referência da página inteira. Trocar de mês troca junto a
+// escala, as minhas DEJEPs, as opções de troca, o cancelamento e o
+// histórico de solicitações — tudo vem da mesma consulta ao servidor.
+let mesRef = null;      // 'aaaa-mm', ou null para o padrão do sistema
+
 let impSel = {};        // 'aaaa-mm-dd' → true
 let impMes = null;      // {ano, mes} exibido
 let impMotivo = 'Ferias';
@@ -543,7 +559,8 @@ function renderGerenciar() {
   if (eu.posicaoNoturna) partes.push(eu.posicaoNoturna + 'º na fila noturna');
   if (!partes.length) partes.push('fora das filas');
 
-  let h = '<div class="painel" style="margin-bottom:1.3rem;">'
+  let h = barraMes()
+    + '<div class="painel" style="margin-bottom:1.3rem;">'
     + '<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">'
     + '<div style="flex:1;min-width:170px;">'
     + '<div class="painel-nome">' + escapar(eu.nome) + '</div>'
@@ -554,9 +571,14 @@ function renderGerenciar() {
     + 'O acesso encerra sozinho após ' + SESSAO.minutos + ' minutos sem uso.</div></div>'
     + '<button class="btn-acao" onclick="sair()">Sair</button></div>';
 
-  if (!dados.minhas.length) {
+  if (dados.semEscalaNoMes) {
     h += '<div class="painel-item"><span class="pi-info">'
-      + 'Você não tem DEJEP agendada neste mês.</span></div>';
+      + 'A escala de ' + escapar(dados.mes) + ' ainda não foi lançada. Você já pode '
+      + 'declarar os dias em que não poderá ser convocado — a declaração vale quando a '
+      + 'escala for gerada.</span></div>';
+  } else if (!dados.minhas.length) {
+    h += '<div class="painel-item"><span class="pi-info">'
+      + 'Você não tem DEJEP agendada em ' + escapar(dados.mes) + '.</span></div>';
   } else {
     dados.minhas.forEach(function (m) {
       h += '<div class="painel-item">'
@@ -736,6 +758,78 @@ function brParaChave(br) {
   return p[2] + '-' + p[1] + '-' + p[0];
 }
 
+// ------------------------------------------------------------
+// MÊS DE REFERÊNCIA
+//
+// Um seletor só governa a aba inteira. Trocar o mês recarrega os dados
+// do servidor, e com eles mudam as minhas DEJEPs, as opções de troca, o
+// que pode ser cancelado e o histórico de solicitações. Deixar o
+// calendário num mês e o resto noutro produziria a situação em que o
+// servidor pede troca achando que está em novembro e o pedido sai em
+// outubro.
+// ------------------------------------------------------------
+function chaveMes(ano, mes) {
+  return ano + '-' + (mes < 10 ? '0' : '') + mes;
+}
+function mesDeslocado(chave, delta) {
+  const p = chave.split('-');
+  const d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1 + delta, 1);
+  return chaveMes(d.getFullYear(), d.getMonth() + 1);
+}
+function rotuloMes(chave) {
+  const p = chave.split('-');
+  return MESES[parseInt(p[1], 10) - 1] + ' ' + p[0];
+}
+
+// Limites da navegação: para trás, até o mês mais antigo com escala
+// lançada, para o servidor poder rever o que já passou; para a frente,
+// até o horizonte de declaração de impedimento, que vai além da escala
+// porque é justamente para marcar férias de mês ainda não gerado.
+function limitesDeMes() {
+  const h = new Date();
+  const atual = chaveMes(h.getFullYear(), h.getMonth() + 1);
+  const comEscala = ((dados && dados.mesesEscala) || []).map(function (m) { return m.chave; });
+  let primeiro = atual, ultimo = mesDeslocado(atual, MESES_A_FRENTE);
+  comEscala.forEach(function (k) {
+    if (k < primeiro) primeiro = k;
+    if (k > ultimo) ultimo = k;
+  });
+  return { primeiro: primeiro, ultimo: ultimo };
+}
+
+function mesAtualDaPagina() {
+  if (mesRef) return mesRef;
+  const h = new Date();
+  return chaveMes(h.getFullYear(), h.getMonth() + 1);
+}
+
+function barraMes() {
+  const atual = mesAtualDaPagina();
+  const lim = limitesDeMes();
+  const temEscala = ((dados && dados.mesesEscala) || [])
+    .some(function (m) { return m.chave === atual; });
+  return '<div class="barra-mes">'
+    + '<button onclick="irParaMes(-1)" title="Mês anterior"'
+    + (atual <= lim.primeiro ? ' disabled' : '') + '>&#8249;</button>'
+    + '<div class="bm-centro"><div class="bm-mes">' + rotuloMes(atual) + '</div>'
+    + '<div class="bm-sub">' + (temEscala
+        ? 'escala, trocas e solicitações deste mês'
+        : 'escala ainda não lançada — dá para declarar impedimento')
+    + '</div></div>'
+    + '<button onclick="irParaMes(1)" title="Próximo mês"'
+    + (atual >= lim.ultimo ? ' disabled' : '') + '>&#8250;</button>'
+    + '</div>';
+}
+
+function irParaMes(delta) {
+  const lim = limitesDeMes();
+  const novo = mesDeslocado(mesAtualDaPagina(), delta);
+  if (novo < lim.primeiro || novo > lim.ultimo) return;
+  mesRef = novo;
+  mostrarAguardo(rotuloMes(novo) + '...');
+  carregar();
+}
+
 function mesLimite(desloc) {
   const h = new Date();
   const d = new Date(h.getFullYear(), h.getMonth() + desloc, 1);
@@ -768,14 +862,11 @@ function renderImpedir() {
     + '<div class="aviso-info" style="margin-bottom:1.1rem;">'
     + 'Marque no calendário os dias em que <strong>não pode</strong> ser convocado. '
     + 'Você continua na fila, na <strong>mesma posição</strong> — o sistema apenas segue '
-    + 'para o próximo e volta a você no dia seguinte disponível. Pode navegar entre os meses: '
-    + 'a marcação de todos eles é enviada de uma só vez.</div>'
+    + 'para o próximo e volta a você no dia seguinte disponível. Troque o mês nas setas do '
+    + 'topo da aba: a marcação de todos os meses é enviada de uma só vez.</div>'
 
-    + '<div class="dp-nav">'
-    + '<button onclick="mudarMes(-1)" id="dp-ant" title="Mês anterior">&#8249;</button>'
-    + '<div class="dp-mes" id="dp-mes"></div>'
-    + '<button onclick="mudarMes(1)" id="dp-prox" title="Próximo mês">&#8250;</button>'
-    + '</div>'
+    + '<div class="dp-nav" style="justify-content:center;">'
+    + '<div class="dp-mes" id="dp-mes"></div></div>'
     + '<div class="dp-sem">' + DIAS_SEM_LONGO.map(function (d) {
         return '<span>' + d + '</span>'; }).join('') + '</div>'
     + '<div class="dp-grade" id="dp-grade"></div>'
@@ -832,10 +923,7 @@ function pintarGrade() {
   const grade = el('dp-grade');
   if (!grade) return;
 
-  const prim = mesLimite(0), ult = mesLimite(MESES_A_FRENTE);
   el('dp-mes').textContent = MESES[impMes.mes - 1] + ' ' + impMes.ano;
-  el('dp-ant').disabled = (impMes.ano === prim.ano && impMes.mes === prim.mes);
-  el('dp-prox').disabled = (impMes.ano === ult.ano && impMes.mes === ult.mes);
 
   const hoje = new Date();
   const hojeK = chaveDia(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
@@ -922,9 +1010,7 @@ function alternarDia(k) {
 }
 
 function mudarMes(delta) {
-  const d = new Date(impMes.ano, impMes.mes - 1 + delta, 1);
-  impMes = { ano: d.getFullYear(), mes: d.getMonth() + 1 };
-  pintarGrade();
+  irParaMes(delta);
 }
 
 function marcarMesInteiro() {
@@ -1002,8 +1088,14 @@ const DIAS_SEM = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 function renderEscala(filtro) {
   const itens = (dados.escala || []).slice();
+  // A mesma barra da aba Gerenciar. Sem ela, quem trocasse o mês lá e
+  // voltasse para cá veria outro mês sem entender por quê.
+  const barra = TOKEN ? barraMes() : '';
   if (!itens.length) {
-    return '<div class="empty-msg">Nenhuma escala publicada no momento.</div>';
+    return barra + '<div class="empty-msg">'
+      + (dados.semEscalaNoMes
+          ? 'A escala de ' + escapar(dados.mes) + ' ainda não foi lançada.'
+          : 'Nenhuma escala publicada no momento.') + '</div>';
   }
 
   const porDia = {};
@@ -1070,7 +1162,8 @@ function renderEscala(filtro) {
     html += '</div>';
   });
 
-  return html || '<div class="empty-msg">Nenhum servidor encontrado com esse nome.</div>';
+  return barra + (html
+    || '<div class="empty-msg">Nenhum servidor encontrado com esse nome.</div>');
 }
 
 function tabelaFila(titulo, itens, filtro, subtitulo) {
@@ -1266,10 +1359,21 @@ function executarCancelamento(id) {
 // ------------------------------------------------------------
 function carregar() {
   if (!dados) mostrarAguardo('Carregando...');
-  const url = URL_BASE + '?acao=consulta' + (TOKEN ? '&t=' + encodeURIComponent(TOKEN) : '');
+  const url = URL_BASE + '?acao=consulta'
+    + (TOKEN ? '&t=' + encodeURIComponent(TOKEN) : '')
+    + (mesRef ? '&mes=' + encodeURIComponent(mesRef) : '');
   fetch(url).then(function (r) { return r.json(); }).then(function (d) {
     esconderAguardo();
     dados = d;
+    // O servidor manda de volta qual mês atendeu. Guardar o que ELE
+    // disse, e não o que foi pedido, evita a página achar que está num
+    // mês e mostrar outro.
+    if (d.mesChave) mesRef = d.mesChave;
+    // O calendário de impedimento acompanha o mês de referência.
+    if (d.mesChave) {
+      const pm = d.mesChave.split('-');
+      impMes = { ano: parseInt(pm[0], 10), mes: parseInt(pm[1], 10) };
+    }
     if (d.mes) {
       const partes = d.mes.split(' ');
       dados.anoRef = parseInt(partes[partes.length - 1], 10) || new Date().getFullYear();
