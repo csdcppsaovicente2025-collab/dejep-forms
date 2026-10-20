@@ -209,6 +209,8 @@ font-family: inherit; padding: 0; line-height: 1; }
 .dp-dia.marcada { background: #1a3a5c; border-color: #1a3a5c; color: #fff; }
 .dp-dia.declarada { background: #fff2cc; border-color: #e0b040; color: #7a5800; }
 .dp-dia.declarada.pendente { background: #fdf6e3; border-style: dashed; }
+.dp-dia.em-lote { background: #dcece0; border-color: #4a8a62; color: #2c6442;
+font-weight: 700; }
 .dp-dia.hoje { box-shadow: inset 0 0 0 2px #2d6a9f; }
 .dp-dejep { position: absolute; bottom: 5px; width: 5px; height: 5px; border-radius: 50%;
 background: #1e7a46; }
@@ -231,6 +233,49 @@ cursor: pointer; font-family: inherit; }
 background: #1a3a5c; color: #fff; font-size: 0.92rem; font-weight: 700; cursor: pointer;
 font-family: inherit; }
 .dp-enviar:disabled { background: #c0ccd8; cursor: not-allowed; }
+.dp-enviar.adm { background: #5e3a80; }
+.link-adm { border: 0; background: none; color: #6b80a0; font-size: 0.8rem;
+text-decoration: underline; cursor: pointer; font-family: inherit; padding: 6px; }
+.link-adm:hover { color: #1a3a5c; }
+/* Roxo em toda parte administrativa: a cor é o aviso de que o que
+   está na tela é a DEJEP de outra pessoa. */
+.faixa-adm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+background: #5e3a80; color: #fff; border-radius: 10px; padding: 0.7rem 0.9rem;
+margin-bottom: 1rem; font-size: 0.82rem; }
+.fa-txt { flex: 1; min-width: 150px; line-height: 1.45; }
+.fa-btn { border: 1px solid rgba(255,255,255,0.45); background: rgba(255,255,255,0.1);
+color: #fff; border-radius: 7px; padding: 6px 12px; font-size: 0.76rem; font-weight: 600;
+cursor: pointer; font-family: inherit; }
+.fa-btn:hover { background: rgba(255,255,255,0.22); }
+.fa-btn.sair { border-color: rgba(255,255,255,0.8); }
+.painel.adm { box-shadow: inset 0 0 0 2px #5e3a80; }
+.ad-item { display: block; width: 100%; text-align: left; border: 1px solid #dde4ed;
+background: #fff; border-radius: 9px; padding: 0.7rem 0.9rem; margin-bottom: 7px;
+cursor: pointer; font-family: inherit; }
+.ad-item:hover { border-color: #5e3a80; background: #faf7fd; }
+.ad-nome { display: block; font-weight: 700; font-size: 0.88rem; color: #1a3a5c; }
+.ad-det { display: block; font-size: 0.74rem; color: #6b80a0; margin-top: 3px; }
+.dp-add { width: 100%; border: 1px dashed #4a8a62; border-radius: 9px; padding: 11px;
+margin-top: 1rem; background: #f3f9f5; color: #2c6442; font-size: 0.84rem; font-weight: 700;
+cursor: pointer; font-family: inherit; }
+.dp-add:hover:not(:disabled) { background: #e7f3eb; }
+.dp-add:disabled { border-color: #d7dee6; background: #fafbfc; color: #a8b4c2;
+cursor: not-allowed; }
+.dp-lotes { margin-top: 1.1rem; border: 1px solid #cfe0d5; border-radius: 10px;
+background: #f7fbf8; padding: 0.85rem 0.9rem; }
+.dp-lotes-tit { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+color: #2c6442; font-weight: 700; margin-bottom: 0.6rem; }
+.dp-lote { position: relative; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+background: #fff; border: 1px solid #dce7e0; border-radius: 8px;
+padding: 0.55rem 2rem 0.55rem 0.7rem; margin-bottom: 6px; }
+.dp-lote-mot { font-weight: 700; font-size: 0.82rem; color: #2c6442; white-space: nowrap; }
+.dp-lote-dias { flex: 1; min-width: 130px; font-size: 0.79rem; color: #45617f; }
+.dp-lote-obs { width: 100%; font-size: 0.73rem; color: #8a99ab; font-style: italic; }
+.dp-lote-x { position: absolute; top: 4px; right: 4px; border: 0; background: none;
+color: #a0adbc; font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 2px 6px;
+font-family: inherit; }
+.dp-lote-x:hover { color: #a02020; }
+.dp-lotes-pe { font-size: 0.74rem; color: #2c6442; margin-top: 0.5rem; }
 .aba-curta { display: none; }
 @media (max-width: 560px) {
   .aba-longa { display: none; }
@@ -327,6 +372,33 @@ function guardarToken(t) {
 }
 
 // ------------------------------------------------------------
+// ACESSO ADMINISTRATIVO
+//
+// A Diretoria de Disciplina entra com usuário e senha próprios e
+// escolhe em nome de QUAL servidor vai agir. O RG escolhido viaja em
+// 'como' em toda chamada; o token pessoal do servidor nunca sai do
+// servidor. A faixa no alto da tela existe para que não se esqueça
+// de que o que está na tela é a DEJEP de outra pessoa.
+// ------------------------------------------------------------
+let admComo = '';
+try { admComo = sessionStorage.getItem('dejep_adm_como') || ''; } catch (e) { admComo = ''; }
+
+function guardarComo(rg) {
+  admComo = (rg || '').toString();
+  try {
+    if (admComo) sessionStorage.setItem('dejep_adm_como', admComo);
+    else sessionStorage.removeItem('dejep_adm_como');
+  } catch (e) { /* idem */ }
+}
+
+// Sufixo que acompanha toda chamada feita em nome de alguém.
+function comoParam() {
+  return admComo ? '&como=' + encodeURIComponent(admComo) : '';
+}
+
+function ehAdm() { return !!(dados && dados.adm); }
+
+// ------------------------------------------------------------
 // SESSÃO — encerra sozinha depois de um tempo sem uso
 //
 // Os computadores da unidade são compartilhados. Sem isto, o servidor
@@ -337,7 +409,14 @@ function guardarToken(t) {
 // máquina hibernar ou a aba ficar em segundo plano, ao voltar o
 // sistema percebe o tempo passado e encerra do mesmo jeito.
 // ------------------------------------------------------------
-const SESSAO = { minutos: 10, avisoSegundos: 60 };
+const SESSAO = { minutos: 10, avisoSegundos: 60, minutosAdm: 30 };
+
+// O ADM apresenta e explica: dez minutos parado acontece sem que a
+// sessão esteja abandonada. O prazo maior vale só para ele, e a
+// sessão no servidor continua com validade própria de poucas horas.
+function minutosDeSessao() {
+  return (TOKEN && TOKEN.indexOf('adm-') === 0) ? SESSAO.minutosAdm : SESSAO.minutos;
+}
 // Conferência frequente: é só comparar dois carimbos de tempo,
 // não custa nada e garante que o aviso apareça na hora certa.
 const INTERVALO_CONFERE_MS = 5000;
@@ -356,7 +435,7 @@ function marcarAtividade() {
 
 function conferirSessao() {
   if (!TOKEN) return;
-  const limite = SESSAO.minutos * 60000;
+  const limite = minutosDeSessao() * 60000;
   const parado = Date.now() - (ultimoUso() || Date.now());
   if (parado >= limite) { encerrarPorInatividade(); return; }
   if (parado >= limite - SESSAO.avisoSegundos * 1000 && !avisoSessaoAberto) {
@@ -367,7 +446,7 @@ function conferirSessao() {
 function avisarFimDeSessao() {
   avisoSessaoAberto = true;
   abrirModal('A sua sessão vai encerrar',
-    'Por segurança, o acesso é encerrado depois de <strong>' + SESSAO.minutos
+    'Por segurança, o acesso é encerrado depois de <strong>' + minutosDeSessao()
     + ' minutos sem uso</strong> — estes computadores são compartilhados.',
     '',
     '<button class="modal-btn perigo" onclick="sair()">Sair agora</button>'
@@ -383,8 +462,9 @@ function continuarConectado() {
 function encerrarPorInatividade() {
   avisoSessaoAberto = false;
   fecharModalForcado();
-  guardarToken('');
-  impSel = {}; impMes = null; impObs = '';
+  guardarToken(''); guardarComo('');
+  telaAdm = false;
+  impSel = {}; impMes = null; impObs = ''; impLotes = [];
   if (aba === 'ger') mostrar('ger');
   toast('Sessão encerrada por falta de uso. Entre novamente para gerenciar as suas DEJEPs.', true);
   carregar();
@@ -471,10 +551,17 @@ const MESES_A_FRENTE = 12;
 // histórico de solicitações — tudo vem da mesma consulta ao servidor.
 let mesRef = null;      // 'aaaa-mm', ou null para o padrão do sistema
 
-let impSel = {};        // 'aaaa-mm-dd' → true
+let impSel = {};        // 'aaaa-mm-dd' → true — o que está marcado agora
 let impMes = null;      // {ano, mes} exibido
 let impMotivo = 'Ferias';
 let impObs = '';
+// Blocos já montados e ainda não enviados, cada um com o seu motivo:
+// férias de 01 a 11, troca nos dias 15 e 21, curso no dia 25. Só saem
+// da página quando o servidor clica em Declarar, e saem juntos.
+// [{motivo, texto, obs, dias: ['aaaa-mm-dd', ...]}]
+let impLotes = [];
+let telaAdm = false;    // mostrando a entrada administrativa
+let filtroAdm = '';     // busca no seletor de servidor
 // O calendário e o painel leem daqui
 function dadosImp() { return dados || {}; }
 
@@ -510,7 +597,159 @@ function renderLogin() {
     + '<strong>três primeiros números do seu RG</strong>. Quem se chama João e tem RG '
     + '12.345.678-9 entra com <strong>JOA123</strong>.<br><br>'
     + 'Se o seu RG não for encontrado, procure a Diretoria de Disciplina — pode ser que '
-    + 'ele ainda não conste do seu cadastro.</div>';
+    + 'ele ainda não conste do seu cadastro.</div>'
+
+    + '<div style="text-align:center;margin-top:1.2rem;">'
+    + '<button class="link-adm" onclick="mostrarLoginAdm()">Entrar como administrador</button>'
+    + '</div>';
+}
+
+// Entrada da Diretoria. Fica atrás de um clique de propósito: não é a
+// porta do dia a dia e não deve competir com ela.
+function renderLoginAdm() {
+  return ''
+    + '<div class="aviso-info" style="margin-bottom:1.2rem;border-left-color:#7a4b9c;'
+    + 'background:#f6f1fa;color:#4a2d63;">'
+    + '<strong>Acesso administrativo</strong><br>'
+    + 'Entra com usuário e senha da Diretoria de Disciplina e permite agir '
+    + '<strong>em nome de um servidor</strong> — solicitar troca, cancelar DEJEP e lançar '
+    + 'impedimento. Toda ação fica registrada e o servidor recebe aviso por e-mail.</div>'
+
+    + '<label class="campo-lbl" for="ad-usuario">Usuário</label>'
+    + '<input class="campo-ent" type="text" id="ad-usuario" autocomplete="username"'
+    + ' onkeydown="if(event.key===\'Enter\')document.getElementById(\'ad-senha\').focus()" />'
+
+    + '<label class="campo-lbl" for="ad-senha">Senha</label>'
+    + '<input class="campo-ent" type="password" id="ad-senha" autocomplete="current-password"'
+    + ' onkeydown="if(event.key===\'Enter\')entrarAdm()" />'
+
+    + '<button class="dp-enviar adm" onclick="entrarAdm()">Entrar como administrador</button>'
+
+    + '<div style="text-align:center;margin-top:1.1rem;">'
+    + '<button class="link-adm" onclick="mostrarLoginServidor()">Voltar para a entrada do servidor</button>'
+    + '</div>';
+}
+
+function mostrarLoginAdm() { telaAdm = true; render(); }
+function mostrarLoginServidor() { telaAdm = false; render(); }
+
+function entrarAdm() {
+  const u = (el('ad-usuario') ? el('ad-usuario').value : '').trim();
+  const senha = (el('ad-senha') ? el('ad-senha').value : '');
+  if (!u) { toast('Informe o usuário.', true); return; }
+  if (!senha) { toast('Informe a senha.', true); return; }
+
+  mostrarAguardo('Entrando...');
+  fetch(URL_BASE + '?acao=entrar_adm&usuario=' + encodeURIComponent(u)
+      + '&senha=' + encodeURIComponent(senha))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      esconderAguardo();
+      if (!j.sucesso) { toast(j.mensagem, true); return; }
+      guardarToken(j.token);
+      guardarComo('');
+      telaAdm = false;
+      marcarAtividade();
+      toast('Acesso administrativo aberto por ' + j.horas + ' horas.');
+      carregar();
+    })
+    .catch(function () {
+      esconderAguardo();
+      toast('Não foi possível entrar agora. Tente novamente.', true); });
+}
+
+function sairAdm() {
+  const t = TOKEN;
+  guardarToken(''); guardarComo('');
+  telaAdm = false;
+  impSel = {}; impMes = null; impObs = ''; impLotes = [];
+  fetch(URL_BASE + '?acao=sair_adm&t=' + encodeURIComponent(t))
+    .catch(function () { /* a sessão expira sozinha de todo modo */ });
+  carregar();
+}
+
+// Escolher o servidor em nome de quem agir
+function escolherServidor(rg) {
+  guardarComo(rg);
+  impSel = {}; impObs = ''; impLotes = [];
+  mostrarAguardo('Abrindo o painel...');
+  carregar();
+}
+
+function trocarDeServidor() {
+  guardarComo('');
+  impSel = {}; impObs = ''; impLotes = [];
+  filtroAdm = '';
+  carregar();
+}
+
+function renderEscolhaDeServidor() {
+  const lista = (dados && dados.servidores) || [];
+  const f = filtroAdm.trim().toLowerCase();
+  const vis = f
+    ? lista.filter(function (s) {
+        return s.nome.toLowerCase().indexOf(f) !== -1 ||
+               (s.rg || '').toString().replace(/\D/g, '').indexOf(f.replace(/\D/g, '')) === 0 &&
+               f.replace(/\D/g, '').length > 0;
+      })
+    : lista;
+
+  let h = faixaAdm()
+    + '<div class="aviso-info" style="margin-bottom:1rem;">'
+    + 'Escolha o servidor em nome de quem você vai agir. A tela seguinte é a mesma que '
+    + 'ele vê, e tudo o que for feito ali entra no nome dele, com registro de que partiu '
+    + 'da Diretoria.</div>'
+    + '<input class="campo-ent" type="text" id="ad-busca" placeholder="Buscar por nome ou RG"'
+    + ' value="' + escapar(filtroAdm) + '" oninput="filtrarAdm(this.value)" />'
+    + '<div style="font-size:0.74rem;color:#6b80a0;margin:0.6rem 0 0.9rem;">'
+    + vis.length + ' de ' + lista.length + ' servidores</div>';
+
+  if (!vis.length) {
+    h += '<div class="empty-msg">Nenhum servidor com esse nome ou RG.</div>';
+    return h;
+  }
+
+  vis.slice(0, 60).forEach(function (s) {
+    const pos = [];
+    if (s.posicaoDiurna) pos.push(s.posicaoDiurna + 'º diurna');
+    if (s.posicaoNoturna) pos.push(s.posicaoNoturna + 'º noturna');
+    h += '<button class="ad-item" onclick="escolherServidor(\'' + escapar(s.rg) + '\')">'
+      + '<span class="ad-nome">' + escapar(s.nome) + '</span>'
+      + '<span class="ad-det">' + escapar(s.tipoSeg || '') + ' &bull; Turno '
+      + escapar(s.turno || '—')
+      + (pos.length ? ' &bull; ' + pos.join(', ') : '') + '</span></button>';
+  });
+  if (vis.length > 60) {
+    h += '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.6rem;">'
+      + 'Mostrando os 60 primeiros. Refine a busca.</div>';
+  }
+  return h;
+}
+
+function filtrarAdm(v) {
+  filtroAdm = v;
+  const alvo = el('conteudo');
+  if (!alvo) return;
+  const pos = (el('ad-busca') || {}).selectionStart;
+  alvo.innerHTML = renderEscolhaDeServidor();
+  const campo = el('ad-busca');
+  if (campo) { campo.focus(); try { campo.setSelectionRange(pos, pos); } catch (e) { /* ok */ } }
+}
+
+// A faixa roxa que lembra, em toda tela, que quem age é o ADM.
+function faixaAdm() {
+  if (!ehAdm()) return '';
+  const nome = (dados.eu && dados.eu.nome) ? dados.eu.nome : '';
+  return '<div class="faixa-adm">'
+    + '<div class="fa-txt"><strong>Acesso administrativo</strong>'
+    + (nome
+        ? ' &bull; agindo como <strong>' + escapar(nome) + '</strong>'
+        : ' &bull; nenhum servidor escolhido')
+    + '</div>'
+    + (nome
+        ? '<button class="fa-btn" onclick="trocarDeServidor()">Trocar de servidor</button>'
+        : '')
+    + '<button class="fa-btn sair" onclick="sairAdm()">Sair</button></div>';
 }
 
 function entrar() {
@@ -536,8 +775,9 @@ function entrar() {
 }
 
 function sair() {
-  guardarToken('');
-  impSel = {}; impMes = null; impObs = '';
+  guardarToken(''); guardarComo('');
+  telaAdm = false;
+  impSel = {}; impMes = null; impObs = ''; impLotes = [];
   carregar();
 }
 
@@ -545,12 +785,14 @@ function sair() {
 // Aba "Gerenciar DEJEPs": tudo o que o servidor faz, num lugar só
 // ------------------------------------------------------------
 function renderGerenciar() {
-  if (!TOKEN) return renderLogin();
+  if (!TOKEN) return telaAdm ? renderLoginAdm() : renderLogin();
   if (!dados) return '<div class="empty-msg">Carregando os seus dados...</div>';
+  // Entrou como ADM e ainda não disse em nome de quem vai agir.
+  if (dados.adm && !dados.eu) return renderEscolhaDeServidor();
   if (!dados.eu) {
     return '<div class="aviso-info" style="border-left-color:#a02020;background:#fde8e8;'
       + 'color:#7a1a1a;margin-bottom:1rem;">A sua sessão expirou. Entre novamente.</div>'
-      + renderLogin();
+      + (telaAdm ? renderLoginAdm() : renderLogin());
   }
 
   const eu = dados.eu;
@@ -559,8 +801,8 @@ function renderGerenciar() {
   if (eu.posicaoNoturna) partes.push(eu.posicaoNoturna + 'º na fila noturna');
   if (!partes.length) partes.push('fora das filas');
 
-  let h = barraMes()
-    + '<div class="painel" style="margin-bottom:1.3rem;">'
+  let h = faixaAdm() + barraMes()
+    + '<div class="painel' + (ehAdm() ? ' adm' : '') + '" style="margin-bottom:1.3rem;">'
     + '<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">'
     + '<div style="flex:1;min-width:170px;">'
     + '<div class="painel-nome">' + escapar(eu.nome) + '</div>'
@@ -568,8 +810,15 @@ function renderGerenciar() {
     + (eu.soTorre ? ' &bull; somente postos de torre' : '')
     + (eu.genero === 'Feminino' ? ' &bull; posto das 08h e jumbo' : '') + '</div>'
     + '<div style="font-size:0.7rem;color:#8fb4d8;margin-top:4px;">'
-    + 'O acesso encerra sozinho após ' + SESSAO.minutos + ' minutos sem uso.</div></div>'
-    + '<button class="btn-acao" onclick="sair()">Sair</button></div>';
+    + (ehAdm()
+        ? 'Você está agindo <strong>em nome deste servidor</strong>. Tudo o que fizer '
+          + 'aqui é avisado a ele por e-mail.'
+        : 'O acesso encerra sozinho após ' + minutosDeSessao() + ' minutos sem uso.')
+    + '</div></div>'
+    + (ehAdm()
+        ? '<button class="btn-acao" onclick="trocarDeServidor()">Trocar</button>'
+        : '<button class="btn-acao" onclick="sair()">Sair</button>')
+    + '</div>';
 
   if (dados.semEscalaNoMes) {
     h += '<div class="painel-item"><span class="pi-info">'
@@ -731,7 +980,7 @@ function confirmarResposta(id, resposta) {
 function responderTroca(id, resposta) {
   fecharModalForcado();
   mostrarAguardo(resposta === 'sim' ? 'Efetivando a troca...' : 'Registrando a recusa...');
-  fetch(URL_BASE + '?acao=responder_troca&t=' + encodeURIComponent(TOKEN)
+  fetch(URL_BASE + '?acao=responder_troca&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&s=' + encodeURIComponent(id) + '&r=' + encodeURIComponent(resposta))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -872,6 +1121,7 @@ function renderImpedir() {
     + '<div class="dp-grade" id="dp-grade"></div>'
     + '<div class="dp-leg">'
     + '<span><i class="pt" style="background:#1a3a5c;border-color:#1a3a5c;"></i> marcado agora</span>'
+    + '<span><i class="pt" style="background:#dcece0;border-color:#4a8a62;"></i> em um bloco montado</span>'
     + '<span><i class="pt" style="background:#fff2cc;border-color:#e0b040;"></i> já declarado</span>'
     + '<span><i class="pt" style="background:#fff;"></i><i class="dp-dejep" style="position:static;"></i> DEJEP sua</span>'
     + '</div>'
@@ -883,13 +1133,23 @@ function renderImpedir() {
 
     + '<div id="dp-resumo"></div>'
 
-    + '<label class="campo-lbl" for="dp-motivo">Motivo</label>'
+    + '<label class="campo-lbl" for="dp-motivo">Motivo destes dias</label>'
     + '<select class="campo-ent" id="dp-motivo" onchange="impMotivo=this.value">' + opts + '</select>'
     + '<label class="campo-lbl" for="dp-obs">Observação (opcional)</label>'
     + '<input class="campo-ent" type="text" id="dp-obs" maxlength="140"'
     + ' value="' + escapar(impObs) + '" oninput="impObs=this.value"'
     + ' placeholder="Ex.: troca de plantão com o colega Fulano" />'
-    + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.7rem;line-height:1.5;">'
+
+    + '<button class="dp-add" id="dp-add" onclick="adicionarLote()">'
+    + 'Guardar estes dias e marcar outro motivo</button>'
+    + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.55rem;line-height:1.5;">'
+    + 'Use este botão quando os próximos dias tiverem <strong>outro motivo</strong> — '
+    + 'férias no início do mês, troca de plantão no dia 15, curso no dia 25. '
+    + 'Os blocos ficam guardados aqui e só são enviados quando você clicar em Declarar.</div>'
+
+    + renderLotes()
+
+    + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.9rem;line-height:1.5;">'
     + 'Férias e licença valem de imediato. Os demais motivos acima de <strong>'
     + (dadosImp().tetoImpedimento || 10) + ' dias no mês</strong> passam pela validação da '
     + 'Diretoria de Disciplina — o limite considera o conjunto dos dias do mês, não cada '
@@ -898,6 +1158,79 @@ function renderImpedir() {
     + '<button class="dp-enviar" id="dp-enviar" onclick="enviarDias()">Declarar</button>'
 
     + renderDeclarados();
+}
+
+// Os blocos montados e ainda não enviados
+function renderLotes() {
+  if (!impLotes.length) return '';
+  let h = '<div class="dp-lotes"><div class="dp-lotes-tit">A declarar</div>';
+  impLotes.forEach(function (l, i) {
+    h += '<div class="dp-lote">'
+      + '<span class="dp-lote-mot">' + escapar(l.texto) + '</span>'
+      + '<span class="dp-lote-dias">' + escapar(resumoDeDias(l.dias)) + '</span>'
+      + (l.obs ? '<span class="dp-lote-obs">' + escapar(l.obs) + '</span>' : '')
+      + '<button class="dp-lote-x" title="Tirar este bloco"'
+      + ' onclick="removerLote(' + i + ')">&times;</button></div>';
+  });
+  const dias = impLotes.reduce(function (s, l) { return s + l.dias.length; }, 0);
+  h += '<div class="dp-lotes-pe">' + dias + (dias === 1 ? ' dia' : ' dias') + ' em '
+    + impLotes.length + (impLotes.length === 1 ? ' bloco' : ' blocos')
+    + ' — tudo vai junto ao clicar em Declarar.</div></div>';
+  return h;
+}
+
+// '2026-11-01,2026-11-02,2026-11-03,2026-11-15' → '1 a 3 e 15 de novembro'
+function resumoDeDias(chaves) {
+  const porMes = {};
+  chaves.slice().sort().forEach(function (k) {
+    const p = k.split('-');
+    const rot = MESES[parseInt(p[1], 10) - 1] + '/' + p[0].slice(2);
+    if (!porMes[rot]) porMes[rot] = [];
+    porMes[rot].push(parseInt(p[2], 10));
+  });
+  return Object.keys(porMes).map(function (rot) {
+    const ds = porMes[rot];
+    const blocos = [];
+    for (let i = 0; i < ds.length; i++) {
+      let ini = ds[i];
+      while (i + 1 < ds.length && ds[i + 1] === ds[i] + 1) i++;
+      blocos.push(ini === ds[i] ? String(ini) : ini + ' a ' + ds[i]);
+    }
+    return blocos.join(', ') + ' de ' + rot;
+  }).join(' · ');
+}
+
+// Dias que já estão dentro de algum bloco montado → o próprio bloco
+function diasEmLotes() {
+  const mapa = {};
+  impLotes.forEach(function (l) {
+    l.dias.forEach(function (k) { mapa[k] = l; });
+  });
+  return mapa;
+}
+
+function adicionarLote() {
+  const chaves = Object.keys(impSel).sort();
+  if (!chaves.length) {
+    toast('Marque no calendário os dias deste motivo antes de guardá-los.', true);
+    return;
+  }
+  if (impLotes.length >= 12) {
+    toast('São no máximo 12 blocos por declaração. Envie estes antes de montar outros.', true);
+    return;
+  }
+  const motivos = dadosImp().motivosImpedimento || [];
+  const m = motivos.find(function (x) { return x.valor === impMotivo; });
+  impLotes.push({ motivo: impMotivo, texto: m ? m.texto : impMotivo,
+    obs: impObs, dias: chaves });
+  impSel = {};
+  impObs = '';
+  render();
+}
+
+function removerLote(i) {
+  impLotes.splice(i, 1);
+  render();
 }
 
 function renderDeclarados() {
@@ -928,6 +1261,7 @@ function pintarGrade() {
   const hoje = new Date();
   const hojeK = chaveDia(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
   const declarados = diasDeclarados();
+  const emLote = diasEmLotes();
   const comDejep = {};
   (dadosImp().meusDias || []).forEach(function (d) { comDejep[brParaChave(d)] = true; });
 
@@ -948,12 +1282,16 @@ function pintarGrade() {
       if (decl.situacao === 'Pendente') cls.push('pendente');
       titulo = 'já declarado: ' + decl.motivo
         + (decl.situacao === 'Pendente' ? ' (aguarda validação)' : '');
+    } else if (emLote[k]) {
+      cls.push('em-lote');
+      titulo = 'em um bloco montado: ' + emLote[k].texto
+        + ' — tire o bloco abaixo para mexer neste dia';
     } else if (impSel[k]) { cls.push('marcada'); }
     if (k === hojeK) cls.push('hoje');
     if (comDejep[k]) titulo += (titulo ? ' — ' : '') + 'você tem DEJEP neste dia';
 
     html += '<button class="' + cls.join(' ') + '"'
-      + (passada || decl ? ' disabled' : ' onclick="alternarDia(\'' + k + '\')"')
+      + (passada || decl || emLote[k] ? ' disabled' : ' onclick="alternarDia(\'' + k + '\')"')
       + (titulo ? ' title="' + titulo + '"' : '') + '>'
       + d + (comDejep[k] ? '<i class="dp-dejep"></i>' : '') + '</button>';
   }
@@ -966,11 +1304,18 @@ function pintarResumo() {
   if (!alvo) return;
   const chaves = Object.keys(impSel).sort();
   const botao = el('dp-enviar');
-  if (botao) botao.disabled = !chaves.length;
+  // Declarar vale tanto para os dias marcados agora quanto para os
+  // blocos já montados: quem montou tudo em blocos não fica travado.
+  if (botao) botao.disabled = !chaves.length && !impLotes.length;
+  const add = el('dp-add');
+  if (add) add.disabled = !chaves.length;
 
   if (!chaves.length) {
     alvo.className = 'dp-resumo vazio';
-    alvo.innerHTML = 'Nenhum dia marcado. Toque nos dias do calendário para marcá-los.';
+    alvo.innerHTML = impLotes.length
+      ? 'Nenhum dia marcado agora. Marque os dias do próximo motivo, ou clique em '
+        + 'Declarar para enviar os blocos montados.'
+      : 'Nenhum dia marcado. Toque nos dias do calendário para marcá-los.';
     return;
   }
 
@@ -1017,10 +1362,11 @@ function marcarMesInteiro() {
   const hoje = new Date();
   const hojeK = chaveDia(hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate());
   const declarados = diasDeclarados();
+  const emLote = diasEmLotes();
   const total = new Date(impMes.ano, impMes.mes, 0).getDate();
   for (let d = 1; d <= total; d++) {
     const k = chaveDia(impMes.ano, impMes.mes, d);
-    if (k < hojeK || declarados[k]) continue;
+    if (k < hojeK || declarados[k] || emLote[k]) continue;
     impSel[k] = true;
   }
   pintarGrade();
@@ -1029,23 +1375,37 @@ function marcarMesInteiro() {
 function limparSelecao() { impSel = {}; pintarGrade(); }
 
 function enviarDias() {
+  // O que está marcado na tela conta como mais um bloco: quem tem um
+  // motivo só não precisa clicar em "guardar" antes de declarar.
   const chaves = Object.keys(impSel).sort();
-  if (!chaves.length) { toast('Marque ao menos um dia no calendário.', true); return; }
+  const motivos = dadosImp().motivosImpedimento || [];
+  const m = motivos.find(function (x) { return x.valor === impMotivo; });
+  const lotes = impLotes.slice();
+  if (chaves.length) {
+    lotes.push({ motivo: impMotivo, texto: m ? m.texto : impMotivo,
+      obs: impObs, dias: chaves });
+  }
+  if (!lotes.length) { toast('Marque ao menos um dia no calendário.', true); return; }
 
-  const dias = chaves.map(chaveParaBR).join(',');
+  const dias = lotes.reduce(function (s, l) { return s + l.dias.length; }, 0);
+  const carga = lotes.map(function (l) {
+    return { motivo: l.motivo, obs: l.obs,
+             dias: l.dias.map(chaveParaBR) };
+  });
+
   const botao = el('dp-enviar');
   if (botao) { botao.disabled = true; botao.textContent = 'Registrando...'; }
-  mostrarAguardo('Registrando ' + chaves.length + (chaves.length === 1 ? ' dia...' : ' dias...'));
+  mostrarAguardo('Registrando ' + dias + (dias === 1 ? ' dia...' : ' dias...'));
 
-  fetch(URL_BASE + '?acao=impedir_dias' + '&t=' + encodeURIComponent(TOKEN)
-      + '&dias=' + encodeURIComponent(dias)
-      + '&motivo=' + encodeURIComponent(impMotivo)
-      + '&obs=' + encodeURIComponent(impObs))
+  fetch(URL_BASE + '?acao=impedir_lotes' + '&t=' + encodeURIComponent(TOKEN) + comoParam()
+      + '&lotes=' + encodeURIComponent(JSON.stringify(carga)))
     .then(function (r) { return r.json(); })
     .then(function (j) {
       esconderAguardo();
       toast(j.mensagem, !j.sucesso);
-      if (j.sucesso) { impSel = {}; impObs = ''; carregar(); }
+      // Só limpa o que foi aceito. Numa recusa, os blocos continuam
+      // montados na tela — refazer tudo seria castigo por um erro.
+      if (j.sucesso) { impSel = {}; impObs = ''; impLotes = []; carregar(); }
       else if (botao) { botao.disabled = false; botao.textContent = 'Declarar'; }
     })
     .catch(function () {
@@ -1069,7 +1429,7 @@ function confirmarRemocaoImpedimento(id) {
 function executarRemocaoImpedimento(id) {
   fecharModalForcado();
   mostrarAguardo('Removendo...');
-  fetch(URL_BASE + '?acao=remover_impedimento' + '&t=' + encodeURIComponent(TOKEN)
+  fetch(URL_BASE + '?acao=remover_impedimento' + '&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&id=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -1090,7 +1450,10 @@ function renderEscala(filtro) {
   const itens = (dados.escala || []).slice();
   // A mesma barra da aba Gerenciar. Sem ela, quem trocasse o mês lá e
   // voltasse para cá veria outro mês sem entender por quê.
-  const barra = TOKEN ? barraMes() : '';
+  // A faixa do ADM aparece em toda aba: clicar numa DEJEP aqui
+  // oferece troca em nome do servidor escolhido, e isso precisa estar
+  // visível o tempo todo.
+  const barra = faixaAdm() + (TOKEN ? barraMes() : '');
   if (!itens.length) {
     return barra + '<div class="empty-msg">'
       + (dados.semEscalaNoMes
@@ -1313,7 +1676,7 @@ function enviarTroca(idMinha) { enviarTrocaCom(idMinha, trocaAlvo); }
 function enviarTrocaCom(idMinha, idAlvo) {
   fecharModalForcado();
   mostrarAguardo('Enviando solicitação...');
-  fetch(URL_BASE + '?acao=solicitar&t=' + encodeURIComponent(TOKEN)
+  fetch(URL_BASE + '?acao=solicitar&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&minha=' + encodeURIComponent(idMinha) + '&alvo=' + encodeURIComponent(idAlvo))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -1344,7 +1707,7 @@ function confirmarCancelamento(id) {
 function executarCancelamento(id) {
   fecharModalForcado();
   mostrarAguardo('Cancelando...');
-  fetch(URL_BASE + '?acao=cancelar_dejep&t=' + encodeURIComponent(TOKEN)
+  fetch(URL_BASE + '?acao=cancelar_dejep&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&id=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -1361,7 +1724,8 @@ function carregar() {
   if (!dados) mostrarAguardo('Carregando...');
   const url = URL_BASE + '?acao=consulta'
     + (TOKEN ? '&t=' + encodeURIComponent(TOKEN) : '')
-    + (mesRef ? '&mes=' + encodeURIComponent(mesRef) : '');
+    + (mesRef ? '&mes=' + encodeURIComponent(mesRef) : '')
+    + comoParam();
   fetch(url).then(function (r) { return r.json(); }).then(function (d) {
     esconderAguardo();
     dados = d;
@@ -1398,7 +1762,7 @@ setInterval(conferirSessao, INTERVALO_CONFERE_MS);
 // agora no computador começa deslogado.
 if (TOKEN) {
   const parado = ultimoUso() ? (Date.now() - ultimoUso()) : 0;
-  if (parado >= SESSAO.minutos * 60000) guardarToken('');
+  if (parado >= minutosDeSessao() * 60000) { guardarToken(''); guardarComo(''); }
   else marcarAtividade();
 }
 
