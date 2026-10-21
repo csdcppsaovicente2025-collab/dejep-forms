@@ -111,6 +111,7 @@ border-top: 1px solid #eef1f5; font-size: 0.85rem; }
 .linha-dejep.clicavel { cursor: pointer; }
 .linha-dejep.clicavel:hover { background: #f5f9fd; }
 .linha-dejep .ld-vaga { color: #a02020; font-weight: 700; }
+.linha-dejep .ld-oculto { color: #a8b4c2; font-style: italic; font-weight: 400; }
 .modal-fundo { position: fixed; inset: 0; background: rgba(12,26,44,0.55); display: none;
 align-items: center; justify-content: center; padding: 1rem; z-index: 50; }
 .modal-fundo.ativo { display: flex; }
@@ -398,6 +399,20 @@ function comoParam() {
 
 function ehAdm() { return !!(dados && dados.adm); }
 
+// Quando a escala vem sem nomes, a tela tem de dizer por quê. Sem
+// este aviso, a página parece defeituosa e o servidor conclui que
+// não foi escalado.
+function avisoEntrar() {
+  if (!dados || !dados.precisaEntrar) return '';
+  return '<div class="aviso-info" style="margin-bottom:1.1rem;">'
+    + '<strong>Entre para ver os nomes.</strong><br>'
+    + 'A escala mostra qual servidor está em qual posto e em que horário. '
+    + 'Por segurança do efetivo, esses nomes aparecem apenas para quem se identifica. '
+    + 'As datas, os postos e os horários continuam à vista. '
+    + 'Use a aba <strong>Gerenciar DEJEPs</strong> para entrar com o seu RG e a sua senha.'
+    + '</div>';
+}
+
 // ------------------------------------------------------------
 // SESSÃO — encerra sozinha depois de um tempo sem uso
 //
@@ -513,7 +528,10 @@ function mostrar(qual) {
   el('card-titulo').textContent = (qual === 'escala' && dados && dados.mes)
     ? 'Escala de ' + dados.mes : TITULO_ABA[qual];
   // A busca por nome só serve às duas primeiras abas
-  el('busca').style.display = (qual === 'ger') ? 'none' : '';
+  // Sem nomes na tela não há o que buscar: um campo "buscar por nome"
+  // sobre uma lista sem nomes parece defeito.
+  const semNomes = !!(dados && dados.precisaEntrar);
+  el('busca').style.display = (qual === 'ger' || semNomes) ? 'none' : '';
   render();
 }
 
@@ -1453,7 +1471,7 @@ function renderEscala(filtro) {
   // A faixa do ADM aparece em toda aba: clicar numa DEJEP aqui
   // oferece troca em nome do servidor escolhido, e isso precisa estar
   // visível o tempo todo.
-  const barra = faixaAdm() + (TOKEN ? barraMes() : '');
+  const barra = faixaAdm() + (TOKEN ? barraMes() : '') + avisoEntrar();
   if (!itens.length) {
     return barra + '<div class="empty-msg">'
       + (dados.semEscalaNoMes
@@ -1500,7 +1518,11 @@ function renderEscala(filtro) {
 
     visiveis.forEach(function (i) {
       const ehMinha = meuNome && (i.nome || '').toLowerCase() === meuNome;
-      const vaga = !i.nome || i.situacao === 'Vaga';
+      // Sem identificação o nome vem vazio do servidor. Isso NÃO é
+      // vaga em aberto: confundir as duas coisas faria a escala
+      // parecer desfalcada para quem está só olhando.
+      const oculto = dados.precisaEntrar && i.situacao !== 'Vaga';
+      const vaga = !oculto && (!i.nome || i.situacao === 'Vaga');
       // O servidor já apurou com quais das minhas DEJEPs esta pode ser
       // trocada. Vazio significa troca incompatível — não se oferece.
       const compat = (i.trocaCom || []).length;
@@ -1512,8 +1534,9 @@ function renderEscala(filtro) {
         + (podeClicar ? ' onclick="abrirTrocaComAlvo(\'' + i.id + '\')"' : '') + '>'
         + '<span class="ld-hora">' + escapar(i.horario) + '</span>'
         + '<span class="ld-posto">' + escapar(i.posto) + '</span>'
-        + '<span class="ld-nome' + (vaga ? ' ld-vaga' : '') + '">'
-        + (vaga ? 'VAGA' : escapar(i.nome)) + '</span>'
+        + '<span class="ld-nome' + (vaga ? ' ld-vaga' : '')
+        + (oculto ? ' ld-oculto' : '') + '">'
+        + (oculto ? 'preenchida' : (vaga ? 'VAGA' : escapar(i.nome))) + '</span>'
         + (ehMinha ? '<span style="font-size:0.7rem;color:#276221;font-weight:700;">você</span>'
                    : (podeClicar ? '<span style="font-size:0.7rem;color:#2d6a9f;">trocar</span>'
                    : (dados.eu && !vaga && dados.minhas.length
@@ -1563,10 +1586,11 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
 function renderLista(filtro) {
   const diurna  = dados.filaDiurna  || dados.fila || [];
   const noturna = dados.filaNoturna || [];
+  if (dados.filaOculta) return avisoEntrar();
   if (!diurna.length && !noturna.length) {
     return '<div class="empty-msg">As filas corridas ainda não foram constituídas.</div>';
   }
-  return tabelaFila('Fila diurna', diurna, filtro,
+  return avisoEntrar() + tabelaFila('Fila diurna', diurna, filtro,
       'Atende os postos das 07h e das 08h, o jumbo e a torre diurna.')
     + tabelaFila('Fila noturna', noturna, filtro,
       'Atende a torre noturna. A participação depende de manifestação na inscrição.')
@@ -1585,6 +1609,7 @@ function render() {
     return;
   }
   if (!dados) return;
+  el('busca').style.display = dados.precisaEntrar ? 'none' : '';
   const filtro = el('busca').value.trim().toLowerCase();
   el('conteudo').innerHTML = (aba === 'escala') ? renderEscala(filtro) : renderLista(filtro);
 }
