@@ -306,13 +306,17 @@ São duas filas independentes: a diurna atende os postos das 07h e das 08h, o ju
 torre diurna; a noturna atende a torre noturna. A convocação segue a ordem de cada uma,
 definida pela inscrição, e
 quem é escalado passa para o fim da fila daquele período. O horário de entrada é apurado
-pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP. Na aba
+pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.
+<span id="aviso-dentro">Na aba
 <strong>Gerenciar DEJEPs</strong>, entrando com o seu RG e a sua senha, você vê as suas
 DEJEPs do mês, solicita troca, cancela e informa os dias em que não pode ser convocado —
-férias, licença, troca de plantão — sem perder a posição na fila.
+férias, licença, troca de plantão — sem perder a posição na fila.</span>
+<span id="aviso-fora">Entrando com o seu RG e a sua senha, você vê as suas DEJEPs do mês,
+solicita troca, cancela e informa os dias em que não pode ser convocado — férias, licença,
+troca de plantão — sem perder a posição na fila.</span>
 </div>
 
-<div class="abas">
+<div class="abas" id="abas">
 <button class="aba ativa" id="aba-escala" onclick="mostrar('escala')">Escala do Mês</button>
 <button class="aba" id="aba-lista" onclick="mostrar('lista')">Filas Corridas</button>
 <button class="aba" id="aba-ger" onclick="mostrar('ger')"
@@ -478,7 +482,7 @@ function encerrarPorInatividade() {
   avisoSessaoAberto = false;
   fecharModalForcado();
   guardarToken(''); guardarComo('');
-  telaAdm = false;
+  telaAcesso = 'login'; trocaObrigatoria = false;
   impSel = {}; impMes = null; impObs = ''; impLotes = [];
   if (aba === 'ger') mostrar('ger');
   toast('Sessão encerrada por falta de uso. Entre novamente para gerenciar as suas DEJEPs.', true);
@@ -530,8 +534,6 @@ function mostrar(qual) {
   // A busca por nome só serve às duas primeiras abas
   // Sem nomes na tela não há o que buscar: um campo "buscar por nome"
   // sobre uma lista sem nomes parece defeito.
-  const semNomes = !!(dados && dados.precisaEntrar);
-  el('busca').style.display = (qual === 'ger' || semNomes) ? 'none' : '';
   render();
 }
 
@@ -578,7 +580,14 @@ let impObs = '';
 // da página quando o servidor clica em Declarar, e saem juntos.
 // [{motivo, texto, obs, dias: ['aaaa-mm-dd', ...]}]
 let impLotes = [];
-let telaAdm = false;    // mostrando a entrada administrativa
+// Qual tela de acesso está em cena: 'login' (RG e senha), 'adm'
+// (entrada da Diretoria), 'recuperar' (pedir o link) ou 'definir'
+// (escolher a senha, vindo do link ou da troca obrigatória).
+let telaAcesso = 'login';
+let trocaObrigatoria = false;   // entrou com a senha inicial
+// Link de recuperação na URL: ?r=<token>
+let recToken = (new URLSearchParams(location.search).get('r') || '').trim();
+let recNome = '';
 let filtroAdm = '';     // busca no seletor de servidor
 // O calendário e o painel leem daqui
 function dadosImp() { return dados || {}; }
@@ -608,18 +617,163 @@ function renderLogin() {
 
     + '<button class="dp-enviar" onclick="entrar()">Entrar</button>'
 
+    + '<div style="text-align:center;margin-top:0.9rem;">'
+    + '<button class="link-adm" onclick="irParaAcesso(\'recuperar\')">Esqueci minha senha</button>'
+    + '</div>'
+
     + '<div style="font-size:0.78rem;color:#6b80a0;margin-top:1.1rem;line-height:1.6;'
     + 'background:#f7f9fc;border-radius:9px;padding:0.9rem 1rem;">'
-    + '<strong style="color:#1a3a5c;">Qual é a minha senha?</strong><br>'
-    + 'São as <strong>três primeiras letras do seu primeiro nome</strong> seguidas dos '
-    + '<strong>três primeiros números do seu RG</strong>. Quem se chama João e tem RG '
-    + '12.345.678-9 entra com <strong>JOA123</strong>.<br><br>'
+    + '<strong style="color:#1a3a5c;">Ainda não defini a minha senha</strong><br>'
+    + 'No primeiro acesso, entre com a senha inicial: as <strong>três primeiras letras do '
+    + 'seu primeiro nome</strong> seguidas dos <strong>três primeiros números do seu '
+    + 'RG</strong> — quem se chama João e tem RG 12.345.678-9 entra com '
+    + '<strong>JOA123</strong>. O sistema pede, na sequência, que você escolha uma senha '
+    + 'só sua: a inicial é fácil de adivinhar e por isso serve uma vez só.<br><br>'
     + 'Se o seu RG não for encontrado, procure a Diretoria de Disciplina — pode ser que '
     + 'ele ainda não conste do seu cadastro.</div>'
 
     + '<div style="text-align:center;margin-top:1.2rem;">'
-    + '<button class="link-adm" onclick="mostrarLoginAdm()">Entrar como administrador</button>'
+    + '<button class="link-adm" onclick="irParaAcesso(\'adm\')">Entrar como administrador</button>'
     + '</div>';
+}
+
+// Qual tela de acesso está em cena. Tudo o que não é painel passa
+// por aqui, para que não haja duas portas abertas ao mesmo tempo.
+function renderAcesso() {
+  if (recToken) return renderDefinirSenha(true);
+  if (trocaObrigatoria) return renderDefinirSenha(false);
+  if (telaAcesso === 'adm') return renderLoginAdm();
+  if (telaAcesso === 'recuperar') return renderRecuperar();
+  return renderLogin();
+}
+
+// Pedir o link. A resposta do servidor é sempre a mesma, acerte ou
+// erre — a tela não serve para descobrir quem está inscrito.
+function renderRecuperar() {
+  return ''
+    + '<div class="aviso-info" style="margin-bottom:1.2rem;">'
+    + '<strong>Esqueci minha senha</strong><br>'
+    + 'Informe o seu RG e o e-mail que consta do seu cadastro. Se os dois conferirem, '
+    + 'você recebe um link para definir uma senha nova. '
+    + 'O sistema <strong>não guarda a sua senha</strong> e por isso não tem como '
+    + 'reenviá-la — o que vai por e-mail é o link, não a senha.</div>'
+
+    + '<label class="campo-lbl" for="rc-rg">RG</label>'
+    + '<input class="campo-ent" type="text" id="rc-rg" inputmode="numeric"'
+    + ' placeholder="00.000.000-0"'
+    + ' onkeydown="if(event.key===\'Enter\')document.getElementById(\'rc-email\').focus()" />'
+
+    + '<label class="campo-lbl" for="rc-email">E-mail do cadastro</label>'
+    + '<input class="campo-ent" type="email" id="rc-email" placeholder="nome@exemplo.gov.br"'
+    + ' onkeydown="if(event.key===\'Enter\')pedirLink()" />'
+
+    + '<button class="dp-enviar" id="rc-enviar" onclick="pedirLink()">Enviar o link</button>'
+
+    + '<div style="text-align:center;margin-top:1.1rem;">'
+    + '<button class="link-adm" onclick="irParaAcesso(\'login\')">Voltar para a entrada</button>'
+    + '</div>'
+
+    + '<div style="font-size:0.76rem;color:#6b80a0;margin-top:1.1rem;line-height:1.55;">'
+    + 'Não sabe qual e-mail está no seu cadastro? É o mesmo que recebe as convocações. '
+    + 'Se não tiver acesso a ele, procure a Diretoria de Disciplina.</div>';
+}
+
+// Definir a senha: pelo link do e-mail (porLink) ou logo após entrar
+// com a senha inicial.
+function renderDefinirSenha(porLink) {
+  const quem = recNome ? ', ' + escapar(recNome) : '';
+  return ''
+    + '<div class="aviso-info" style="margin-bottom:1.2rem;'
+    + (porLink ? '' : 'border-left-color:#e0b040;background:#fff8e0;color:#7a5800;') + '">'
+    + '<strong>' + (porLink ? 'Defina a sua senha' + quem : 'Troque a senha inicial')
+    + '</strong><br>'
+    + (porLink
+        ? 'Escolha uma senha só sua. Ela não fica guardada em lugar nenhum: o sistema '
+          + 'guarda apenas um resumo, que não permite voltar à senha.'
+        : 'Você entrou com a senha inicial, formada pelo seu nome e pelo seu RG — '
+          + 'qualquer colega consegue adivinhá-la. Escolha agora uma senha só sua.')
+    + '</div>'
+
+    + (porLink ? '' :
+        '<label class="campo-lbl" for="ds-atual">Senha atual</label>'
+      + '<input class="campo-ent" type="password" id="ds-atual" autocomplete="current-password" />')
+
+    + '<label class="campo-lbl" for="ds-nova">Senha nova</label>'
+    + '<input class="campo-ent" type="password" id="ds-nova" autocomplete="new-password"'
+    + ' placeholder="Mínimo de 6 caracteres"'
+    + ' onkeydown="if(event.key===\'Enter\')document.getElementById(\'ds-rep\').focus()" />'
+
+    + '<label class="campo-lbl" for="ds-rep">Repita a senha nova</label>'
+    + '<input class="campo-ent" type="password" id="ds-rep" autocomplete="new-password"'
+    + ' onkeydown="if(event.key===\'Enter\')salvarSenha(' + (porLink ? 'true' : 'false') + ')" />'
+
+    + '<button class="dp-enviar" id="ds-enviar" onclick="salvarSenha('
+    + (porLink ? 'true' : 'false') + ')">Salvar a senha</button>'
+
+    + '<div style="font-size:0.76rem;color:#6b80a0;margin-top:1.1rem;line-height:1.55;">'
+    + 'Não use o seu RG nem a senha inicial. Você recebe um e-mail confirmando a troca; '
+    + 'se ele chegar sem que você tenha trocado, avise a Diretoria de Disciplina.</div>';
+}
+
+function pedirLink() {
+  const rg = (el('rc-rg') ? el('rc-rg').value : '').trim();
+  const email = (el('rc-email') ? el('rc-email').value : '').trim();
+  if (!rg) { toast('Informe o seu RG.', true); return; }
+  if (email.indexOf('@') === -1) { toast('Informe o e-mail do seu cadastro.', true); return; }
+
+  const botao = el('rc-enviar');
+  if (botao) { botao.disabled = true; botao.textContent = 'Enviando...'; }
+  mostrarAguardo('Enviando...');
+  fetch(URL_BASE + '?acao=recuperar&rg=' + encodeURIComponent(rg)
+      + '&email=' + encodeURIComponent(email))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      esconderAguardo();
+      toast(j.mensagem, !j.sucesso);
+      if (botao) { botao.disabled = false; botao.textContent = 'Enviar o link'; }
+      if (j.sucesso) irParaAcesso('login');
+    })
+    .catch(function () {
+      esconderAguardo();
+      toast('Não foi possível enviar agora. Tente novamente.', true);
+      if (botao) { botao.disabled = false; botao.textContent = 'Enviar o link'; }
+    });
+}
+
+function salvarSenha(porLink) {
+  const nova = el('ds-nova') ? el('ds-nova').value : '';
+  const rep  = el('ds-rep') ? el('ds-rep').value : '';
+  const atual = el('ds-atual') ? el('ds-atual').value : '';
+  if (nova.length < 6) { toast('A senha precisa ter pelo menos 6 caracteres.', true); return; }
+  if (nova !== rep) { toast('As duas senhas não são iguais.', true); return; }
+
+  const botao = el('ds-enviar');
+  if (botao) { botao.disabled = true; botao.textContent = 'Salvando...'; }
+  mostrarAguardo('Salvando...');
+  fetch(URL_BASE + '?acao=definir_senha'
+      + '&t=' + encodeURIComponent(porLink ? recToken : TOKEN)
+      + '&nova=' + encodeURIComponent(nova)
+      + '&atual=' + encodeURIComponent(atual))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      esconderAguardo();
+      toast(j.mensagem, !j.sucesso);
+      if (botao) { botao.disabled = false; botao.textContent = 'Salvar a senha'; }
+      if (!j.sucesso) return;
+      // Deu certo: limpa o link da URL para que recarregar não tente
+      // usá-lo de novo, e entra com o token devolvido.
+      recToken = ''; recNome = ''; trocaObrigatoria = false;
+      telaAcesso = 'login';
+      try { history.replaceState(null, '', location.pathname); } catch (e) { /* ok */ }
+      if (j.token) { guardarToken(j.token); marcarAtividade(); }
+      mostrar('ger');
+      carregar();
+    })
+    .catch(function () {
+      esconderAguardo();
+      toast('Não foi possível salvar agora. Tente novamente.', true);
+      if (botao) { botao.disabled = false; botao.textContent = 'Salvar a senha'; }
+    });
 }
 
 // Entrada da Diretoria. Fica atrás de um clique de propósito: não é a
@@ -644,12 +798,11 @@ function renderLoginAdm() {
     + '<button class="dp-enviar adm" onclick="entrarAdm()">Entrar como administrador</button>'
 
     + '<div style="text-align:center;margin-top:1.1rem;">'
-    + '<button class="link-adm" onclick="mostrarLoginServidor()">Voltar para a entrada do servidor</button>'
+    + '<button class="link-adm" onclick="irParaAcesso(\'login\')">Voltar para a entrada do servidor</button>'
     + '</div>';
 }
 
-function mostrarLoginAdm() { telaAdm = true; render(); }
-function mostrarLoginServidor() { telaAdm = false; render(); }
+function irParaAcesso(qual) { telaAcesso = qual; render(); }
 
 function entrarAdm() {
   const u = (el('ad-usuario') ? el('ad-usuario').value : '').trim();
@@ -666,9 +819,10 @@ function entrarAdm() {
       if (!j.sucesso) { toast(j.mensagem, true); return; }
       guardarToken(j.token);
       guardarComo('');
-      telaAdm = false;
+      telaAcesso = 'login';
       marcarAtividade();
       toast('Acesso administrativo aberto por ' + j.horas + ' horas.');
+      mostrar('ger');
       carregar();
     })
     .catch(function () {
@@ -679,7 +833,7 @@ function entrarAdm() {
 function sairAdm() {
   const t = TOKEN;
   guardarToken(''); guardarComo('');
-  telaAdm = false;
+  telaAcesso = 'login'; trocaObrigatoria = false;
   impSel = {}; impMes = null; impObs = ''; impLotes = [];
   fetch(URL_BASE + '?acao=sair_adm&t=' + encodeURIComponent(t))
     .catch(function () { /* a sessão expira sozinha de todo modo */ });
@@ -785,7 +939,18 @@ function entrar() {
       if (!j.sucesso) { toast(j.mensagem, true); return; }
       guardarToken(j.token);
       marcarAtividade();
+      // Entrou com a senha inicial: a troca vem antes de qualquer
+      // outra coisa, senão ela nunca acontece.
+      if (j.precisaDefinirSenha) {
+        trocaObrigatoria = true;
+        recNome = j.primeiroNome || '';
+        toast(j.mensagem || 'Defina a sua senha.', true);
+        mostrar('ger');
+        return;
+      }
       toast('Bem-vindo, ' + j.primeiroNome + '.');
+      // Quem entra vem ver as próprias DEJEPs, não a escala geral.
+      mostrar('ger');
       carregar();
     })
     .catch(function () {
@@ -794,7 +959,7 @@ function entrar() {
 
 function sair() {
   guardarToken(''); guardarComo('');
-  telaAdm = false;
+  telaAcesso = 'login'; trocaObrigatoria = false;
   impSel = {}; impMes = null; impObs = ''; impLotes = [];
   carregar();
 }
@@ -803,14 +968,14 @@ function sair() {
 // Aba "Gerenciar DEJEPs": tudo o que o servidor faz, num lugar só
 // ------------------------------------------------------------
 function renderGerenciar() {
-  if (!TOKEN) return telaAdm ? renderLoginAdm() : renderLogin();
+  if (!TOKEN) return renderAcesso();
   if (!dados) return '<div class="empty-msg">Carregando os seus dados...</div>';
   // Entrou como ADM e ainda não disse em nome de quem vai agir.
   if (dados.adm && !dados.eu) return renderEscolhaDeServidor();
   if (!dados.eu) {
     return '<div class="aviso-info" style="border-left-color:#a02020;background:#fde8e8;'
       + 'color:#7a1a1a;margin-bottom:1rem;">A sua sessão expirou. Entre novamente.</div>'
-      + (telaAdm ? renderLoginAdm() : renderLogin());
+      + renderAcesso();
   }
 
   const eu = dados.eu;
@@ -1601,15 +1766,33 @@ function renderLista(filtro) {
     + 'A falta e a convocação emergencial também recolocam o servidor no fim.</div>';
 }
 
+// Identificado = servidor com token válido, ou acesso administrativo.
+function autenticado() { return !!(dados && (dados.eu || dados.adm)); }
+
 function render() {
-  // A aba de gerenciamento se explica mesmo sem dados carregados
+  // MURO DE ACESSO. Sem identificação não há escala, fila nem nome:
+  // a página inteira é a tela de entrada. É mais simples de explicar
+  // do que uma página meio aberta, e não deixa sobra para discutir.
+  const dentro = autenticado();
+  el('abas').style.display = dentro ? '' : 'none';
+  // O texto de apresentação fala em "aba" — que só existe depois de
+  // entrar. Fora, a mesma frase sem a referência às abas.
+  el('aviso-dentro').style.display = dentro ? '' : 'none';
+  el('aviso-fora').style.display = dentro ? 'none' : '';
+  el('busca').style.display = (dentro && !dados.precisaEntrar && aba !== 'ger') ? '' : 'none';
+  if (!dentro) {
+    el('card-titulo').textContent = recToken || trocaObrigatoria
+      ? 'Definir a senha' : 'Acesso à DEJEP';
+    el('conteudo').innerHTML = renderAcesso();
+    return;
+  }
+
   if (aba === 'ger') {
     el('conteudo').innerHTML = renderGerenciar();
     if (dados && dados.eu) pintarGrade();
     return;
   }
   if (!dados) return;
-  el('busca').style.display = dados.precisaEntrar ? 'none' : '';
   const filtro = el('busca').value.trim().toLowerCase();
   el('conteudo').innerHTML = (aba === 'escala') ? renderEscala(filtro) : renderLista(filtro);
 }
@@ -1791,7 +1974,34 @@ if (TOKEN) {
   else marcarAtividade();
 }
 
-carregar();
+// Chegou pelo link de recuperação: a tela de definir a senha vem
+// antes de tudo, e o link é conferido antes de o servidor digitar —
+// descobrir que o link venceu depois de escolher a senha irrita.
+if (recToken) {
+  guardarToken(''); guardarComo('');
+  mostrar('ger');
+  mostrarAguardo('Conferindo o link...');
+  fetch(URL_BASE + '?acao=conferir_link&r=' + encodeURIComponent(recToken))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      esconderAguardo();
+      if (j.sucesso) { recNome = j.primeiroNome || ''; }
+      else {
+        recToken = '';
+        try { history.replaceState(null, '', location.pathname); } catch (e) { /* ok */ }
+        toast(j.mensagem, true);
+      }
+      carregar();
+    })
+    .catch(function () {
+      esconderAguardo();
+      recToken = '';
+      toast('Não foi possível conferir o link agora. Tente novamente.', true);
+      carregar();
+    });
+} else {
+  carregar();
+}
 </script>
 </body>
 </html>
