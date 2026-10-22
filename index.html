@@ -338,6 +338,9 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8
 
 // ⚠️ Constituída a lista, altere para false e republique a página.
 // O cadastro passa a ser feito pela Diretoria de Disciplina.
+// Valor de partida apenas, para a página não piscar enquanto
+// pergunta. Quem decide é o servidor, pelo interruptor do menu da
+// planilha — assim encerrar não exige republicar esta página.
 const INSCRICOES_ABERTAS = true;
 
 function el(id) { return document.getElementById(id); }
@@ -558,6 +561,11 @@ async function enviar(tentativa) {
           '<i class="fa-solid fa-envelope"></i> Comprovante e <strong>link pessoal</strong> enviados para <strong>'
           + escapar(d.email) + '</strong>';
       }
+    } else if (json.encerradas) {
+      // Encerrou depois de a página ter sido aberta: em vez de uma
+      // mensagem de erro no formulário, a tela passa a ser a de
+      // inscrições encerradas, que é o que de fato ocorreu.
+      fecharInscricoes(json.mensagem);
     } else if (json.ocupado && tentativa < 3) {
       // Outra inscrição está sendo gravada neste instante. Nada foi
       // gravado desta, então repetir é seguro — e melhor do que pedir
@@ -607,10 +615,26 @@ function reiniciar() {
   atualizar();
 }
 
-if (!INSCRICOES_ABERTAS) {
+function fecharInscricoes(msg) {
   el('form-area').style.display = 'none';
   el('encerrado').style.display = 'block';
+  if (msg) {
+    var p = el('encerrado').querySelector('p');
+    if (p) p.textContent = msg;
+  }
 }
+
+if (!INSCRICOES_ABERTAS) fecharInscricoes();
+
+// Pergunta ao servidor, que é quem manda. Se a consulta falhar, fica
+// como está: a inscrição em si continua sendo recusada do outro lado.
+fetch(APPS_SCRIPT_URL + '?acao=situacao_inscricao')
+  .then(function (r) { return r.json(); })
+  .then(function (j) {
+    if (j && j.sucesso && j.abertas === false) fecharInscricoes(j.mensagem);
+  })
+  .catch(function () { /* o servidor recusa de todo modo */ });
+
 atualizar();
 </script>
 </body>
