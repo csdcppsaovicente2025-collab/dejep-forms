@@ -132,6 +132,11 @@ font-weight: 700; cursor: pointer; background: #e8edf3; color: #45617f; }
 .btn-resp { flex: 1; border: 0; border-radius: 8px; padding: 10px; font-size: 0.85rem;
 font-weight: 700; cursor: pointer; background: #e8edf3; color: #45617f; }
 .btn-resp.aceitar { background: #1a3a5c; color: #fff; }
+/* Retirar o próprio pedido é ação de desfazer: vermelha e cheia, para
+   não se perder no cinza do cartão. Vem sozinha na linha, longe de
+   "Aceitar" e "Recusar", que ficam nos pedidos recebidos. */
+.btn-resp.perigo { background: #c0392b; color: #fff; }
+.btn-resp.perigo:hover { background: #a93226; }
 /* Indicador de carregamento no centro da tela. No telefone, um aviso
    no rodapé passa despercebido — e o servidor clica de novo. */
 .aguardo { position: fixed; inset: 0; background: rgba(12,26,44,0.55); display: none;
@@ -1138,9 +1143,9 @@ function renderSolicitacoes() {
         // há mais pedido a cancelar.
         + (pend
             ? '<div style="margin-top:0.7rem;">'
-              + '<button class="btn-resp"'
+              + '<button class="btn-resp perigo"'
               + ' onclick="confirmarCancelarPedido(\'' + r.id + '\')">'
-              + 'Cancelar este pedido</button></div>'
+              + '✕ Cancelar este pedido</button></div>'
             : '')
         + '</div>';
     });
