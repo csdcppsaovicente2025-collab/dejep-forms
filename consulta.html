@@ -1058,6 +1058,7 @@ const SITUACAO_TROCA = {
   'Aceita':         { cor: '#276221', fundo: '#eef7ee', texto: 'aceita — troca feita' },
   'Recusada':       { cor: '#8a2020', fundo: '#fde8e8', texto: 'recusada' },
   'Invalida':       { cor: '#8a2020', fundo: '#fde8e8', texto: 'não pôde ser efetivada' },
+  'Cancelada':      { cor: '#45617f', fundo: '#eef1f5', texto: 'cancelada por você' },
   'Falha no envio': { cor: '#8a2020', fundo: '#fde8e8', texto: 'o e-mail não foi entregue' }
 };
 
@@ -1115,8 +1116,9 @@ function renderSolicitacoes() {
       + 'margin:' + (s.recebidas.length ? '1rem' : '0') + ' 0 0.4rem;">'
       + 'Pedidos que você fez</div>';
     s.feitas.forEach(function (r) {
-      h += '<div style="border:1px solid #dde4ed;border-radius:10px;'
-        + 'padding:0.8rem 0.9rem;margin-bottom:8px;">'
+      const pend = r.situacao === 'Pendente';
+      h += '<div style="border:1px solid ' + (pend ? '#cfdcea' : '#dde4ed') + ';'
+        + 'border-radius:10px;padding:0.8rem 0.9rem;margin-bottom:8px;">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
         + '<strong style="font-size:0.88rem;color:#1a3a5c;">' + escapar(r.outro) + '</strong>'
         + etiquetaSituacao(r.situacao) + '</div>'
@@ -1130,10 +1132,51 @@ function renderSolicitacoes() {
         + (r.respondidaEm ? ' &bull; respondido em ' + escapar(r.respondidaEm) : '')
         + (r.situacao === 'Falha no envio'
             ? ' &bull; avise o colega por outro meio ou procure a Diretoria de Disciplina' : '')
-        + '</div></div>';
+        + '</div>'
+        // Enquanto ninguém respondeu, o pedido é só um pedido: quem fez
+        // pode retirá-lo. Depois do aceite a escala já mudou, e aí não
+        // há mais pedido a cancelar.
+        + (pend
+            ? '<div style="margin-top:0.7rem;">'
+              + '<button class="btn-resp"'
+              + ' onclick="confirmarCancelarPedido(\'' + r.id + '\')">'
+              + 'Cancelar este pedido</button></div>'
+            : '')
+        + '</div>';
     });
   }
   return h;
+}
+
+function confirmarCancelarPedido(id) {
+  const s = dados.solicitacoes || { feitas: [] };
+  const r = s.feitas.find(function (x) { return x.id === id; });
+  if (!r) return;
+  abrirModal('Cancelar o pedido de troca',
+    'O pedido enviado a <strong>' + escapar(r.outro) + '</strong> será retirado.'
+    + '<br><br>Você continua com a sua DEJEP de <strong>' + trechoDejep(r.minha)
+    + '</strong> e nada muda na escala. '
+    + escapar(r.outro) + ' será avisado(a) de que não precisa responder.', '',
+    '<button class="modal-btn" onclick="fecharModalForcado()">Voltar</button>'
+    + '<button class="modal-btn perigo" onclick="cancelarPedido(\'' + id + '\')">'
+    + 'Confirmar cancelamento</button>');
+}
+
+function cancelarPedido(id) {
+  fecharModalForcado();
+  mostrarAguardo('Cancelando o pedido...');
+  fetch(URL_BASE + '?acao=cancelar_solicitacao&t=' + encodeURIComponent(TOKEN)
+      + comoParam() + '&s=' + encodeURIComponent(id))
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      esconderAguardo();
+      toast(j.mensagem, !j.sucesso);
+      carregar();
+    })
+    .catch(function () {
+      esconderAguardo();
+      toast('Não foi possível cancelar o pedido. Tente de novo.', true);
+    });
 }
 
 function confirmarResposta(id, resposta) {
