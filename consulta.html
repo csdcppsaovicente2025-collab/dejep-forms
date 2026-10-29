@@ -41,6 +41,9 @@ tbody tr:nth-child(even) { background: #f7f9fc; }
 border-radius: 6px; padding: 2px 6px; font-size: 0.78rem; font-weight: 700; }
 .pos.topo { background: #1e7a46; }
 .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Coluna de contagem: o cabeçalho é largo e o número é curto, então
+   os dois centralizados é o único jeito de ficarem na mesma prumada. */
+.centro, th.centro { text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tag { font-size: 0.7rem; padding: 2px 7px; border-radius: 5px; background: #ead1dc; color: #7a2348; font-weight: 700; }
 .empty-msg { text-align: center; color: #8fa3ba; font-size: 0.88rem; padding: 1.5rem 1rem; line-height: 1.6; }
 .aviso-info { background: #eef4fb; border-left: 4px solid #2d6a9f; border-radius: 8px;
@@ -1786,7 +1789,7 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
   const comContagem = !!dados.porContagem;
   html += '<div class="tabela-wrap"><table><thead><tr>'
     + '<th style="width:60px;">#</th><th>Servidor</th>'
-    + (comContagem ? '<th style="width:86px;">DEJEPs</th>' : '')
+    + (comContagem ? '<th class="centro" style="width:86px;">DEJEPs</th>' : '')
     + '<th style="width:90px;">Turno</th>'
     + '</tr></thead><tbody>';
   visiveis.forEach(function (i) {
@@ -1798,7 +1801,7 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
       + (i.listas === 'Ambas' ? ' <span class="tag" style="background:#d9e8f5;color:#1a3a5c;">nas duas</span>' : '')
       + '</td>'
       + (comContagem
-          ? '<td class="num">' + (i.dejeps === null || i.dejeps === undefined
+          ? '<td class="centro">' + (i.dejeps === null || i.dejeps === undefined
               ? '—' : i.dejeps) + '</td>'
           : '')
       + '<td>' + escapar(i.turno || '—') + '</td></tr>';
