@@ -1790,7 +1790,7 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
   html += '<div class="tabela-wrap"><table><thead><tr>'
     + '<th style="width:60px;">#</th><th>Servidor</th>'
     + (comContagem ? '<th class="centro" style="width:86px;">DEJEPs</th>' : '')
-    + '<th style="width:90px;">Turno</th>'
+    + '<th class="centro" style="width:90px;">Turno</th>'
     + '</tr></thead><tbody>';
   visiveis.forEach(function (i) {
     const eu = meuNome && i.nome.toLowerCase() === meuNome;
@@ -1804,7 +1804,7 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
           ? '<td class="centro">' + (i.dejeps === null || i.dejeps === undefined
               ? '—' : i.dejeps) + '</td>'
           : '')
-      + '<td>' + escapar(i.turno || '—') + '</td></tr>';
+      + '<td class="centro">' + escapar(i.turno || '—') + '</td></tr>';
   });
   return html + '</tbody></table></div>';
 }
