@@ -309,9 +309,9 @@ SP" />
 <div class="aviso-info" id="aviso-info">
 São duas filas independentes: a diurna atende os postos das 07h e das 08h, o jumbo e a
 torre diurna; a noturna atende a torre noturna. A convocação segue a ordem de cada uma,
-definida pela inscrição, e
-quem é escalado passa para o fim da fila daquele período. O horário de entrada é apurado
-pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.
+dada pela <strong>quantidade de DEJEPs</strong> de cada servidor — quem fez menos vem
+primeiro —, e quem é escalado passa para o fim da fila daquele período. O horário de
+entrada é apurado pelo intervalo mínimo de 1 hora entre o plantão e a DEJEP.
 <span id="aviso-dentro">Na aba
 <strong>Gerenciar DEJEPs</strong>, entrando com o seu RG e a sua senha, você vê as suas
 DEJEPs do mês, solicita troca, cancela e informa os dias em que não pode ser convocado —
@@ -1781,8 +1781,13 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
   }
 
   const meuNome = dados.eu ? dados.eu.nome.toLowerCase() : null;
+  // A contagem é o que ordena a fila. Mostrá-la é o que permite a
+  // cada um conferir a própria posição sem precisar perguntar.
+  const comContagem = !!dados.porContagem;
   html += '<div class="tabela-wrap"><table><thead><tr>'
-    + '<th style="width:60px;">#</th><th>Servidor</th><th style="width:90px;">Turno</th>'
+    + '<th style="width:60px;">#</th><th>Servidor</th>'
+    + (comContagem ? '<th style="width:86px;">DEJEPs</th>' : '')
+    + '<th style="width:90px;">Turno</th>'
     + '</tr></thead><tbody>';
   visiveis.forEach(function (i) {
     const eu = meuNome && i.nome.toLowerCase() === meuNome;
@@ -1791,7 +1796,12 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
       + '<td>' + escapar(i.nome)
       + (i.soTorre ? ' <span class="tag">torre</span>' : '')
       + (i.listas === 'Ambas' ? ' <span class="tag" style="background:#d9e8f5;color:#1a3a5c;">nas duas</span>' : '')
-      + '</td><td>' + escapar(i.turno || '—') + '</td></tr>';
+      + '</td>'
+      + (comContagem
+          ? '<td class="num">' + (i.dejeps === null || i.dejeps === undefined
+              ? '—' : i.dejeps) + '</td>'
+          : '')
+      + '<td>' + escapar(i.turno || '—') + '</td></tr>';
   });
   return html + '</tbody></table></div>';
 }
@@ -1809,9 +1819,19 @@ function renderLista(filtro) {
       'Atende a torre noturna. A participação depende de manifestação na inscrição.')
     + '<div style="font-size:0.76rem;color:#6b80a0;line-height:1.5;margin-top:14px;">'
     + 'São <strong>duas filas independentes</strong>: ser escalado numa não altera a posição '
-    + 'na outra. A ordem foi definida na inscrição e é contínua — quem realiza uma DEJEP passa '
-    + 'para o fim da fila daquele período, e o mês seguinte começa de onde o anterior parou. '
-    + 'A falta e a convocação emergencial também recolocam o servidor no fim.</div>';
+    + 'na outra.'
+    + (dados.porContagem
+        ? ' A ordem é dada pela <strong>quantidade de DEJEPs</strong> de cada um: quem fez '
+          + 'menos vem primeiro. A coluna DEJEPs mostra esse número, contado desde que o '
+          + 'sistema entrou em operação — não entram as canceladas nem as faltas. '
+          + 'Quem empata na mesma quantidade fica na ordem do rodízio, e dentro do mês vale '
+          + 'o rodízio de sempre: quem pega uma vaga passa para o fim. Quem se inscreve '
+          + 'depois entra com a média do grupo, para não passar à frente de quem já está na '
+          + 'fila.'
+        : ' A ordem foi definida na inscrição e é contínua — quem realiza uma DEJEP passa '
+          + 'para o fim da fila daquele período, e o mês seguinte começa de onde o anterior '
+          + 'parou. A falta e a convocação emergencial também recolocam o servidor no fim.')
+    + '</div>';
 }
 
 // Identificado = servidor com token válido, ou acesso administrativo.
