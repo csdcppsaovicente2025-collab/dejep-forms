@@ -241,12 +241,11 @@ unificada, as habilitações exigidas, a necessidade operacional e os critérios
 <option value="Ambas">Diurna e noturna</option>
 </select>
 <p style="font-size:0.78rem;color:#6b80a0;line-height:1.5;margin:6px 0 0;" id="nota-listas">
-São <strong>duas filas independentes</strong>. A <strong>diurna</strong> atende os postos
-das 07h e das 08h, o jumbo e a torre diurna; a <strong>noturna</strong> atende a torre
-noturna. Cada uma tem
-a sua posição e corre sozinha — ser escalado numa não altera a sua posição na outra.<br>
-A participação na lista noturna <strong>depende desta manifestação</strong>: sem ela, você
-é escalado apenas nas DEJEPs diurnas.
+A lista é <strong>única</strong>, separada nos períodos <strong>diurno</strong> e
+<strong>noturno</strong>. O diurno atende os postos das 07h e das 08h, o jumbo e a torre
+diurna; o noturno atende a torre noturna.<br>
+A atuação no período noturno <strong>depende desta manifestação</strong>: sem ela, você é
+escalado apenas nas DEJEPs diurnas.
 </p>
 </div>
 </div>
@@ -363,11 +362,10 @@ function onGenero() {
   } else {
     sel.disabled = false;
     el('nota-listas').innerHTML =
-      'São <strong>duas filas independentes</strong>. A <strong>diurna</strong> atende os '
-      + 'postos das 07h e das 08h, o jumbo e a torre diurna; a <strong>noturna</strong> atende '
-      + 'a torre noturna. Cada uma '
-      + 'tem a sua posição e corre sozinha — ser escalado numa não altera a sua posição na outra.'
-      + '<br>A participação na lista noturna <strong>depende desta manifestação</strong>: sem ela, '
+      'A lista é <strong>única</strong>, separada nos períodos <strong>diurno</strong> e '
+      + '<strong>noturno</strong>. O diurno atende os postos das 07h e das 08h, o jumbo e a '
+      + 'torre diurna; o noturno atende a torre noturna.'
+      + '<br>A atuação no período noturno <strong>depende desta manifestação</strong>: sem ela, '
       + 'você é escalado apenas nas DEJEPs diurnas.';
   }
   atualizar();
