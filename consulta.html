@@ -880,20 +880,19 @@ function entrarAdm() {
       + '&senha=' + encodeURIComponent(senha))
     .then(function (r) { return r.json(); })
     .then(function (j) {
-      esconderAguardo();
-      if (!j.sucesso) { toast(j.mensagem, true); return; }
+      if (!j.sucesso) { esconderAguardo(); toast(j.mensagem, true); return; }
+      // O indicador continua de pé: a escala ainda vai ser buscada.
+      mostrarAguardo('Abrindo o painel...');
       guardarToken(j.token);
       guardarComo('');
       telaAcesso = 'login';
       marcarAtividade();
-      if (j.consulta) {
-        toast('Acesso de consulta aberto por ' + j.horas + ' horas.');
-        mostrar('stats');
-      } else {
-        toast('Acesso administrativo aberto por ' + j.horas + ' horas.');
-        mostrar('ger');
-      }
-      carregar();
+      const ehConsultaAgora = !!j.consulta, horas = j.horas;
+      mostrar(ehConsultaAgora ? 'stats' : 'ger');
+      carregar(function () {
+        toast((ehConsultaAgora ? 'Acesso de consulta' : 'Acesso administrativo')
+          + ' aberto por ' + horas + ' horas.');
+      });
     })
     .catch(function () {
       esconderAguardo();
@@ -1082,6 +1081,49 @@ function vizColunas(titulo, sub, itens) {
   return vizCartao(titulo, sub, '<div class="viz-cols">' + cols + '</div>');
 }
 
+// O acompanhamento da cota ao longo do mês: quanto das 119 já está
+// colocado, quanto falta, e se ainda cabe nos dias que restam. É o
+// quadro que diz se é hora de agir, e por isso fica no topo.
+function vizSaldo(e) {
+  const s = e.saldo;
+  if (!s) return '';
+  const pc = Math.round(s.usadas * 100 / e.cotaTotal);
+  const falta = e.cotaTotal - s.usadas;
+  const alerta = s.mesCorrente && s.faltam > 0 && !s.cabe;
+  const cor = falta === 0 ? 'var(--s3)' : (alerta ? 'var(--s4)' : 'var(--s1)');
+  let nota;
+  if (!s.mesCorrente) {
+    nota = 'Mês fora do corrente: o número é o do que está lançado.';
+  } else if (falta === 0) {
+    nota = '<strong>Cota fechada.</strong> As ' + e.cotaTotal + ' estão colocadas.';
+  } else if (alerta) {
+    nota = '<strong style="color:#8a2020;">Não cabe mais tudo.</strong> Faltam '
+      + s.faltam + ' e só cabem ' + s.capacidade + ' em ' + s.diasDisponiveis
+      + ' dia(s) de terça a sexta com antecedência suficiente'
+      + (s.ultimoDia ? ' — o último é ' + s.ultimoDia : '') + '. '
+      + (s.faltam - s.capacidade) + ' vão se perder se nada for feito.';
+  } else if (s.naReta) {
+    nota = '<strong>Reta final.</strong> A reserva emergencial não usada ('
+      + s.reservaLivre + ') já entrou na conta. Faltam <strong>' + s.faltam
+      + '</strong>, e cabem ' + s.capacidade + ' nos ' + s.diasDisponiveis
+      + ' dia(s) que restam.';
+  } else {
+    nota = 'Faltam <strong>' + s.faltam + '</strong> para a meta de ' + s.meta
+      + '. A reserva de ' + s.reservaLivre + ' ainda está de pé e entra na conta na '
+      + 'reta final do mês. Restam ' + s.diasAteOFim + ' dia(s).';
+  }
+  return '<div class="viz-cartao" style="margin-bottom:14px;">'
+    + '<div class="viz-tit">Saldo da cota</div>'
+    + '<div class="viz-num" style="color:' + (alerta ? '#8a2020' : '#1a3a5c') + ';">'
+    + s.usadas + '<small> de ' + e.cotaTotal + '</small></div>'
+    + '<div class="viz-sub" style="margin:4px 0 9px;">' + falta
+    + ' por colocar até o fim do mês</div>'
+    + '<div class="viz-trilho" style="height:16px;" title="' + s.usadas + ' de '
+    + e.cotaTotal + '"><div class="viz-barra" style="width:' + Math.min(pc, 100)
+    + '%;background:' + cor + ';"></div></div>'
+    + '<div class="viz-sub" style="margin:10px 0 0;">' + nota + '</div></div>';
+}
+
 function renderEstatisticas() {
   const e = dados && dados.estatisticas;
   // A faixa de perfil acompanha TODA aba: é por ela que a chefia sai,
@@ -1110,6 +1152,7 @@ function renderEstatisticas() {
     + vizNumero('Servidores na lista', e.inscritos,
         e.filaDiurna + ' no período diurno &bull; ' + e.filaNoturna + ' no noturno')
     + '</div>'
+    + vizSaldo(e)
     + '<div class="viz-cartao" style="margin-bottom:14px;">'
     + '<div class="viz-tit">Como a cota do mês foi fechada</div>'
     + '<div class="viz-sub">Os postos fixos pedem um número que varia com o calendário; '
@@ -1189,23 +1232,24 @@ function entrar() {
       + '&senha=' + encodeURIComponent(senha))
     .then(function (r) { return r.json(); })
     .then(function (j) {
-      esconderAguardo();
-      if (!j.sucesso) { toast(j.mensagem, true); return; }
+      if (!j.sucesso) { esconderAguardo(); toast(j.mensagem, true); return; }
       guardarToken(j.token);
       marcarAtividade();
       // Entrou com a senha inicial: a troca vem antes de qualquer
       // outra coisa, senão ela nunca acontece.
       if (j.precisaDefinirSenha) {
+        esconderAguardo();
         trocaObrigatoria = true;
         recNome = j.primeiroNome || '';
         toast(j.mensagem || 'Defina a sua senha.', true);
         mostrar('ger');
         return;
       }
-      toast('Bem-vindo, ' + j.primeiroNome + '.');
+      mostrarAguardo('Abrindo as suas DEJEPs...');
+      const primeiro = j.primeiroNome;
       // Quem entra vem ver as próprias DEJEPs, não a escala geral.
       mostrar('ger');
-      carregar();
+      carregar(function () { toast('Bem-vindo, ' + primeiro + '.'); });
     })
     .catch(function () {
       esconderAguardo(); toast('Não foi possível entrar agora. Tente novamente.', true); });
@@ -2264,8 +2308,14 @@ function executarCancelamento(id) {
 }
 
 // ------------------------------------------------------------
-function carregar() {
-  if (!dados) mostrarAguardo('Carregando...');
+// Entrar são DUAS chamadas: a que confere a senha e a que busca a
+// escala. Esconder o indicador ao fim da primeira deixava a tela
+// parada e sem sinal durante a segunda, que é a demorada. O
+// indicador agora atravessa as duas, e quem chamou pode pedir algo
+// para depois de a tela estar pronta — o aviso da sessão, por
+// exemplo, que aparecia antes de a página existir.
+function carregar(aoTerminar) {
+  if (!el('aguardo').classList.contains('ativo')) mostrarAguardo('Carregando...');
   const url = URL_BASE + '?acao=consulta'
     + (TOKEN ? '&t=' + encodeURIComponent(TOKEN) : '')
     + (mesRef ? '&mes=' + encodeURIComponent(mesRef) : '')
@@ -2293,6 +2343,7 @@ function carregar() {
         ? 'Escala de ' + d.mes : TITULO_ABA[aba];
     }
     render();
+    if (aoTerminar) aoTerminar(d);
   }).catch(function () {
     esconderAguardo();
     el('conteudo').innerHTML = '<div class="empty-msg">Não foi possível carregar os dados '
