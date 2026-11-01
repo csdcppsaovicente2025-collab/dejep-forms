@@ -243,6 +243,50 @@ background: #1a3a5c; color: #fff; font-size: 0.92rem; font-weight: 700; cursor: 
 font-family: inherit; }
 .dp-enviar:disabled { background: #c0ccd8; cursor: not-allowed; }
 .dp-enviar.adm { background: #5e3a80; }
+/* ---- Gráficos da aba de estatísticas ----
+   Paleta conferida com o validador de contraste e de daltonismo:
+   as cinco cores passam na banda de luminosidade, no piso de croma,
+   na separação sob deuteranopia e no contraste contra o branco.
+   Cada série também vai rotulada — cor sozinha nunca carrega a
+   identidade. */
+.viz { --s1:#2d6a9f; --s2:#9c6b12; --s3:#0f8f6b; --s4:#c0392b; --s5:#7c58ab;
+  --neutro:#8fa3ba; --trilho:#e8edf3; }
+.viz-grade { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.viz-cartao { border: 1px solid #dde4ed; border-radius: 12px; padding: 0.9rem 1rem; background: #fff; }
+.viz-tit { font-size: 0.74rem; font-weight: 700; color: #1a3a5c; text-transform: uppercase;
+  letter-spacing: 0.04em; margin-bottom: 2px; }
+.viz-sub { font-size: 0.72rem; color: #8fa3ba; margin-bottom: 10px; line-height: 1.4; }
+.viz-num { font-size: 2.1rem; font-weight: 700; color: #1a3a5c; line-height: 1.1;
+  font-variant-numeric: tabular-nums; }
+.viz-num small { font-size: 0.9rem; font-weight: 600; color: #6b80a0; }
+.viz-linha { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.viz-rot { font-size: 0.78rem; color: #45617f; width: 47%; flex: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viz-trilho { flex: 1; height: 13px; background: var(--trilho); border-radius: 4px; overflow: hidden; }
+.viz-barra { height: 100%; border-radius: 4px; min-width: 2px; }
+.viz-val { font-size: 0.8rem; font-weight: 700; color: #1a3a5c; width: 34px;
+  text-align: right; flex: none; font-variant-numeric: tabular-nums; }
+/* Barra segmentada: 2px de respiro entre os blocos, para que dois
+   vizinhos não se leiam como um só. */
+.viz-seg { display: flex; height: 26px; border-radius: 5px; overflow: hidden;
+  background: var(--trilho); gap: 2px; }
+.viz-seg > span { display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700; color: #fff; min-width: 2px; }
+.viz-legenda { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 9px; }
+.viz-leg { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: #45617f; }
+.viz-ponto { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.viz-cols { display: flex; align-items: flex-end; gap: 6px; height: 104px; margin-top: 4px; }
+.viz-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+  align-items: center; gap: 4px; height: 100%; }
+.viz-col-barra { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; }
+.viz-col-rot { font-size: 0.68rem; color: #6b80a0; white-space: nowrap; }
+.viz-col-val { font-size: 0.72rem; font-weight: 700; color: #1a3a5c; }
+.viz-vazio { font-size: 0.8rem; color: #8fa3ba; padding: 6px 0; }
+/* Verde, e não o roxo do administrativo: a cor da faixa é o aviso
+   mais rápido de qual perfil está aberto. Precisa vir com as duas
+   classes para vencer a regra de .faixa-adm. */
+.faixa-adm.faixa-consulta { background: #1f5133; }
+
 .link-adm { border: 0; background: none; color: #6b80a0; font-size: 0.8rem;
 text-decoration: underline; cursor: pointer; font-family: inherit; padding: 6px; }
 .link-adm:hover { color: #1a3a5c; }
@@ -333,6 +377,8 @@ troca de plantão — sem perder a posição na lista.</span>
 <button class="aba" id="aba-ger" onclick="mostrar('ger')"
 ><span class="aba-longa">Gerenciar DEJEPs</span
 ><span class="aba-curta">Gerenciar</span></button>
+<button class="aba" id="aba-stats" onclick="mostrar('stats')"
+  style="display:none;">Estatísticas</button>
 </div>
 
 <div class="card">
@@ -413,6 +459,9 @@ function comoParam() {
 }
 
 function ehAdm() { return !!(dados && dados.adm); }
+// Perfil de consulta da chefia: lê tudo, não age em nada.
+function ehConsulta() { return !!(dados && dados.consulta); }
+function ehGestao() { return ehAdm() || ehConsulta(); }
 
 // Quando a escala vem sem nomes, a tela tem de dizer por quê. Sem
 // este aviso, a página parece defeituosa e o servidor conclui que
@@ -526,7 +575,8 @@ function toast(msg, erro) {
 }
 
 const TITULO_ABA = { escala: 'Escala do Mês', lista: 'Lista Corrida',
-                     ger: 'Gerenciar as minhas DEJEPs' };
+                     ger: 'Gerenciar as minhas DEJEPs',
+                     stats: 'Estatísticas da DEJEP' };
 
 function mostrarAguardo(txt) {
   el('aguardo-txt').textContent = txt || 'Carregando...';
@@ -536,7 +586,7 @@ function esconderAguardo() { el('aguardo').classList.remove('ativo'); }
 
 function mostrar(qual) {
   aba = qual;
-  ['escala','lista','ger'].forEach(function (k) {
+  ['escala','lista','ger','stats'].forEach(function (k) {
     const b = el('aba-' + k);
     if (b) b.classList.toggle('ativa', qual === k);
   });
@@ -644,7 +694,7 @@ function renderLogin() {
     + 'ele ainda não conste do seu cadastro.</div>'
 
     + '<div style="text-align:center;margin-top:1.2rem;">'
-    + '<button class="link-adm" onclick="irParaAcesso(\'adm\')">Entrar como administrador</button>'
+    + '<button class="link-adm" onclick="irParaAcesso(\'adm\')">Acesso de gestão</button>'
     + '</div>';
 }
 
@@ -793,10 +843,14 @@ function renderLoginAdm() {
   return ''
     + '<div class="aviso-info" style="margin-bottom:1.2rem;border-left-color:#7a4b9c;'
     + 'background:#f6f1fa;color:#4a2d63;">'
-    + '<strong>Acesso administrativo</strong><br>'
-    + 'Entra com usuário e senha da Diretoria de Disciplina e permite agir '
-    + '<strong>em nome de um servidor</strong> — solicitar troca, cancelar DEJEP e lançar '
-    + 'impedimento. Toda ação fica registrada e o servidor recebe aviso por e-mail.</div>'
+    + '<strong>Acesso de gestão</strong><br>'
+    + 'São dois perfis, cada um com a sua credencial — o sistema reconhece pelo '
+    + 'usuário informado.<br><br>'
+    + '<strong>Diretoria de Disciplina:</strong> age <strong>em nome de um servidor</strong> '
+    + '— solicita troca, cancela DEJEP e lança impedimento. Toda ação fica registrada e o '
+    + 'servidor recebe aviso por e-mail.<br><br>'
+    + '<strong>Chefia (consulta):</strong> vê a escala, a lista e as estatísticas. '
+    + '<strong>Não altera nada.</strong></div>'
 
     + '<label class="campo-lbl" for="ad-usuario">Usuário</label>'
     + '<input class="campo-ent" type="text" id="ad-usuario" autocomplete="username"'
@@ -806,7 +860,7 @@ function renderLoginAdm() {
     + '<input class="campo-ent" type="password" id="ad-senha" autocomplete="current-password"'
     + ' onkeydown="if(event.key===\'Enter\')entrarAdm()" />'
 
-    + '<button class="dp-enviar adm" onclick="entrarAdm()">Entrar como administrador</button>'
+    + '<button class="dp-enviar adm" onclick="entrarAdm()">Entrar</button>'
 
     + '<div style="text-align:center;margin-top:1.1rem;">'
     + '<button class="link-adm" onclick="irParaAcesso(\'login\')">Voltar para a entrada do servidor</button>'
@@ -832,8 +886,13 @@ function entrarAdm() {
       guardarComo('');
       telaAcesso = 'login';
       marcarAtividade();
-      toast('Acesso administrativo aberto por ' + j.horas + ' horas.');
-      mostrar('ger');
+      if (j.consulta) {
+        toast('Acesso de consulta aberto por ' + j.horas + ' horas.');
+        mostrar('stats');
+      } else {
+        toast('Acesso administrativo aberto por ' + j.horas + ' horas.');
+        mostrar('ger');
+      }
       carregar();
     })
     .catch(function () {
@@ -920,7 +979,162 @@ function filtrarAdm(v) {
 }
 
 // A faixa roxa que lembra, em toda tela, que quem age é o ADM.
+// ============================================================
+// ESTATÍSTICAS
+//
+// Nenhum gráfico de pizza. Em quase todos estes quadros o leitor
+// precisa COMPARAR os valores — trocas contra cancelamentos, um posto
+// contra outro —, e barras apoiadas na mesma linha de base comparam
+// com precisão que fatias de círculo não dão. Onde se trata de um
+// inteiro repartido em poucas partes, a barra segmentada mostra a
+// divisão de uma vez; onde se trata de uma razão contra um limite,
+// o medidor é mais direto que qualquer dos dois.
+// ============================================================
+const VIZ_CORES = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'];
+
+function vizCartao(titulo, sub, corpo) {
+  return '<div class="viz-cartao"><div class="viz-tit">' + escapar(titulo) + '</div>'
+    + (sub ? '<div class="viz-sub">' + sub + '</div>' : '')
+    + corpo + '</div>';
+}
+
+function vizNumero(titulo, valor, sub) {
+  return vizCartao(titulo, '', '<div class="viz-num">' + valor + '</div>'
+    + (sub ? '<div class="viz-sub" style="margin:4px 0 0;">' + sub + '</div>' : ''));
+}
+
+// Barras horizontais ordenadas, uma por item, todas na mesma cor:
+// aqui o que importa é o tamanho relativo, e cores diferentes
+// sugeririam uma distinção que não existe.
+function vizBarras(titulo, sub, itens, cor) {
+  if (!itens || !itens.length) {
+    return vizCartao(titulo, sub, '<div class="viz-vazio">Nada registrado neste mês.</div>');
+  }
+  const max = Math.max.apply(null, itens.map(function (i) { return i.valor; })) || 1;
+  const corpo = itens.map(function (i) {
+    const pc = Math.round(i.valor * 100 / max);
+    return '<div class="viz-linha" title="' + escapar(i.rotulo) + ': ' + i.valor + '">'
+      + '<div class="viz-rot">' + escapar(i.rotulo) + '</div>'
+      + '<div class="viz-trilho"><div class="viz-barra" style="width:'
+      + Math.max(pc, i.valor > 0 ? 3 : 0) + '%;background:' + (cor || 'var(--s1)')
+      + ';"></div></div>'
+      + '<div class="viz-val">' + i.valor + '</div></div>';
+  }).join('');
+  return vizCartao(titulo, sub, corpo);
+}
+
+// Um inteiro repartido. Cada bloco leva o número dentro quando cabe,
+// e a legenda nomeia todos — a cor nunca responde sozinha.
+function vizSegmentada(titulo, sub, itens) {
+  const total = (itens || []).reduce(function (a, i) { return a + i.valor; }, 0);
+  if (!total) {
+    return vizCartao(titulo, sub, '<div class="viz-vazio">Nada registrado neste mês.</div>');
+  }
+  const blocos = itens.map(function (i, k) {
+    const pc = i.valor * 100 / total;
+    return '<span style="width:' + pc + '%;background:' + VIZ_CORES[k % VIZ_CORES.length]
+      + ';" title="' + escapar(i.rotulo) + ': ' + i.valor + '">'
+      + (pc >= 12 ? i.valor : '') + '</span>';
+  }).join('');
+  const legenda = itens.map(function (i, k) {
+    return '<span class="viz-leg"><span class="viz-ponto" style="background:'
+      + VIZ_CORES[k % VIZ_CORES.length] + ';"></span>' + escapar(i.rotulo)
+      + ' <strong style="color:#1a3a5c;">' + i.valor + '</strong></span>';
+  }).join('');
+  return vizCartao(titulo, sub,
+    '<div class="viz-seg">' + blocos + '</div>'
+    + '<div class="viz-legenda">' + legenda + '</div>');
+}
+
+// Razão contra um limite: quanto do previsto foi coberto.
+function vizMedidor(titulo, sub, feito, total) {
+  if (!total) {
+    return vizCartao(titulo, sub, '<div class="viz-vazio">Nenhuma vaga prevista neste mês.</div>');
+  }
+  const pc = Math.round(feito * 100 / total);
+  const cor = pc >= 100 ? 'var(--s3)' : (pc >= 90 ? 'var(--s1)' : 'var(--s4)');
+  return vizCartao(titulo, sub,
+    '<div class="viz-num">' + pc + '<small>%</small></div>'
+    + '<div class="viz-sub" style="margin:4px 0 9px;">' + feito + ' de ' + total
+    + ' vagas previstas</div>'
+    + '<div class="viz-trilho" style="height:16px;" title="' + feito + ' de ' + total + '">'
+    + '<div class="viz-barra" style="width:' + Math.min(pc, 100)
+    + '%;background:' + cor + ';"></div></div>');
+}
+
+function vizColunas(titulo, sub, itens) {
+  if (!itens || !itens.length) {
+    return vizCartao(titulo, sub, '<div class="viz-vazio">Sem dados neste mês.</div>');
+  }
+  const max = Math.max.apply(null, itens.map(function (i) { return i.valor; })) || 1;
+  const cols = itens.map(function (i) {
+    return '<div class="viz-col" title="' + escapar(i.rotulo) + ': ' + i.valor
+      + ' servidor(es)">'
+      + '<div class="viz-col-val">' + i.valor + '</div>'
+      + '<div class="viz-col-barra" style="height:' + Math.max(i.valor * 100 / max, 2)
+      + '%;background:var(--s1);"></div>'
+      + '<div class="viz-col-rot">' + escapar(i.rotulo) + '</div></div>';
+  }).join('');
+  return vizCartao(titulo, sub, '<div class="viz-cols">' + cols + '</div>');
+}
+
+function renderEstatisticas() {
+  const e = dados && dados.estatisticas;
+  // A faixa de perfil acompanha TODA aba: é por ela que a chefia sai,
+  // e é o que lembra, em qualquer tela, com qual acesso se está.
+  if (!e) {
+    return faixaAdm() + barraMes()
+      + '<div class="empty-msg">Não há escala lançada neste mês, '
+      + 'portanto não há o que medir. Escolha outro mês nas setas acima.</div>';
+  }
+  const m = e.movimentacoes.filter(function (x) { return x.valor > 0; });
+  const totalMov = e.movimentacoes.reduce(function (a, x) { return a + x.valor; }, 0);
+
+  return faixaAdm() + barraMes()
+    + '<div class="viz">'
+
+    + '<div class="viz-grade" style="margin-bottom:14px;">'
+    + vizNumero('DEJEPs disponibilizadas', e.previstas,
+        'vagas previstas pelos postos em ' + escapar(e.rotulo))
+    + vizNumero('DEJEPs agendadas', e.agendadas,
+        e.emAberto ? '<strong style="color:#8a2020;">' + e.emAberto
+          + ' vaga(s) em aberto</strong>' : 'nenhuma vaga em aberto')
+    + vizNumero('Servidores na lista', e.inscritos,
+        e.filaDiurna + ' no período diurno &bull; ' + e.filaNoturna + ' no noturno')
+    + vizNumero('Movimentações no mês', totalMov,
+        'trocas, cancelamentos, faltas, reconvocações e emergenciais')
+    + '</div>'
+
+    + '<div class="viz-grade">'
+    + vizMedidor('Cobertura das vagas',
+        'Quanto do previsto foi efetivamente preenchido.',
+        e.agendadas, e.previstas)
+    + vizBarras('Movimentações',
+        'O que mexeu na escala depois de gerada.', m, 'var(--s1)')
+    + vizSegmentada('Pedidos de troca',
+        e.solicitacoesTotal + ' pedido(s) no mês, por desfecho.', e.solicitacoes)
+    + vizBarras('DEJEPs por posto',
+        'Onde as vagas foram abertas.', e.porPosto, 'var(--s1)')
+    + vizSegmentada('Por período',
+        'Como as DEJEPs se repartem entre o diurno e o noturno.', e.porPeriodo)
+    + vizSegmentada('Por tipo de segurança',
+        'Quantas DEJEPs couberam a cada grupo.', e.porSeguranca)
+    + vizColunas('Distribuição entre os servidores',
+        'Quantos servidores ficaram com cada quantidade de DEJEPs. '
+        + (e.zerados ? '<strong>' + e.zerados + '</strong> ficaram sem nenhuma.'
+                     : 'Nenhum ficou sem DEJEP.'), e.faixas)
+    + vizNumero('Impedimentos no mês', e.impedimentos,
+        e.servidoresComImpedimento + ' servidor(es) declararam dias indisponíveis')
+    + '</div></div>';
+}
+
 function faixaAdm() {
+  if (ehConsulta()) {
+    return '<div class="faixa-adm faixa-consulta">'
+      + '<div class="fa-txt"><strong>Acesso de consulta</strong> &bull; '
+      + escapar(dados.gestorUsuario || '') + ' &bull; somente leitura</div>'
+      + '<button class="fa-btn sair" onclick="sairAdm()">Sair</button></div>';
+  }
   if (!ehAdm()) return '';
   const nome = (dados.eu && dados.eu.nome) ? dados.eu.nome : '';
   return '<div class="faixa-adm">'
@@ -1844,7 +2058,7 @@ function renderLista(filtro) {
 }
 
 // Identificado = servidor com token válido, ou acesso administrativo.
-function autenticado() { return !!(dados && (dados.eu || dados.adm)); }
+function autenticado() { return !!(dados && (dados.eu || dados.adm || dados.consulta)); }
 
 function render() {
   // MURO DE ACESSO. Sem identificação não há escala, fila nem nome:
@@ -1852,11 +2066,24 @@ function render() {
   // do que uma página meio aberta, e não deixa sobra para discutir.
   const dentro = autenticado();
   el('abas').style.display = dentro ? '' : 'none';
+  // A aba de estatísticas é da gestão. E o perfil de consulta não
+  // tem o que gerenciar: a aba some, em vez de abrir numa tela que
+  // só recusaria o que ele tentasse fazer.
+  const atual = !!(dados && dados.__token === TOKEN);
+  const bStats = el('aba-stats'), bGer = el('aba-ger');
+  if (bStats) bStats.style.display = (dentro && ehGestao()) ? '' : 'none';
+  if (bGer)   bGer.style.display   = (dentro && ehConsulta()) ? 'none' : '';
+  // A correção de aba só vale quando os dados já são desta sessão.
+  if (atual) {
+    if (ehConsulta() && aba === 'ger') aba = 'stats';
+    if (!ehGestao() && aba === 'stats') aba = 'escala';
+  }
   // O texto de apresentação fala em "aba" — que só existe depois de
   // entrar. Fora, a mesma frase sem a referência às abas.
   el('aviso-dentro').style.display = dentro ? '' : 'none';
   el('aviso-fora').style.display = dentro ? 'none' : '';
-  el('busca').style.display = (dentro && !dados.precisaEntrar && aba !== 'ger') ? '' : 'none';
+  el('busca').style.display =
+    (dentro && !dados.precisaEntrar && aba !== 'ger' && aba !== 'stats') ? '' : 'none';
   if (!dentro) {
     el('card-titulo').textContent = recToken || trocaObrigatoria
       ? 'Definir a senha' : 'Acesso à DEJEP';
@@ -1870,6 +2097,9 @@ function render() {
     return;
   }
   if (!dados) return;
+  el('card-titulo').textContent = (aba === 'escala' && dados.mes)
+    ? 'Escala de ' + dados.mes : TITULO_ABA[aba];
+  if (aba === 'stats') { el('conteudo').innerHTML = renderEstatisticas(); return; }
   const filtro = el('busca').value.trim().toLowerCase();
   el('conteudo').innerHTML = (aba === 'escala') ? renderEscala(filtro) : renderLista(filtro);
 }
@@ -2014,6 +2244,10 @@ function carregar() {
   fetch(url).then(function (r) { return r.json(); }).then(function (d) {
     esconderAguardo();
     dados = d;
+    // De qual token estes dados são. Sem isso, logo após entrar a
+    // página ainda tem em mãos o payload da sessão anterior, e
+    // decidir qual aba mostrar por ele leva à aba errada.
+    dados.__token = TOKEN;
     // O servidor manda de volta qual mês atendeu. Guardar o que ELE
     // disse, e não o que foi pedido, evita a página achar que está num
     // mês e mostrar outro.
