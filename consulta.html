@@ -992,8 +992,12 @@ function filtrarAdm(v) {
 // ============================================================
 const VIZ_CORES = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)'];
 
+// Sem título e sem subtítulo, devolve só o corpo: serve para
+// encaixar um gráfico dentro de outro cartão, sem moldura dupla.
 function vizCartao(titulo, sub, corpo) {
-  return '<div class="viz-cartao"><div class="viz-tit">' + escapar(titulo) + '</div>'
+  if (!titulo && !sub) return corpo;
+  return '<div class="viz-cartao">'
+    + (titulo ? '<div class="viz-tit">' + escapar(titulo) + '</div>' : '')
     + (sub ? '<div class="viz-sub">' + sub + '</div>' : '')
     + corpo + '</div>';
 }
@@ -1094,15 +1098,42 @@ function renderEstatisticas() {
     + '<div class="viz">'
 
     + '<div class="viz-grade" style="margin-bottom:14px;">'
-    + vizNumero('DEJEPs disponibilizadas', e.previstas,
-        'vagas previstas pelos postos em ' + escapar(e.rotulo))
-    + vizNumero('DEJEPs agendadas', e.agendadas,
+    + vizNumero('Cota do mês', e.cotaTotal,
+        '<strong>' + e.previstas + '</strong> a escalar &bull; <strong>'
+        + e.reservaEmergencial + '</strong> reservadas para convocação emergencial')
+    + vizNumero('DEJEPs escaladas', e.agendadas,
         e.emAberto ? '<strong style="color:#8a2020;">' + e.emAberto
-          + ' vaga(s) em aberto</strong>' : 'nenhuma vaga em aberto')
+          + ' vaga(s) em aberto</strong>' : 'de ' + e.previstas + ', nenhuma em aberto')
+    + vizNumero('Reserva emergencial', e.reservaEmergencial,
+        '<strong>' + e.emergenciaisUsadas + '</strong> usada(s) até agora &bull; '
+        + Math.max(0, e.reservaEmergencial - e.emergenciaisUsadas) + ' disponível(eis)')
     + vizNumero('Servidores na lista', e.inscritos,
         e.filaDiurna + ' no período diurno &bull; ' + e.filaNoturna + ' no noturno')
+    + '</div>'
+    + '<div class="viz-cartao" style="margin-bottom:14px;">'
+    + '<div class="viz-tit">Como a cota do mês foi fechada</div>'
+    + '<div class="viz-sub">Os postos fixos pedem um número que varia com o calendário; '
+    + 'a diferença para a cota é cortada ou completada.</div>'
+    + vizSegmentada('', '', [
+        { rotulo: 'Postos fixos', valor: Math.max(0, e.agendadas - (e.apoio || 0)) },
+        { rotulo: 'Apoio carceragem', valor: e.apoio || 0 },
+        { rotulo: 'Em aberto', valor: e.emAberto || 0 }
+      ].filter(function (x) { return x.valor > 0; }))
+    + '<div class="viz-sub" style="margin:10px 0 0;">Os postos pediram <strong>'
+    + e.vagasDosPostos + '</strong> vagas neste mês. '
+    + (e.suprimidas
+        ? '<strong>' + e.suprimidas + '</strong> foram suprimidas no posto das 08h de '
+          + 'domingo, para o mês fechar em ' + e.previstas + '.'
+        : (e.apoio
+            ? 'Faltaram <strong>' + e.apoio + '</strong> para a cota, completadas no '
+              + 'Apoio Carceragem, de terça a sexta às 11h.'
+            : 'O número bateu com a cota, sem corte nem complemento.'))
+    + '</div></div>'
+    + '<div class="viz-grade" style="margin-bottom:14px;">'
     + vizNumero('Movimentações no mês', totalMov,
         'trocas, cancelamentos, faltas, reconvocações e emergenciais')
+    + vizNumero('Impedimentos no mês', e.impedimentos,
+        e.servidoresComImpedimento + ' servidor(es) declararam dias indisponíveis')
     + '</div>'
 
     + '<div class="viz-grade">'
@@ -1123,8 +1154,6 @@ function renderEstatisticas() {
         'Quantos servidores ficaram com cada quantidade de DEJEPs. '
         + (e.zerados ? '<strong>' + e.zerados + '</strong> ficaram sem nenhuma.'
                      : 'Nenhum ficou sem DEJEP.'), e.faixas)
-    + vizNumero('Impedimentos no mês', e.impedimentos,
-        e.servidoresComImpedimento + ' servidor(es) declararam dias indisponíveis')
     + '</div></div>';
 }
 
