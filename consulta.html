@@ -1265,6 +1265,22 @@ function sair() {
 // ------------------------------------------------------------
 // Aba "Gerenciar DEJEPs": tudo o que o servidor faz, num lugar só
 // ------------------------------------------------------------
+// Por que o botão de cancelar está apagado nesta DEJEP.
+function motivoSemCancelar(m) {
+  const p = (dados && dados.prazos) || { cancelamento: 48, tardio: 24 };
+  if (m.horasAte === null || m.horasAte === undefined) {
+    return 'O cancelamento pela página exige ' + p.cancelamento + ' horas de antecedência.';
+  }
+  if (m.horasAte < 0) return 'Esta DEJEP já passou.';
+  const falta = 'Faltam ' + m.horasAte + 'h — o cancelamento pela página exige '
+    + p.cancelamento + 'h. ';
+  return m.tardio
+    ? falta + 'Com menos de ' + p.tardio + 'h o aviso é TARDIO e sujeita a penalidade. '
+      + 'Procure a Diretoria de Disciplina imediatamente.'
+    : falta + 'Procure a Diretoria de Disciplina, que registra e decide — avisando '
+      + 'antes de faltarem ' + p.tardio + 'h não há penalidade.';
+}
+
 function renderGerenciar() {
   if (!TOKEN) return renderAcesso();
   if (!dados) return '<div class="empty-msg">Carregando os seus dados...</div>';
@@ -1317,8 +1333,15 @@ function renderGerenciar() {
         + '<button class="btn-acao" onclick="abrirTrocaDaMinha(\'' + m.id + '\')">Trocar</button>'
         + '<button class="btn-acao cancelar"' + (m.podeCancelar ? '' : ' disabled')
         + ' onclick="confirmarCancelamento(\'' + m.id + '\')"'
-        + (m.podeCancelar ? '' : ' title="O cancelamento exige antecedência mínima de 24 horas"')
-        + '>Cancelar</button></div>';
+        + (m.podeCancelar ? '' : ' title="' + escapar(motivoSemCancelar(m)) + '"')
+        + '>Cancelar</button></div>'
+        // Botão apagado sem explicação vira reclamação. O motivo vai
+        // escrito ao lado, e com o aviso da penalidade quando o
+        // prazo já entrou na faixa tardia.
+        + (m.podeCancelar ? '' :
+            '<div style="font-size:0.7rem;line-height:1.45;margin:-2px 0 6px;color:'
+            + (m.tardio ? '#ffb4a0' : '#8fb4d8') + ';">'
+            + escapar(motivoSemCancelar(m)) + '</div>');
     });
   }
 
@@ -1334,8 +1357,12 @@ function renderGerenciar() {
     h += 'Há <strong>' + totalCompat + '</strong> DEJEPs compatíveis para troca, marcadas '
       + 'com "trocar" na aba Escala do Mês. As incompatíveis aparecem sem o link. ';
   }
-  h += 'O cancelamento exige antecedência de 24 horas e <strong>não altera a sua '
-    + 'posição</strong> na lista.</div></div>';
+  const pz = dados.prazos || { cancelamento: 48, tardio: 24 };
+  h += 'O cancelamento pela página exige <strong>' + pz.cancelamento
+    + ' horas</strong> de antecedência e <strong>não altera a sua posição</strong> na '
+    + 'lista. Abaixo desse prazo, procure a Diretoria de Disciplina: com menos de '
+    + '<strong>' + pz.tardio + ' horas</strong> o aviso é considerado tardio e '
+    + 'sujeita o servidor a penalidade.</div></div>';
 
   h += renderSolicitacoes();
 
