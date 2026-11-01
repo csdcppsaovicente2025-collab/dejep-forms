@@ -1335,6 +1335,15 @@ function renderGerenciar() {
         + ' onclick="confirmarCancelamento(\'' + m.id + '\')"'
         + (m.podeCancelar ? '' : ' title="' + escapar(motivoSemCancelar(m)) + '"')
         + '>Cancelar</button></div>'
+        // Pela Diretoria o botão vale em qualquer prazo, mas o aviso
+        // tardio precisa estar à vista de quem clica: é ele que
+        // sujeita o servidor a penalidade.
+        + ((ehAdm() && m.podeCancelar && m.tardio)
+            ? '<div style="font-size:0.7rem;line-height:1.45;margin:-2px 0 6px;'
+              + 'color:#ffb4a0;">Faltam ' + m.horasAte + 'h: cancelar aqui será '
+              + 'registrado como <strong>aviso tardio</strong>, sujeito a '
+              + 'penalidade.</div>'
+            : '')
         // Botão apagado sem explicação vira reclamação. O motivo vai
         // escrito ao lado, e com o aviso da penalidade quando o
         // prazo já entrou na faixa tardia.
