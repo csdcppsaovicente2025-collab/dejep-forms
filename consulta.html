@@ -408,6 +408,78 @@ SP" />
 // ============================================================
 const URL_BASE = 'https://script.google.com/macros/s/AKfycbwtHE6r5r2nOhK8po1JfLVJBYbf_CKjsJY1Gsp8E88EwWDYJ-CJW110GITNZDR3HS9oXQ/exec';
 
+// ============================================================
+// DIAGNÓSTICO DE VELOCIDADE — abra a página com ?diag=1
+//
+// "Está lento" não se conserta por palpite. Com ?diag=1 a página
+// mostra, num quadro no canto, cada chamada feita ao servidor, quanto
+// ela levou de ponta a ponta e quanto DISSO o servidor gastou
+// calculando. A diferença entre as duas é viagem pela internet mais o
+// arranque do Apps Script, que nenhum conserto no código alcança.
+//
+// Mostra também a versão implantada. Colar o código no editor não
+// muda o que o /exec responde: só uma nova implantação muda. Se a
+// versão aqui não for a esperada, o servidor no ar ainda é o antigo.
+// ============================================================
+const DIAG = /[?&]diag=1/.test(location.search);
+const diagChamadas = [];
+
+if (DIAG) {
+  const fetchOriginal = window.fetch.bind(window);
+  window.fetch = function (url) {
+    const t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+    const acao = (String(url).match(/acao=([a-z_]+)/) || [, '?'])[1];
+    const marcar = function (j) {
+      const t1 = (window.performance && performance.now) ? performance.now() : Date.now();
+      diagChamadas.push({
+        acao: acao + (String(url).indexOf('stats=1') !== -1 ? ' +stats' : ''),
+        total: Math.round(t1 - t0),
+        servidor: (j && typeof j.tempoMs === 'number') ? j.tempoMs : null,
+        versao: (j && j.versao) || '',
+        bytes: j ? JSON.stringify(j).length : 0
+      });
+      desenharDiag();
+    };
+    return fetchOriginal.apply(null, arguments).then(function (r) {
+      try {
+        r.clone().json().then(marcar).catch(function () { marcar(null); });
+      } catch (e) { marcar(null); }
+      return r;
+    }, function (e) { marcar(null); throw e; });
+  };
+}
+
+function desenharDiag() {
+  if (!DIAG || !document.body) return;
+  let cx = document.getElementById('diag');
+  if (!cx) {
+    cx = document.createElement('div');
+    cx.id = 'diag';
+    cx.style.cssText = 'position:fixed;right:10px;bottom:10px;z-index:9999;max-width:330px;'
+      + 'background:#1a3a5c;color:#fff;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;'
+      + 'padding:10px 12px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.35)';
+    document.body.appendChild(cx);
+  }
+  const versoes = diagChamadas.map(function (c) { return c.versao; })
+    .filter(function (v) { return v; });
+  const v = versoes.length ? versoes[versoes.length - 1] : '(não informada)';
+  const somaT = diagChamadas.reduce(function (a, c) { return a + c.total; }, 0);
+  const somaS = diagChamadas.reduce(function (a, c) {
+    return a + (c.servidor || 0); }, 0);
+  cx.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Diagnóstico</div>'
+    + '<div style="color:#a8c4e0">versão no ar: <b style="color:#fff">' + v + '</b></div>'
+    + '<div style="color:#a8c4e0;margin-bottom:6px">'
+    + diagChamadas.length + ' chamada(s) · ' + somaT + ' ms, sendo '
+    + somaS + ' ms de servidor</div>'
+    + diagChamadas.map(function (c) {
+        const fora = (c.servidor === null) ? '?' : (c.total - c.servidor);
+        return '<div>' + c.acao + ': <b>' + c.total + ' ms</b>'
+          + ' <span style="color:#a8c4e0">(' + (c.servidor === null ? '?' : c.servidor)
+          + ' servidor + ' + fora + ' rede) · '
+          + Math.round(c.bytes / 1024) + ' KB</span></div>';
+      }).join('');
+}
+
 // A identificação vem do login por RG e senha, guardada enquanto a
 // aba do navegador estiver aberta. O link pessoal antigo, que ainda
 // circula em e-mails já enviados, continua valendo.
