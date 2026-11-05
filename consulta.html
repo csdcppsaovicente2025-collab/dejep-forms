@@ -2247,17 +2247,21 @@ function render() {
   // do que uma página meio aberta, e não deixa sobra para discutir.
   const dentro = autenticado();
   el('abas').style.display = dentro ? '' : 'none';
-  // A aba de estatísticas é da gestão. E o perfil de consulta não
-  // tem o que gerenciar: a aba some, em vez de abrir numa tela que
-  // só recusaria o que ele tentasse fazer.
+  // A aba de estatísticas vale para quem entrou — servidor, gestão ou
+  // chefia. O conteúdo dela é todo agregado: contagens do mês, nenhum
+  // nome. Fora do login ela não aparece, como a escala.
+  //
+  // O perfil de consulta não tem o que gerenciar: a aba de gerenciar
+  // some, em vez de abrir numa tela que só recusaria o que ele
+  // tentasse fazer.
   const atual = !!(dados && dados.__token === TOKEN);
   const bStats = el('aba-stats'), bGer = el('aba-ger');
-  if (bStats) bStats.style.display = (dentro && ehGestao()) ? '' : 'none';
+  if (bStats) bStats.style.display = dentro ? '' : 'none';
   if (bGer)   bGer.style.display   = (dentro && ehConsulta()) ? 'none' : '';
   // A correção de aba só vale quando os dados já são desta sessão.
   if (atual) {
     if (ehConsulta() && aba === 'ger') aba = 'stats';
-    if (!ehGestao() && aba === 'stats') aba = 'escala';
+    if (!dentro && aba === 'stats') aba = 'escala';
   }
   el('busca').style.display =
     (dentro && !dados.precisaEntrar && aba !== 'ger' && aba !== 'stats') ? '' : 'none';
