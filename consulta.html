@@ -324,6 +324,41 @@ margin-right: 4px; vertical-align: middle; }
   .cota-linha { font-size: 0.79rem; gap: 0.4rem; }
 }
 
+/* Lista para lançamento no sistema oficial: a escala virada do
+   avesso, por horário e por segurança, em ordem alfabética. */
+.ag-ajuda { background: #eef4fb; border-left: 3px solid #2d6a9f;
+padding: 0.7rem 0.9rem; border-radius: 6px; font-size: 0.82rem;
+color: #35506d; line-height: 1.55; margin-bottom: 1rem; }
+.ag-hora { margin-top: 1.4rem; }
+.ag-hora:first-of-type { margin-top: 0.2rem; }
+.ag-hora-tit { display: flex; align-items: baseline; gap: 0.5rem;
+flex-wrap: wrap; background: #1a3a5c; color: #fff; padding: 0.5rem 0.8rem;
+border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.95rem; }
+.ag-hora-tit small { font-weight: 400; opacity: 0.8; font-size: 0.78rem; }
+.ag-seg { border: 1px solid #dde4ed; border-top: 0; }
+.ag-seg-tit { display: flex; align-items: baseline; gap: 0.5rem;
+background: #f4f7fb; padding: 0.4rem 0.8rem; font-weight: 700;
+font-size: 0.82rem; color: #1a3a5c; border-bottom: 1px solid #e6ecf3; }
+.ag-seg-tit small { font-weight: 400; color: #7b8ca0; font-size: 0.75rem; }
+.ag-copiar { margin-left: auto; border: 1px solid #c3d0e0; background: #fff;
+color: #2d6a9f; border-radius: 6px; padding: 3px 9px; font-size: 0.72rem;
+font-weight: 600; cursor: pointer; font-family: inherit; }
+.ag-copiar:hover { background: #eef4fb; }
+.ag-li { display: flex; gap: 0.6rem; align-items: baseline;
+padding: 0.38rem 0.8rem; border-bottom: 1px solid #f0f4f8; font-size: 0.86rem; }
+.ag-li:last-child { border-bottom: 0; }
+.ag-li:nth-child(even) { background: #fbfcfe; }
+.ag-n { color: #9aa9bb; font-size: 0.76rem; min-width: 1.6rem;
+text-align: right; font-variant-numeric: tabular-nums; }
+.ag-nome { flex: 1; min-width: 150px; color: #1a2b3c; }
+.ag-datas { color: #4a5d73; font-size: 0.8rem; text-align: right;
+font-variant-numeric: tabular-nums; }
+.ag-vazio { padding: 0.6rem 0.8rem; color: #7b8ca0; font-size: 0.82rem; }
+@media (max-width: 560px) {
+  .ag-li { flex-wrap: wrap; gap: 0.2rem 0.6rem; }
+  .ag-datas { width: 100%; text-align: left; padding-left: 2.2rem; }
+}
+
 .link-adm { border: 0; background: none; color: #6b80a0; font-size: 0.8rem;
 text-decoration: underline; cursor: pointer; font-family: inherit; padding: 6px; }
 .link-adm:hover { color: #1a3a5c; }
@@ -399,6 +434,10 @@ SP" />
 <button class="aba" id="aba-ger" onclick="mostrar('ger')"
 ><span class="aba-longa">Gerenciar DEJEPs</span
 ><span class="aba-curta">Gerenciar</span></button>
+<button class="aba" id="aba-agenda" onclick="mostrar('agenda')"
+  style="display:none;"
+><span class="aba-longa">Lista para Agendamento</span
+><span class="aba-curta">Agendamento</span></button>
 <button class="aba" id="aba-stats" onclick="mostrar('stats')"
   style="display:none;">Estatísticas</button>
 </div>
@@ -670,6 +709,7 @@ function toast(msg, erro) {
 
 const TITULO_ABA = { escala: 'Escala do Mês', lista: 'Lista Corrida',
                      ger: 'Gerenciar as minhas DEJEPs',
+                     agenda: 'Lista para Agendamento',
                      stats: 'Estatísticas da DEJEP' };
 
 function mostrarAguardo(txt) {
@@ -695,6 +735,12 @@ function mostrar(qual) {
   // não estão na tela em que ela entra. Ao abrir a aba, busca-as.
   if (qual === 'stats' && vinhaDeOutra && dados
       && dados.estatisticasSobDemanda && !dados.estatisticas) {
+    carregar();
+  }
+  // A lista de lançamento, pelo mesmo motivo: percorre a escala
+  // inteira e cruza com o cadastro, e só serve a quem vai lançar.
+  if (qual === 'agenda' && vinhaDeOutra && dados
+      && dados.agendamentoSobDemanda && !dados.agendamento) {
     carregar();
   }
 }
@@ -2340,6 +2386,101 @@ function desenharCota() {
     + '</div>';
 }
 
+// Nome vem do cadastro, que é digitado à mão: escapar antes de pôr
+// na página é barato e evita que um caractere solto quebre o HTML.
+function esc(t) {
+  return String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// A escala virada do avesso, para o lançamento no sistema oficial:
+// por horário, dentro dele por segurança, e em ordem alfabética. A
+// escala normal é por dia, que é como a unidade trabalha; para lançar,
+// essa ordem obriga a percorrer o mês inteiro atrás de quem é das 07h.
+function renderAgendamento() {
+  const a = dados && dados.agendamento;
+  if (!a) {
+    return '<div class="empty-msg"><i class="fa-solid fa-spinner fa-spin"></i> '
+      + 'Montando a lista...</div>';
+  }
+  if (!a.horarios.length) {
+    return '<div class="empty-msg">Não há DEJEPs agendadas em ' + a.mes + '.</div>';
+  }
+  let h = '<div class="ag-ajuda">Os mesmos nomes da escala, organizados do jeito '
+    + 'do sistema oficial: um bloco por <strong>horário</strong>, dentro dele '
+    + '<strong>Interna</strong> e <strong>Externa</strong>, em ordem alfabética. '
+    + 'Lance um horário de cada vez e vá conferindo. '
+    + '<strong>' + a.total + '</strong> lançamentos em ' + a.mes + '.</div>';
+
+  a.horarios.forEach(ho => {
+    h += '<div class="ag-hora"><div class="ag-hora-tit">'
+      + '<span>' + ho.chave + '</span>'
+      + '<small>' + ho.rotulo + '</small>'
+      + '<small style="margin-left:auto">' + ho.lancamentos + ' lançamento'
+      + (ho.lancamentos > 1 ? 's' : '') + '</small>'
+      + '</div>';
+    ho.grupos.forEach(g => {
+      const idCopia = 'ag-' + ho.hora + '-' + g.seguranca.replace(/[^A-Za-z]/g, '');
+      h += '<div class="ag-seg"><div class="ag-seg-tit">'
+        + '<span>Segurança ' + g.seguranca + '</span>'
+        + '<small>' + g.servidores.length + ' servidor'
+        + (g.servidores.length > 1 ? 'es' : '') + ' · '
+        + g.lancamentos + ' lançamento' + (g.lancamentos > 1 ? 's' : '') + '</small>'
+        + '<button class="ag-copiar" onclick="copiarGrupo(\'' + idCopia + '\', this)">'
+        + 'Copiar</button>'
+        + '</div><div id="' + idCopia + '">';
+      if (!g.servidores.length) {
+        h += '<div class="ag-vazio">Ninguém neste grupo.</div>';
+      }
+      g.servidores.forEach((sv, i) => {
+        h += '<div class="ag-li">'
+          + '<span class="ag-n">' + (i + 1) + '</span>'
+          + '<span class="ag-nome">' + esc(sv.nome) + '</span>'
+          + '<span class="ag-datas">' + sv.datas.map(d => d.substring(0, 5)).join('  ')
+          + '</span></div>';
+      });
+      h += '</div></div>';
+    });
+    h += '</div>';
+  });
+  return h;
+}
+
+// Copiar em texto simples: é assim que o conteúdo entra numa planilha
+// ou num campo do sistema oficial sem arrastar a formatação da página.
+function copiarGrupo(id, botao) {
+  const cx = el(id);
+  if (!cx) return;
+  const linhas = Array.from(cx.querySelectorAll('.ag-li')).map(li => {
+    const nome = li.querySelector('.ag-nome').textContent.trim();
+    const datas = li.querySelector('.ag-datas').textContent.trim().replace(/\s+/g, ' ');
+    return nome + (datas ? '\t' + datas : '');
+  });
+  const texto = linhas.join('\n');
+  const avisar = ok => {
+    const antes = botao.textContent;
+    botao.textContent = ok ? 'Copiado' : 'Não deu';
+    setTimeout(() => { botao.textContent = antes; }, 1600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(() => avisar(true), () => avisar(false));
+    return;
+  }
+  // Navegador antigo, ou página aberta sem HTTPS: o caminho velho.
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = texto;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    avisar(ok);
+  } catch (e) { avisar(false); }
+}
+
 function render() {
   // MURO DE ACESSO. Sem identificação não há escala, fila nem nome:
   // a página inteira é a tela de entrada. É mais simples de explicar
@@ -2357,14 +2498,24 @@ function render() {
   const bStats = el('aba-stats'), bGer = el('aba-ger');
   if (bStats) bStats.style.display = dentro ? '' : 'none';
   if (bGer)   bGer.style.display   = (dentro && ehConsulta()) ? 'none' : '';
+  // A lista de lançamento é ferramenta de quem agenda no sistema
+  // oficial: gestão e chefia. Para o servidor não teria uso, e seria
+  // mais uma aba a atrapalhar quem só quer ver a própria DEJEP.
+  const bAg = el('aba-agenda');
+  if (bAg) bAg.style.display = (dentro && ehGestao()) ? '' : 'none';
   desenharCota();
   // A correção de aba só vale quando os dados já são desta sessão.
   if (atual) {
     if (ehConsulta() && aba === 'ger') aba = 'stats';
     if (!dentro && aba === 'stats') aba = 'escala';
+    if (aba === 'agenda' && !(dentro && ehGestao())) aba = 'escala';
   }
+  // A lista de lançamento já vem agrupada e ordenada: um campo de
+  // busca ali faria o operador filtrar justamente o que ele precisa
+  // conferir por inteiro.
   el('busca').style.display =
-    (dentro && !dados.precisaEntrar && aba !== 'ger' && aba !== 'stats') ? '' : 'none';
+    (dentro && !dados.precisaEntrar && aba !== 'ger' && aba !== 'stats'
+     && aba !== 'agenda') ? '' : 'none';
   if (!dentro) {
     el('card-titulo').textContent = recToken || trocaObrigatoria
       ? 'Definir a senha' : 'Acesso à DEJEP';
@@ -2381,6 +2532,7 @@ function render() {
   el('card-titulo').textContent = (aba === 'escala' && dados.mes)
     ? 'Escala de ' + dados.mes : TITULO_ABA[aba];
   if (aba === 'stats') { el('conteudo').innerHTML = renderEstatisticas(); return; }
+  if (aba === 'agenda') { el('conteudo').innerHTML = renderAgendamento(); return; }
   const filtro = el('busca').value.trim().toLowerCase();
   el('conteudo').innerHTML = (aba === 'escala') ? renderEscala(filtro) : renderLista(filtro);
 }
@@ -2535,6 +2687,7 @@ function carregar(aoTerminar, prontos) {
     // As estatísticas são caras de apurar no servidor e não aparecem
     // nas outras abas: só se pedem quando é a aba aberta.
     + (aba === 'stats' ? '&stats=1' : '')
+    + (aba === 'agenda' ? '&agenda=1' : '')
     + comoParam();
   fetch(url).then(function (r) { return r.json(); })
     .then(function (d) { aplicarConsulta(d, aoTerminar); })
