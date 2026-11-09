@@ -329,12 +329,14 @@ margin-right: 4px; vertical-align: middle; }
 .ag-ajuda { background: #eef4fb; border-left: 3px solid #2d6a9f;
 padding: 0.7rem 0.9rem; border-radius: 6px; font-size: 0.82rem;
 color: #35506d; line-height: 1.55; margin-bottom: 1rem; }
-.ag-hora { margin-top: 1.4rem; }
-.ag-hora:first-of-type { margin-top: 0.2rem; }
-.ag-hora-tit { display: flex; align-items: baseline; gap: 0.5rem;
-flex-wrap: wrap; background: #1a3a5c; color: #fff; padding: 0.5rem 0.8rem;
-border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.95rem; }
-.ag-hora-tit small { font-weight: 400; opacity: 0.8; font-size: 0.78rem; }
+/* O bloco de segurança é o de fora: Interna inteira, depois Externa. */
+.ag-grupo { margin-top: 1.6rem; }
+.ag-grupo:first-of-type { margin-top: 0.2rem; }
+.ag-seg-cab { display: flex; align-items: baseline; gap: 0.6rem;
+flex-wrap: wrap; background: #1a3a5c; color: #fff; padding: 0.55rem 0.85rem;
+border-radius: 8px 8px 0 0; font-weight: 700; font-size: 1rem; }
+.ag-seg-cab small { font-weight: 400; opacity: 0.82; font-size: 0.78rem;
+margin-left: auto; }
 .ag-seg { border: 1px solid #dde4ed; border-top: 0; }
 .ag-seg-tit { display: flex; align-items: baseline; gap: 0.5rem;
 background: #f4f7fb; padding: 0.4rem 0.8rem; font-weight: 700;
@@ -2404,36 +2406,35 @@ function renderAgendamento() {
     return '<div class="empty-msg"><i class="fa-solid fa-spinner fa-spin"></i> '
       + 'Montando a lista...</div>';
   }
-  if (!a.horarios.length) {
+  if (!a.grupos || !a.grupos.length) {
     return '<div class="empty-msg">Não há DEJEPs agendadas em ' + a.mes + '.</div>';
   }
   let h = '<div class="ag-ajuda">Os mesmos nomes da escala, organizados do jeito '
-    + 'do sistema oficial: um bloco por <strong>horário</strong>, dentro dele '
-    + '<strong>Interna</strong> e <strong>Externa</strong>, em ordem alfabética. '
-    + 'Lance um horário de cada vez e vá conferindo. '
+    + 'do sistema oficial: primeiro a <strong>Segurança Interna</strong> inteira, '
+    + 'depois a <strong>Externa</strong>; dentro de cada uma, um bloco por '
+    + '<strong>horário</strong>, em ordem alfabética. '
     + '<strong>' + a.total + '</strong> lançamentos em ' + a.mes + '.</div>';
 
-  a.horarios.forEach(ho => {
-    h += '<div class="ag-hora"><div class="ag-hora-tit">'
-      + '<span>' + ho.chave + '</span>'
-      + '<small>' + ho.rotulo + '</small>'
-      + '<small style="margin-left:auto">' + ho.lancamentos + ' lançamento'
-      + (ho.lancamentos > 1 ? 's' : '') + '</small>'
-      + '</div>';
-    ho.grupos.forEach(g => {
-      const idCopia = 'ag-' + ho.hora + '-' + g.seguranca.replace(/[^A-Za-z]/g, '');
+  a.grupos.forEach(g => {
+    h += '<div class="ag-grupo"><div class="ag-seg-cab">'
+      + '<span>Segurança ' + esc(g.seguranca) + '</span>'
+      + '<small>' + g.servidores + ' servidor' + (g.servidores > 1 ? 'es' : '')
+      + ' · ' + g.lancamentos + ' lançamento' + (g.lancamentos > 1 ? 's' : '')
+      + '</small></div>';
+    g.horarios.forEach(ho => {
+      const idCopia = 'ag-' + g.seguranca.replace(/[^A-Za-z]/g, '') + '-' + ho.hora;
       h += '<div class="ag-seg"><div class="ag-seg-tit">'
-        + '<span>Segurança ' + g.seguranca + '</span>'
-        + '<small>' + g.servidores.length + ' servidor'
-        + (g.servidores.length > 1 ? 'es' : '') + ' · '
-        + g.lancamentos + ' lançamento' + (g.lancamentos > 1 ? 's' : '') + '</small>'
+        + '<span>' + ho.chave + '</span>'
+        + '<small>' + ho.rotulo + ' · ' + ho.servidores.length + ' servidor'
+        + (ho.servidores.length > 1 ? 'es' : '') + ' · ' + ho.lancamentos
+        + ' lançamento' + (ho.lancamentos > 1 ? 's' : '') + '</small>'
         + '<button class="ag-copiar" onclick="copiarGrupo(\'' + idCopia + '\', this)">'
         + 'Copiar</button>'
         + '</div><div id="' + idCopia + '">';
-      if (!g.servidores.length) {
-        h += '<div class="ag-vazio">Ninguém neste grupo.</div>';
+      if (!ho.servidores.length) {
+        h += '<div class="ag-vazio">Ninguém neste horário.</div>';
       }
-      g.servidores.forEach((sv, i) => {
+      ho.servidores.forEach((sv, i) => {
         h += '<div class="ag-li">'
           + '<span class="ag-n">' + (i + 1) + '</span>'
           + '<span class="ag-nome">' + esc(sv.nome) + '</span>'
