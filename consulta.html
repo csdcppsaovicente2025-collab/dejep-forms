@@ -294,6 +294,36 @@ font-family: inherit; }
    classes para vencer a regra de .faixa-adm. */
 .faixa-adm.faixa-consulta { background: #1f5133; }
 
+/* A cota do mês. Fica acima das abas de propósito: é controle de
+   rotina, e tem de estar na tela em qualquer aba, sem clique. */
+.cota { background: #fff; border: 1px solid #dde4ed; border-radius: 10px;
+padding: 0.65rem 0.85rem; margin-bottom: 0.8rem;
+box-shadow: 0 1px 3px rgba(26,58,92,0.06); }
+.cota-linha { display: flex; align-items: baseline; gap: 0.55rem;
+flex-wrap: wrap; font-size: 0.84rem; color: #4a5d73; }
+.cota-mes { font-weight: 700; color: #1a3a5c; }
+.cota-num { font-size: 1.22rem; font-weight: 700; color: #1a3a5c;
+line-height: 1; letter-spacing: -0.01em; }
+.cota-de { color: #7b8ca0; }
+.cota-sep { color: #ccd5e0; }
+.cota-faltam { font-weight: 700; color: #2d6a9f; }
+.cota-aviso { font-weight: 700; color: #c0392b; }
+/* Medidor de 119: o que está escalado, o que a emergência consumiu, e
+   o que ainda falta colocar. */
+.cota-barra { display: flex; height: 7px; border-radius: 4px;
+overflow: hidden; background: #eef2f7; margin-top: 0.5rem; }
+.cota-barra span { display: block; height: 100%; }
+.cb-usadas { background: #2d6a9f; }
+.cb-emg { background: #9c6b12; }
+.cota-leg { display: flex; gap: 0.9rem; flex-wrap: wrap; margin-top: 0.4rem;
+font-size: 0.72rem; color: #7b8ca0; }
+.cota-leg i { display: inline-block; width: 8px; height: 8px; border-radius: 2px;
+margin-right: 4px; vertical-align: middle; }
+@media (max-width: 480px) {
+  .cota-num { font-size: 1.1rem; }
+  .cota-linha { font-size: 0.79rem; gap: 0.4rem; }
+}
+
 .link-adm { border: 0; background: none; color: #6b80a0; font-size: 0.8rem;
 text-decoration: underline; cursor: pointer; font-family: inherit; padding: 6px; }
 .link-adm:hover { color: #1a3a5c; }
@@ -360,6 +390,8 @@ SP" />
 <div class="header-espaco" aria-hidden="true"></div>
 </div>
 </div>
+
+<div id="cota"></div>
 
 <div class="abas" id="abas">
 <button class="aba ativa" id="aba-escala" onclick="mostrar('escala')">Escala do Mês</button>
@@ -2241,6 +2273,73 @@ function renderLista(filtro) {
 // Identificado = servidor com token válido, ou acesso administrativo.
 function autenticado() { return !!(dados && (dados.eu || dados.adm || dados.consulta)); }
 
+// A cota do mês, acima das abas. Aparece em qualquer aba e para quem
+// entrou: é número de controle, não de relatório — ter de abrir a aba
+// de estatísticas para saber quantas DEJEPs faltam é o mesmo que não
+// ter o número.
+function desenharCota() {
+  const cx = el('cota');
+  if (!cx) return;
+  const c = dados && dados.cota;
+  if (!autenticado() || !c || !c.total) { cx.innerHTML = ''; return; }
+
+  // O caminho que interessa é até as 119. A meta de 110 é a regra
+  // interna de quando a reserva emergencial se abre; quem acompanha o
+  // mês quer as duas informações, sem confundi-las.
+  const usadas = c.usadas || 0;
+  const emg = c.emergenciais || 0;
+  const ordinarias = Math.max(0, usadas - emg);
+  const pct = n => (c.total ? (n * 100 / c.total) : 0).toFixed(2) + '%';
+
+  let faltaTxt;
+  if (c.restantes === 0) {
+    faltaTxt = '<span class="cota-faltam">cota completa</span>';
+  } else if (c.naReta && !c.cabe) {
+    faltaTxt = '<span class="cota-aviso">faltam ' + c.restantes
+      + ' e não cabem mais nos dias que restam</span>';
+  } else {
+    faltaTxt = '<span class="cota-faltam">faltam ' + c.restantes + '</span>';
+  }
+
+  // A reserva só é notícia enquanto está de pé. Na reta final ela já
+  // entrou na escala, e repeti-la ali viraria número sem função.
+  const reservaTxt = (!c.naReta && c.reservaLivre > 0)
+    ? '<span class="cota-sep">·</span> <span>' + c.reservaLivre
+      + ' de reserva emergencial ainda livres</span>'
+    : (emg > 0
+        ? '<span class="cota-sep">·</span> <span>' + emg + ' '
+          + (emg > 1 ? 'emergenciais usadas' : 'emergencial usada') + '</span>'
+        : '');
+
+  const abertoTxt = c.emAberto > 0
+    ? '<span class="cota-sep">·</span> <span class="cota-aviso">'
+      + c.emAberto + ' vaga' + (c.emAberto > 1 ? 's' : '') + ' em aberto</span>'
+    : '';
+
+  cx.innerHTML = '<div class="cota">'
+    + '<div class="cota-linha">'
+    +   '<span class="cota-mes">' + c.mes + '</span>'
+    +   '<span class="cota-sep">·</span>'
+    +   '<span class="cota-num">' + usadas + '</span>'
+    +   '<span class="cota-de">de ' + c.total + ' DEJEPs agendadas</span>'
+    +   '<span class="cota-sep">·</span>' + faltaTxt
+    +   reservaTxt + abertoTxt
+    + '</div>'
+    + '<div class="cota-barra" role="img" aria-label="' + usadas + ' de '
+    +   c.total + ' DEJEPs do mês já agendadas">'
+    +   '<span class="cb-usadas" style="width:' + pct(ordinarias) + '"></span>'
+    +   '<span class="cb-emg" style="width:' + pct(emg) + '"></span>'
+    + '</div>'
+    + (emg > 0
+        ? '<div class="cota-leg">'
+          + '<span><i class="cb-usadas"></i>' + ordinarias + ' pela lista corrida</span>'
+          + '<span><i class="cb-emg"></i>' + emg + ' '
+          + (emg > 1 ? 'emergenciais' : 'emergencial') + '</span>'
+          + '</div>'
+        : '')
+    + '</div>';
+}
+
 function render() {
   // MURO DE ACESSO. Sem identificação não há escala, fila nem nome:
   // a página inteira é a tela de entrada. É mais simples de explicar
@@ -2258,6 +2357,7 @@ function render() {
   const bStats = el('aba-stats'), bGer = el('aba-ger');
   if (bStats) bStats.style.display = dentro ? '' : 'none';
   if (bGer)   bGer.style.display   = (dentro && ehConsulta()) ? 'none' : '';
+  desenharCota();
   // A correção de aba só vale quando os dados já são desta sessão.
   if (atual) {
     if (ehConsulta() && aba === 'ger') aba = 'stats';
