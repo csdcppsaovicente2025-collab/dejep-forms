@@ -52,6 +52,13 @@ border-radius: 6px; padding: 2px 6px; font-size: 0.78rem; font-weight: 700; }
    os dois centralizados é o único jeito de ficarem na mesma prumada. */
 .centro, th.centro { text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tag { font-size: 0.7rem; padding: 2px 7px; border-radius: 5px; background: #ead1dc; color: #7a2348; font-weight: 700; }
+/* Marca de cancelamento na coluna DEJEPs: explica por que o número
+   exibido é menor que o de quem está à frente. Diz "canc." por
+   escrito — cor sozinha não se lê em impressão nem por quem enxerga
+   mal — e vem em tom neutro, porque cancelar em tempo hábil é
+   direito do servidor, não falta. */
+.canc { font-size: 0.66rem; padding: 1px 5px; border-radius: 4px; background: #e8edf4;
+color: #5a6f8c; font-weight: 700; white-space: nowrap; cursor: help; }
 .empty-msg { text-align: center; color: #8fa3ba; font-size: 0.88rem; padding: 1.5rem 1rem; line-height: 1.6; }
 .aviso-info { background: #eef4fb; border-left: 4px solid #2d6a9f; border-radius: 8px;
 padding: 0.85rem 1rem; font-size: 0.8rem; color: #45617f; line-height: 1.55; margin-bottom: 1.25rem; }
@@ -2280,7 +2287,20 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
       + '</td>'
       + (comContagem
           ? '<td class="centro">' + (i.dejeps === null || i.dejeps === undefined
-              ? '—' : i.dejeps) + '</td>'
+              ? '—' : i.dejeps)
+            // A marca de cancelamento. Sem ela a coluna se contradiz:
+            // quem cancelou aparece com menos DEJEPs e ainda assim
+            // atrás de quem tem mais. O cancelamento em tempo hábil
+            // não faz perder nem ganhar posição, e é isso que o número
+            // exibido, sozinho, não consegue dizer.
+            + (i.canceladas
+                ? ' <span class="canc" title="' + i.canceladas + ' DEJEP'
+                  + (i.canceladas > 1 ? 's canceladas' : ' cancelada')
+                  + ' por ele. Contam na ordem da fila, para que o cancelamento '
+                  + 'não faça perder nem ganhar posição.">+' + i.canceladas
+                  + ' canc.</span>'
+                : '')
+            + '</td>'
           : '')
       + '<td class="centro">' + escapar(i.turno || '—') + '</td></tr>';
   });
@@ -2306,8 +2326,15 @@ function renderLista(filtro) {
           + '<strong>total do servidor</strong> — diurnas e noturnas somadas. Por isso quem '
           + 'atua nos dois períodos aparece com o mesmo número nos dois: a DEJEP é a mesma, '
           + 'de dia ou de noite.<br><br>'
-          + 'Conta desde que o sistema entrou em operação, e não entram as canceladas nem as '
-          + 'faltas. Quem empata na mesma quantidade fica na ordem do rodízio daquele '
+          + 'Conta desde que o sistema entrou em operação, e não entram as faltas.<br><br>'
+          + '<strong>Cancelamento.</strong> Quem cancela a própria DEJEP não perde posição '
+          + 'nem ganha — é o que diz a Resolução. Por isso a DEJEP cancelada continua '
+          + 'pesando na ordem da fila, ainda que não seja DEJEP cumprida: quem cancela fica '
+          + 'onde estava. O número da coluna é o das DEJEPs <strong>cumpridas</strong>, e é '
+          + 'por isso que alguém pode aparecer com menos DEJEPs e ainda assim atrás de quem '
+          + 'tem mais. Nesse caso a marca <span class="canc">+1 canc.</span> aparece ao lado '
+          + 'do número e mostra a diferença.<br><br>'
+          + 'Quem empata na mesma quantidade fica na ordem do rodízio daquele '
           + 'período, e dentro do mês vale o rodízio de sempre: quem pega uma vaga passa '
           + 'para o fim. Quem se inscreve depois entra com a média do efetivo, para não '
           + 'passar à frente de quem já está na lista.'
