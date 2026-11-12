@@ -2533,17 +2533,22 @@ function render() {
   const bStats = el('aba-stats'), bGer = el('aba-ger');
   if (bStats) bStats.style.display = dentro ? '' : 'none';
   if (bGer)   bGer.style.display   = (dentro && ehConsulta()) ? 'none' : '';
-  // A lista de lançamento é ferramenta de quem agenda no sistema
-  // oficial: gestão e chefia. Para o servidor não teria uso, e seria
-  // mais uma aba a atrapalhar quem só quer ver a própria DEJEP.
+  // A lista de lançamento é ferramenta de quem lança no sistema
+  // oficial, e quem lança é a Diretoria: só o acesso ADM. Para o
+  // servidor não teria uso, e seria mais uma aba a atrapalhar quem
+  // só quer ver a própria DEJEP; a chefia, que consulta e não age,
+  // também não lança.
+  //
+  // Esconder a aba é conforto, não controle: quem manda na resposta
+  // é o servidor, que só entrega a lista ao acesso ADM.
   const bAg = el('aba-agenda');
-  if (bAg) bAg.style.display = (dentro && ehGestao()) ? '' : 'none';
+  if (bAg) bAg.style.display = (dentro && ehAdm()) ? '' : 'none';
   desenharCota();
   // A correção de aba só vale quando os dados já são desta sessão.
   if (atual) {
     if (ehConsulta() && aba === 'ger') aba = 'stats';
     if (!dentro && aba === 'stats') aba = 'escala';
-    if (aba === 'agenda' && !(dentro && ehGestao())) aba = 'escala';
+    if (aba === 'agenda' && !(dentro && ehAdm())) aba = 'escala';
   }
   // A lista de lançamento já vem agrupada e ordenada: um campo de
   // busca ali faria o operador filtrar justamente o que ele precisa
