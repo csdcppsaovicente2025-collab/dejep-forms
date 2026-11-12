@@ -2186,8 +2186,15 @@ function renderEscala(filtro) {
     porDia[i.data].push(i);
   });
 
+  // Ordem dos postos dentro de um mesmo dia, por horário de entrada.
+  // O apoio não constava e caía no 9 do fim; agora os dois horários
+  // dele entram no lugar certo, e o rótulo antigo ("Apoio
+  // carceragem", sem hora) segue reconhecido por causa das linhas
+  // já gravadas na escala.
   const ordemPosto = { '07 às 15h': 1, '08 às 16h': 2, 'Jumbo 08 às 16h': 3,
-                       'Torre diurna': 4, 'Torre noturna': 5 };
+                       'Apoio carceragem': 4, 'Apoio carceragem 11h': 4,
+                       'Torre diurna': 5, 'Torre noturna': 6,
+                       'Apoio carceragem 23h': 7 };
   const datas = Object.keys(porDia).sort(function (a, b) {
     const pa = a.split('/'), pb = b.split('/');
     return (pa[1] + pa[0]).localeCompare(pb[1] + pb[0]);
