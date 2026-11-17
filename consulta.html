@@ -2756,8 +2756,12 @@ function executarCancelamento(id) {
 // pedi-la de novo. 'carregar' continua existindo para todo o resto —
 // trocar de mês, recarregar depois de uma ação — mas entrar não paga
 // mais duas viagens ao servidor.
-function carregar(aoTerminar, prontos) {
-  if (!el('aguardo').classList.contains('ativo')) mostrarAguardo('Carregando...');
+// semBloquear: busca sem cobrir a tela com "Carregando...". Serve a
+// quem ainda não entrou — a tela de login aparece na hora e a consulta
+// anônima corre atrás, em vez de o servidor digitar o RG depois de
+// esperar um arranque frio do Apps Script inteiro.
+function carregar(aoTerminar, prontos, semBloquear) {
+  if (!semBloquear && !el('aguardo').classList.contains('ativo')) mostrarAguardo('Carregando...');
   if (prontos) { aplicarConsulta(prontos, aoTerminar); return; }
   const url = URL_BASE + '?acao=consulta'
     + (TOKEN ? '&t=' + encodeURIComponent(TOKEN) : '')
@@ -2767,12 +2771,15 @@ function carregar(aoTerminar, prontos) {
     + (aba === 'stats' ? '&stats=1' : '')
     + (aba === 'agenda' ? '&agenda=1' : '')
     + comoParam();
-  fetch(url).then(function (r) { return r.json(); })
+  buscar(url).then(function (r) { return r.json(); })
     .then(function (d) { aplicarConsulta(d, aoTerminar); })
-    .catch(function () {
+    .catch(function (e) {
       esconderAguardo();
-      el('conteudo').innerHTML = '<div class="empty-msg">Não foi possível carregar os dados '
-        + 'no momento.<br>Tente novamente em alguns instantes.</div>';
+      // Em segundo plano, na tela de login, a falha não vira aviso: o
+      // servidor está digitando o RG e nada do que falhou lhe faria
+      // falta. O erro aparece quando ele entrar.
+      if (semBloquear) return;
+      el('conteudo').innerHTML = '<div class="empty-msg">' + motivoDaFalha(e) + '</div>';
     });
 }
 
@@ -2843,6 +2850,23 @@ if (recToken) {
       toast('Não foi possível conferir o link agora. Tente novamente.', true);
       carregar();
     });
+} else if (!TOKEN) {
+  // SEM TOKEN NÃO HÁ O QUE ESPERAR DO SERVIDOR.
+  //
+  // A página chamava o Apps Script antes mesmo de o servidor digitar o
+  // RG. Isso custava um arranque frio inteiro — segundos — e trazia de
+  // útil uma única informação: "precisaEntrar", que a página já sabe
+  // pela ausência do token. Depois o login custava OUTRO arranque.
+  // Eram duas esperas para uma entrada.
+  //
+  // Nem em segundo plano vale a pena: a resposta anônima não tem o que
+  // mostrar na tela de entrada, e ao chegar redesenhava a tela, APAGANDO
+  // o RG e a senha já digitados. A chamada sai inteira.
+  //
+  // Isto vale porque a escala desta unidade exige login
+  // (CFG.ESCALA_SO_AUTENTICADA). Numa unidade que deixe a escala
+  // pública, esta é a linha a rever.
+  mostrar('ger');
 } else {
   carregar();
 }
