@@ -733,7 +733,11 @@ const TITULO_ABA = { escala: 'Escala do Mês', lista: 'Lista Corrida',
 // inteiro a cada chamada e, com o contêiner frio, passa dos 10s. O
 // limite não existe para ser atingido no uso normal — existe para que
 // o travado vire mensagem em vez de espera eterna.
-var ESPERA_MAX_MS = 25000;
+// 60s, não 25. O primeiro limite cortava antes de a página terminar:
+// o relato foi de que o erro aparecia MAIS CEDO do que a carga levava
+// quando dava certo. O prazo existe contra o travado, não contra o
+// lento — cortar quem ia responder é trocar espera por erro.
+var ESPERA_MAX_MS = 60000;
 function buscar(url) {
   if (typeof AbortController === 'undefined') return fetch(url);
   var ctrl = new AbortController();
@@ -753,16 +757,41 @@ function buscar(url) {
 // A mensagem muda conforme o motivo: demora pede nova tentativa,
 // queda de rede pede conferir a conexão.
 function motivoDaFalha(e) {
+  var s = segundosDeEspera();
   return (e && e.demorou)
-    ? 'O servidor demorou a responder. Tente novamente em instantes.'
+    ? ('O servidor não respondeu em ' + s + ' segundos. Tente novamente; '
+       + 'se repetir, informe este número à Diretoria.')
     : 'Não foi possível falar com o servidor. Confira a conexão e tente novamente.';
 }
 
+// A espera mostra o relógio.
+//
+// Sem ele, "está demorando" é impressão, e impressão não se diagnostica:
+// ninguém sabe dizer se foram 4 segundos ou 40. Com o contador, quem
+// está na tela lê o número e o repassa — e o número aponta se o gargalo
+// é arranque frio do Apps Script ou outra coisa.
+var aguardoTimer = null, aguardoInicio = 0, aguardoTexto = '';
 function mostrarAguardo(txt) {
-  el('aguardo-txt').textContent = txt || 'Carregando...';
+  aguardoTexto = txt || 'Carregando...';
+  aguardoInicio = Date.now();
+  el('aguardo-txt').textContent = aguardoTexto;
   el('aguardo').classList.add('ativo');
+  if (aguardoTimer) clearInterval(aguardoTimer);
+  aguardoTimer = setInterval(function () {
+    var s = Math.round((Date.now() - aguardoInicio) / 1000);
+    // Os primeiros segundos não ganham contador: numa carga normal o
+    // número apareceria e sumiria, parecendo defeito.
+    el('aguardo-txt').textContent = (s < 3) ? aguardoTexto : (aguardoTexto + ' (' + s + 's)');
+  }, 500);
 }
-function esconderAguardo() { el('aguardo').classList.remove('ativo'); }
+function esconderAguardo() {
+  if (aguardoTimer) { clearInterval(aguardoTimer); aguardoTimer = null; }
+  el('aguardo').classList.remove('ativo');
+}
+// Quanto durou a última espera, para a mensagem de erro poder dizê-lo.
+function segundosDeEspera() {
+  return aguardoInicio ? Math.round((Date.now() - aguardoInicio) / 1000) : 0;
+}
 
 function mostrar(qual) {
   const vinhaDeOutra = aba !== qual;
