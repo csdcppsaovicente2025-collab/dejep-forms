@@ -721,6 +721,43 @@ const TITULO_ABA = { escala: 'Escala do Mês', lista: 'Lista Corrida',
                      agenda: 'Lista para Agendamento',
                      stats: 'Estatísticas da DEJEP' };
 
+// O SERVIDOR PRECISA TER PRAZO PARA RESPONDER.
+//
+// fetch não desiste sozinho: sem limite, uma chamada que trava deixa a
+// tela em "Entrando..." indefinidamente, sem erro e sem saída. Foi o
+// que aconteceu em 17/11 — o acesso pareceu travado, e a impressão foi
+// de que apertar Esc resolveu, quando na verdade a resposta apenas
+// chegou naquele instante.
+//
+// 25 segundos é folgado de propósito: o Apps Script arranca o script
+// inteiro a cada chamada e, com o contêiner frio, passa dos 10s. O
+// limite não existe para ser atingido no uso normal — existe para que
+// o travado vire mensagem em vez de espera eterna.
+var ESPERA_MAX_MS = 25000;
+function buscar(url) {
+  if (typeof AbortController === 'undefined') return fetch(url);
+  var ctrl = new AbortController();
+  var t = setTimeout(function () { ctrl.abort(); }, ESPERA_MAX_MS);
+  return fetch(url, { signal: ctrl.signal }).then(
+    function (r) { clearTimeout(t); return r; },
+    function (e) {
+      clearTimeout(t);
+      if (e && e.name === 'AbortError') {
+        var err = new Error('demorou');
+        err.demorou = true;
+        throw err;
+      }
+      throw e;
+    });
+}
+// A mensagem muda conforme o motivo: demora pede nova tentativa,
+// queda de rede pede conferir a conexão.
+function motivoDaFalha(e) {
+  return (e && e.demorou)
+    ? 'O servidor demorou a responder. Tente novamente em instantes.'
+    : 'Não foi possível falar com o servidor. Confira a conexão e tente novamente.';
+}
+
 function mostrarAguardo(txt) {
   el('aguardo-txt').textContent = txt || 'Carregando...';
   el('aguardo').classList.add('ativo');
@@ -941,7 +978,7 @@ function pedirLink() {
   const botao = el('rc-enviar');
   if (botao) { botao.disabled = true; botao.textContent = 'Enviando...'; }
   mostrarAguardo('Enviando...');
-  fetch(URL_BASE + '?acao=recuperar&rg=' + encodeURIComponent(rg)
+  buscar(URL_BASE + '?acao=recuperar&rg=' + encodeURIComponent(rg)
       + '&email=' + encodeURIComponent(email))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -967,7 +1004,7 @@ function salvarSenha(porLink) {
   const botao = el('ds-enviar');
   if (botao) { botao.disabled = true; botao.textContent = 'Salvando...'; }
   mostrarAguardo('Salvando...');
-  fetch(URL_BASE + '?acao=definir_senha'
+  buscar(URL_BASE + '?acao=definir_senha'
       + '&t=' + encodeURIComponent(porLink ? recToken : TOKEN)
       + '&nova=' + encodeURIComponent(nova)
       + '&atual=' + encodeURIComponent(atual))
@@ -1032,7 +1069,7 @@ function entrarAdm() {
   if (!senha) { toast('Informe a senha.', true); return; }
 
   mostrarAguardo('Entrando...');
-  fetch(URL_BASE + '?acao=entrar_adm&usuario=' + encodeURIComponent(u)
+  buscar(URL_BASE + '?acao=entrar_adm&usuario=' + encodeURIComponent(u)
       + '&senha=' + encodeURIComponent(senha))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -1050,9 +1087,9 @@ function entrarAdm() {
           + ' aberto por ' + horas + ' horas.');
       }, j.dados);
     })
-    .catch(function () {
+    .catch(function (e) {
       esconderAguardo();
-      toast('Não foi possível entrar agora. Tente novamente.', true); });
+      toast(motivoDaFalha(e), true); });
 }
 
 function sairAdm() {
@@ -1060,7 +1097,7 @@ function sairAdm() {
   guardarToken(''); guardarComo('');
   telaAcesso = 'login'; trocaObrigatoria = false;
   impSel = {}; impMes = null; impObs = ''; impLotes = [];
-  fetch(URL_BASE + '?acao=sair_adm&t=' + encodeURIComponent(t))
+  buscar(URL_BASE + '?acao=sair_adm&t=' + encodeURIComponent(t))
     .catch(function () { /* a sessão expira sozinha de todo modo */ });
   carregar();
 }
@@ -1384,7 +1421,7 @@ function entrar() {
   if (!senha) { toast('Informe a sua senha.', true); return; }
 
   mostrarAguardo('Entrando...');
-  fetch(URL_BASE + '?acao=entrar&rg=' + encodeURIComponent(rg)
+  buscar(URL_BASE + '?acao=entrar&rg=' + encodeURIComponent(rg)
       + '&senha=' + encodeURIComponent(senha))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -1410,8 +1447,8 @@ function entrar() {
       // já havia calculado.
       carregar(function () { toast('Bem-vindo, ' + primeiro + '.'); }, j.dados);
     })
-    .catch(function () {
-      esconderAguardo(); toast('Não foi possível entrar agora. Tente novamente.', true); });
+    .catch(function (e) {
+      esconderAguardo(); toast(motivoDaFalha(e), true); });
 }
 
 function sair() {
@@ -1658,7 +1695,7 @@ function confirmarCancelarPedido(id) {
 function cancelarPedido(id) {
   fecharModalForcado();
   mostrarAguardo('Cancelando o pedido...');
-  fetch(URL_BASE + '?acao=cancelar_solicitacao&t=' + encodeURIComponent(TOKEN)
+  buscar(URL_BASE + '?acao=cancelar_solicitacao&t=' + encodeURIComponent(TOKEN)
       + comoParam() + '&s=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -1699,7 +1736,7 @@ function confirmarResposta(id, resposta) {
 function responderTroca(id, resposta) {
   fecharModalForcado();
   mostrarAguardo(resposta === 'sim' ? 'Efetivando a troca...' : 'Registrando a recusa...');
-  fetch(URL_BASE + '?acao=responder_troca&t=' + encodeURIComponent(TOKEN) + comoParam()
+  buscar(URL_BASE + '?acao=responder_troca&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&s=' + encodeURIComponent(id) + '&r=' + encodeURIComponent(resposta))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -2116,7 +2153,7 @@ function enviarDias() {
   if (botao) { botao.disabled = true; botao.textContent = 'Registrando...'; }
   mostrarAguardo('Registrando ' + dias + (dias === 1 ? ' dia...' : ' dias...'));
 
-  fetch(URL_BASE + '?acao=impedir_lotes' + '&t=' + encodeURIComponent(TOKEN) + comoParam()
+  buscar(URL_BASE + '?acao=impedir_lotes' + '&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&lotes=' + encodeURIComponent(JSON.stringify(carga)))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -2148,7 +2185,7 @@ function confirmarRemocaoImpedimento(id) {
 function executarRemocaoImpedimento(id) {
   fecharModalForcado();
   mostrarAguardo('Removendo...');
-  fetch(URL_BASE + '?acao=remover_impedimento' + '&t=' + encodeURIComponent(TOKEN) + comoParam()
+  buscar(URL_BASE + '?acao=remover_impedimento' + '&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&id=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -2665,7 +2702,7 @@ function enviarTroca(idMinha) { enviarTrocaCom(idMinha, trocaAlvo); }
 function enviarTrocaCom(idMinha, idAlvo) {
   fecharModalForcado();
   mostrarAguardo('Enviando solicitação...');
-  fetch(URL_BASE + '?acao=solicitar&t=' + encodeURIComponent(TOKEN) + comoParam()
+  buscar(URL_BASE + '?acao=solicitar&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&minha=' + encodeURIComponent(idMinha) + '&alvo=' + encodeURIComponent(idAlvo))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -2696,7 +2733,7 @@ function confirmarCancelamento(id) {
 function executarCancelamento(id) {
   fecharModalForcado();
   mostrarAguardo('Cancelando...');
-  fetch(URL_BASE + '?acao=cancelar_dejep&t=' + encodeURIComponent(TOKEN) + comoParam()
+  buscar(URL_BASE + '?acao=cancelar_dejep&t=' + encodeURIComponent(TOKEN) + comoParam()
       + '&id=' + encodeURIComponent(id))
     .then(function (r) { return r.json(); })
     .then(function (j) {
@@ -2788,7 +2825,7 @@ if (recToken) {
   guardarToken(''); guardarComo('');
   mostrar('ger');
   mostrarAguardo('Conferindo o link...');
-  fetch(URL_BASE + '?acao=conferir_link&r=' + encodeURIComponent(recToken))
+  buscar(URL_BASE + '?acao=conferir_link&r=' + encodeURIComponent(recToken))
     .then(function (r) { return r.json(); })
     .then(function (j) {
       esconderAguardo();
