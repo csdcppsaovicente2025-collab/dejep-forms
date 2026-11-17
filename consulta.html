@@ -515,6 +515,7 @@ if (DIAG) {
         acao: acao + (String(url).indexOf('stats=1') !== -1 ? ' +stats' : ''),
         total: Math.round(t1 - t0),
         servidor: (j && typeof j.tempoMs === 'number') ? j.tempoMs : null,
+        marcos: (j && j.marcos) || null,
         versao: (j && j.versao) || '',
         bytes: j ? JSON.stringify(j).length : 0
       });
@@ -542,6 +543,16 @@ function desenharDiag() {
   }
   const versoes = diagChamadas.map(function (c) { return c.versao; })
     .filter(function (v) { return v; });
+  // Sem chamada nenhuma ainda, o painel precisa dizer que está vivo:
+  // desde que a página deixou de consultar o servidor antes do login,
+  // a primeira chamada só acontece quando alguém entra, e um painel
+  // invisível parece painel que não funciona.
+  if (!diagChamadas.length) {
+    cx.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Diagnóstico</div>'
+      + '<div style="color:#a8c4e0">Nenhuma chamada ao servidor ainda.<br>'
+      + 'Entre no sistema: os tempos aparecem aqui.</div>';
+    return;
+  }
   const v = versoes.length ? versoes[versoes.length - 1] : '(não informada)';
   const somaT = diagChamadas.reduce(function (a, c) { return a + c.total; }, 0);
   const somaS = diagChamadas.reduce(function (a, c) {
@@ -553,10 +564,21 @@ function desenharDiag() {
     + somaS + ' ms de servidor</div>'
     + diagChamadas.map(function (c) {
         const fora = (c.servidor === null) ? '?' : (c.total - c.servidor);
+        // Os marcos vêm ordenados do mais caro para o mais barato: numa
+        // lista longa, o que interessa é o primeiro.
+        var detalhe = '';
+        if (c.marcos && c.marcos.length) {
+          detalhe = '<div style="margin:4px 0 8px 10px;color:#cfe0f0">'
+            + c.marcos.slice().sort(function (a, b) { return b.ms - a.ms; })
+                .slice(0, 6)
+                .map(function (m) { return '· ' + m.o + ': <b>' + m.ms + ' ms</b>'; })
+                .join('<br>')
+            + '</div>';
+        }
         return '<div>' + c.acao + ': <b>' + c.total + ' ms</b>'
           + ' <span style="color:#a8c4e0">(' + (c.servidor === null ? '?' : c.servidor)
           + ' servidor + ' + fora + ' rede) · '
-          + Math.round(c.bytes / 1024) + ' KB</span></div>';
+          + Math.round(c.bytes / 1024) + ' KB</span></div>' + detalhe;
       }).join('');
 }
 
@@ -2896,8 +2918,10 @@ if (recToken) {
   // (CFG.ESCALA_SO_AUTENTICADA). Numa unidade que deixe a escala
   // pública, esta é a linha a rever.
   mostrar('ger');
+  if (DIAG) desenharDiag();
 } else {
   carregar();
+  if (DIAG) desenharDiag();
 }
 </script>
 </body>
