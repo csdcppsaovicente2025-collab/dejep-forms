@@ -181,8 +181,6 @@ margin-bottom: 0.4rem; display: flex; align-items: center; gap: 9px; flex-wrap: 
 font-size: 0.8rem; }
 .imp-item .ii-per { font-weight: 700; white-space: nowrap; }
 .imp-item .ii-mot { color: #c8dcf0; flex: 1; min-width: 100px; }
-.imp-pend { font-size: 0.66rem; font-weight: 700; background: #e0b040; color: #4a3600;
-border-radius: 4px; padding: 2px 6px; white-space: nowrap; }
 .imp-vazio { font-size: 0.78rem; color: #a8c4e0; line-height: 1.5; margin-bottom: 0.5rem; }
 .btn-imp { border: 1px dashed rgba(255,255,255,0.45); background: transparent; color: #fff;
 border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700;
@@ -231,7 +229,6 @@ font-family: inherit; padding: 0; line-height: 1; }
 .dp-dia.passada { color: #c8d2de; background: #fafbfc; border-style: dashed; }
 .dp-dia.marcada { background: #1a3a5c; border-color: #1a3a5c; color: #fff; }
 .dp-dia.declarada { background: #fff2cc; border-color: #e0b040; color: #7a5800; }
-.dp-dia.declarada.pendente { background: #fdf6e3; border-style: dashed; }
 .dp-dia.em-lote { background: #dcece0; border-color: #4a8a62; color: #2c6442;
 font-weight: 700; }
 .dp-dia.hoje { box-shadow: inset 0 0 0 2px #2d6a9f; }
@@ -1957,10 +1954,9 @@ function renderImpedir() {
     + renderLotes()
 
     + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.9rem;line-height:1.5;">'
-    + 'Férias e licença valem de imediato. Os demais motivos acima de <strong>'
-    + (dadosImp().tetoImpedimento || 10) + ' dias no mês</strong> passam pela validação da '
-    + 'Diretoria de Disciplina — o limite considera o conjunto dos dias do mês, não cada '
-    + 'bloco isolado.</div>'
+    + 'O impedimento <strong>vale de imediato</strong>, qualquer que seja o motivo: '
+    + 'não depende de validação da Diretoria. Você não é escalado nos dias declarados '
+    + 'e <strong>mantém a sua posição na fila</strong>.</div>'
 
     + '<button class="dp-enviar" id="dp-enviar" onclick="enviarDias()">Declarar</button>'
 
@@ -2051,8 +2047,6 @@ function renderDeclarados() {
       + escapar(periodoTexto(i)) + '</span>'
       + '<span style="flex:1;min-width:110px;font-size:0.8rem;color:#6b80a0;">'
       + escapar(i.motivo) + '</span>'
-      + (i.situacao === 'Pendente'
-          ? '<span class="imp-pend">aguarda validação</span>' : '')
       + '<button class="btn-acao cancelar" onclick="confirmarRemocaoImpedimento(\''
       + i.id + '\')">Remover</button></div>';
   });
@@ -2086,9 +2080,7 @@ function pintarGrade() {
     if (passada) { cls.push('passada'); titulo = 'dia já passado'; }
     else if (decl) {
       cls.push('declarada');
-      if (decl.situacao === 'Pendente') cls.push('pendente');
-      titulo = 'já declarado: ' + decl.motivo
-        + (decl.situacao === 'Pendente' ? ' (aguarda validação)' : '');
+      titulo = 'já declarado: ' + decl.motivo;
     } else if (emLote[k]) {
       cls.push('em-lote');
       titulo = 'em um bloco montado: ' + emLote[k].texto
