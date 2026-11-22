@@ -587,6 +587,11 @@ if (!TOKEN) {
   try { TOKEN = sessionStorage.getItem('dejep_token') || ''; } catch (e) { TOKEN = ''; }
 }
 function guardarToken(t) {
+  // Trocou quem está na tela: o que estava guardado é de outra pessoa.
+  // Sair não faz chamada nenhuma ao servidor, então a invalidação do
+  // buscar() não pega este caso — e era o caso em que ela mais
+  // importa.
+  if (typeof esquecerConsultas === 'function' && TOKEN !== (t || '')) esquecerConsultas();
   TOKEN = t || '';
   try {
     if (TOKEN) sessionStorage.setItem('dejep_token', TOKEN);
@@ -607,6 +612,10 @@ let admComo = '';
 try { admComo = sessionStorage.getItem('dejep_adm_como') || ''; } catch (e) { admComo = ''; }
 
 function guardarComo(rg) {
+  // Idem: a Diretoria passou a agir em nome de outro servidor.
+  if (typeof esquecerConsultas === 'function' && admComo !== (rg || '').toString()) {
+    esquecerConsultas();
+  }
   admComo = (rg || '').toString();
   try {
     if (admComo) sessionStorage.setItem('dejep_adm_como', admComo);
@@ -757,7 +766,67 @@ const TITULO_ABA = { escala: 'Escala do Mês', lista: 'Lista Corrida',
 // quando dava certo. O prazo existe contra o travado, não contra o
 // lento — cortar quem ia responder é trocar espera por erro.
 var ESPERA_MAX_MS = 60000;
+
+// ------------------------------------------------------------
+// O MÊS JÁ VISTO NÃO SE PEDE DE NOVO
+//
+// Trocar de aba já não custava chamada nenhuma. Trocar de MÊS custava
+// uma inteira, a cada seta: quem olhava novembro, dezembro e voltava a
+// novembro pagava três esperas pela mesma informação.
+//
+// Agora a resposta de cada mês fica guardada NA MEMÓRIA DA PÁGINA
+// enquanto ela está aberta, e voltar a um mês já visto é instantâneo —
+// nenhuma ida ao servidor.
+//
+// Memória da página, e não do navegador, de propósito: boa parte do
+// acesso é de plantão, em computador compartilhado, e nome e escala de
+// colega não ficam guardados na máquina. Fechou a aba, acabou.
+//
+// A validade é curta porque a Diretoria pode lançar escala enquanto o
+// servidor navega. Dois minutos é o bastante para o vai-e-vem entre
+// meses e curto para não mostrar escala velha.
+//
+// A chave é a própria URL: ela já carrega mês, token, 'como' e se o
+// pedido inclui estatísticas ou lista de agendamento. Dois pedidos
+// diferentes nunca compartilham resposta por engano.
+var VALIDADE_CACHE_MS = 120000;
+var cacheConsulta = {};
+
+function esquecerConsultas() { cacheConsulta = {}; }
+
+function doCache(url) {
+  var g = cacheConsulta[url];
+  if (!g) return null;
+  if ((Date.now() - g.quando) > VALIDADE_CACHE_MS) { delete cacheConsulta[url]; return null; }
+  // Cópia: o resto da página escreve em 'dados' (anoRef, __token), e
+  // sem copiar essas escritas iriam para dentro do que está guardado.
+  try { return JSON.parse(JSON.stringify(g.dados)); } catch (e) { return null; }
+}
+
+function guardarNoCache(url, d) {
+  if (!d || d.sucesso === false) return;
+  // Só se guarda consulta de verdade, de alguém que entrou e sobre um
+  // mês identificado. A resposta anônima ('precisaEntrar') não tem o
+  // que reaproveitar, e guardá-la deixava sobra no cache depois de
+  // sair — nada vazava, mas a regra "sair esvazia tudo" tem de ser
+  // verdadeira sem asterisco.
+  if (!TOKEN || d.precisaEntrar || !d.mesChave) return;
+  try { cacheConsulta[url] = { dados: JSON.parse(JSON.stringify(d)), quando: Date.now() }; }
+  catch (e) { /* payload estranho: segue sem guardar */ }
+}
+
 function buscar(url) {
+  // PONTO ÚNICO DE INVALIDAÇÃO.
+  //
+  // Toda chamada que NÃO é consulta muda alguma coisa: declarar ou
+  // remover impedimento, cancelar DEJEP, pedir ou responder troca,
+  // entrar, sair, trocar de servidor. Qualquer uma delas torna velho
+  // o que está guardado, e é aqui que elas todas passam.
+  //
+  // Está aqui, e não em cada ação, porque em cada ação é questão de
+  // tempo alguém esquecer — e esquecer significa mostrar ao servidor
+  // uma escala que já mudou.
+  if (url.indexOf('acao=consulta') === -1) esquecerConsultas();
   if (typeof AbortController === 'undefined') return fetch(url);
   var ctrl = new AbortController();
   var t = setTimeout(function () { ctrl.abort(); }, ESPERA_MAX_MS);
@@ -1878,9 +1947,45 @@ function irParaMes(delta) {
   const lim = limitesDeMes();
   const novo = mesDeslocado(mesAtualDaPagina(), delta);
   if (novo < lim.primeiro || novo > lim.ultimo) return;
+  const naMemoria = temNaMemoria(novo);
   mesRef = novo;
-  mostrarAguardo(rotuloMes(novo) + '...');
+  // Tela de espera só quando há o que esperar. Mês já visto troca na
+  // hora, e um "Dezembro..." piscando antes seria ruído.
+  if (!naMemoria) mostrarAguardo(rotuloMes(novo) + '...');
   carregar();
+}
+
+// ------------------------------------------------------------
+// ADIANTAR O MÊS VIZINHO
+//
+// O primeiro clique numa seta ainda custava a espera inteira. Este
+// pedido acontece quando ninguém está esperando — o servidor está
+// lendo a tela que já abriu —, e só enche o cache: não aplica nada,
+// não redesenha, não mexe em 'dados'. É o que torna o primeiro clique
+// instantâneo também.
+//
+// Nada de aplicarConsulta aqui. Uma resposta chegando por trás e
+// redesenhando a tela já apagou RG e senha digitados uma vez; o
+// conserto foi tirar a chamada, não aprender a conviver com ela.
+function adiantarMesVizinho() {
+  if (!TOKEN) return;
+  const lim = limitesDeMes();
+  const atual = mesAtualDaPagina();
+  // O próximo mês primeiro: é onde a escala nova aparece. Se não
+  // houver, o anterior, que é para onde se olha ao conferir o que
+  // passou.
+  const candidatos = [mesDeslocado(atual, 1), mesDeslocado(atual, -1)];
+  for (let i = 0; i < candidatos.length; i++) {
+    const m = candidatos[i];
+    if (m < lim.primeiro || m > lim.ultimo) continue;
+    if (temNaMemoria(m)) continue;
+    const url = urlDaConsulta(m, 'escala');
+    buscar(url)
+      .then(function (r) { return r.json(); })
+      .then(function (d) { guardarNoCache(url, d); })
+      .catch(function () { /* adiantamento é cortesia: falhou, não faz falta */ });
+    return;
+  }
 }
 
 function mesLimite(desloc) {
@@ -2803,19 +2908,49 @@ function executarCancelamento(id) {
 // quem ainda não entrou — a tela de login aparece na hora e a consulta
 // anônima corre atrás, em vez de o servidor digitar o RG depois de
 // esperar um arranque frio do Apps Script inteiro.
-function carregar(aoTerminar, prontos, semBloquear) {
-  if (!semBloquear && !el('aguardo').classList.contains('ativo')) mostrarAguardo('Carregando...');
-  if (prontos) { aplicarConsulta(prontos, aoTerminar); return; }
-  const url = URL_BASE + '?acao=consulta'
+// A URL do pedido de consulta, montada num lugar só: é ela que serve
+// de chave do cache, e se a navegação montasse a sua própria versão as
+// duas se desencontrariam no primeiro parâmetro novo.
+function urlDaConsulta(mes, qualAba) {
+  const m = (mes === undefined) ? mesRef : mes;
+  const a = (qualAba === undefined) ? aba : qualAba;
+  return URL_BASE + '?acao=consulta'
     + (TOKEN ? '&t=' + encodeURIComponent(TOKEN) : '')
-    + (mesRef ? '&mes=' + encodeURIComponent(mesRef) : '')
+    + (m ? '&mes=' + encodeURIComponent(m) : '')
     // As estatísticas são caras de apurar no servidor e não aparecem
     // nas outras abas: só se pedem quando é a aba aberta.
-    + (aba === 'stats' ? '&stats=1' : '')
-    + (aba === 'agenda' ? '&agenda=1' : '')
+    + (a === 'stats' ? '&stats=1' : '')
+    + (a === 'agenda' ? '&agenda=1' : '')
     + comoParam();
+}
+
+// Só confere se está lá e se ainda vale: não copia o payload, que
+// pode passar de 50 KB, só para responder sim ou não.
+function temNaMemoria(mes, qualAba) {
+  const g = cacheConsulta[urlDaConsulta(mes, qualAba)];
+  return !!(g && (Date.now() - g.quando) <= VALIDADE_CACHE_MS);
+}
+
+function carregar(aoTerminar, prontos, semBloquear) {
+  const url = urlDaConsulta();
+  if (prontos) {
+    // Payload que veio junto com o login: vale como resposta deste mês.
+    guardarNoCache(url, prontos);
+    if (!semBloquear && !el('aguardo').classList.contains('ativo')) mostrarAguardo('Carregando...');
+    aplicarConsulta(prontos, aoTerminar);
+    return;
+  }
+  // Mês já visto nesta sessão: responde na hora, sem servidor e sem
+  // nem piscar a tela de espera.
+  const guardado = doCache(url);
+  if (guardado) {
+    esconderAguardo();
+    aplicarConsulta(guardado, aoTerminar);
+    return;
+  }
+  if (!semBloquear && !el('aguardo').classList.contains('ativo')) mostrarAguardo('Carregando...');
   buscar(url).then(function (r) { return r.json(); })
-    .then(function (d) { aplicarConsulta(d, aoTerminar); })
+    .then(function (d) { guardarNoCache(url, d); aplicarConsulta(d, aoTerminar); })
     .catch(function (e) {
       esconderAguardo();
       // Em segundo plano, na tela de login, a falha não vira aviso: o
@@ -2838,6 +2973,12 @@ function aplicarConsulta(d, aoTerminar) {
     // disse, e não o que foi pedido, evita a página achar que está num
     // mês e mostrar outro.
     if (d.mesChave) mesRef = d.mesChave;
+    // E guarda também sob a URL do mês que o servidor REALMENTE
+    // atendeu. O primeiro pedido vai sem '&mes=' — a página ainda não
+    // sabe em que mês está —, de modo que a resposta ficava guardada
+    // sob uma chave que nenhuma navegação volta a montar: voltar ao
+    // mês de entrada pedia tudo de novo.
+    if (d.mesChave) guardarNoCache(urlDaConsulta(), d);
     // O calendário de impedimento acompanha o mês de referência.
     if (d.mesChave) {
       const pm = d.mesChave.split('-');
@@ -2851,7 +2992,22 @@ function aplicarConsulta(d, aoTerminar) {
     }
     render();
     if (aoTerminar) aoTerminar(d);
+    agendarAdiantamento();
   }
+}
+
+// O adiantamento espera a tela assentar: pedir junto com o primeiro
+// desenho é disputar banda com o que o servidor está esperando ver.
+// E um temporizador só, reiniciado, para que navegar depressa entre
+// meses não dispare uma rajada de pedidos.
+var tempoAdiantar = null;
+function agendarAdiantamento() {
+  if (!TOKEN) return;
+  if (tempoAdiantar) clearTimeout(tempoAdiantar);
+  tempoAdiantar = setTimeout(function () {
+    tempoAdiantar = null;
+    adiantarMesVizinho();
+  }, 1500);
 }
 
 // Qualquer interação do servidor adia o encerramento
