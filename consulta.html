@@ -3284,9 +3284,24 @@ function agendarAdiantamento() {
 // dados. Nada disso sai da máquina nem chega ao servidor.
 // ------------------------------------------------------------
 function ehTemporada(hoje) {
+  // ?natal=1 força a temporada, ?natal=0 desliga. Existe por um
+  // motivo prático: em novembro não há como ver o enfeite para
+  // aprová-lo, e abrir o console do navegador não é jeito de mostrar
+  // uma coisa a alguém. Serve também no sentido contrário — se em
+  // dezembro a Diretoria achar que não cabe, ?natal=0 resolve na
+  // hora, sem republicar a página.
+  var forcado = (new URLSearchParams(location.search).get('natal') || '').trim();
+  if (forcado === '1') return true;
+  if (forcado === '0') return false;
+  // De 20 de novembro a 6 de janeiro, TODO ano. É regra de calendário,
+  // não data deste ano: entra e sai sozinho enquanto a página existir,
+  // sem ninguém precisar lembrar de nada em março.
   var d = hoje || new Date();
   var m = d.getMonth(), dia = d.getDate();
-  return (m === 11) || (m === 0 && dia <= 6);
+  if (m === 10) return dia >= 20;    // novembro, da véspera do fim
+  if (m === 11) return true;         // dezembro inteiro
+  if (m === 0)  return dia <= 6;     // até o Dia de Reis
+  return false;
 }
 
 var neveLigada = false;
