@@ -571,7 +571,17 @@ font-family: inherit; }
 .dp-lote-x:hover { color: var(--vermelho); }
 .dp-lotes-pe { font-size: 0.74rem; color: var(--verde); margin-top: 0.5rem; }
 /* ------------------------------------------------------------
-   NATAL — a única coisa nesta página que não é trabalho
+   DEZEMBRO — a única coisa nesta página que não é trabalho
+   ------------------------------------------------------------
+   Era neve, e neve aqui é mentira. A festa é antiga e de todo
+   mundo, mas a iconografia de neve, pinheiro e casaco grosso é do
+   hemisfério norte, espalhada pelos cartões ingleses do século XIX
+   e pela propaganda americana depois. Em São Vicente, 25 de
+   dezembro é trinta graus.
+   O resto desta página inteira foi feito na lógica de não mostrar
+   o que não corresponde ao que é. O enfeite não ia ser a exceção.
+   Virou chuva de verão: a pancada de fim de tarde da Baixada, que
+   é o dezembro de verdade daqui.
    ------------------------------------------------------------
    Três regras, e elas são o projeto inteiro:
 
@@ -600,23 +610,23 @@ margin-top: 0.7rem; padding: 4px 10px; border-radius: 20px; }
 .natal-luzes i:nth-child(6) { background: #c9a227; box-shadow: 0 0 7px #c9a22788; }
 .natal-luzes span { font-family: var(--fonte-tit); font-size: 0.78rem; font-weight: 600;
 color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.1em; margin-left: 5px; }
-body.nevando .natal-luzes i { animation: brilho 2.6s ease-in-out infinite; }
+body.chovendo .natal-luzes i { animation: brilho 2.6s ease-in-out infinite; }
 .natal-luzes i:nth-child(2) { animation-delay: 0.4s; }
 .natal-luzes i:nth-child(3) { animation-delay: 0.8s; }
 .natal-luzes i:nth-child(4) { animation-delay: 1.2s; }
 .natal-luzes i:nth-child(5) { animation-delay: 1.6s; }
 .natal-luzes i:nth-child(6) { animation-delay: 2.0s; }
 @keyframes brilho { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-/* A neve fica ATRÁS DOS CARTÕES e não intercepta clique nenhum. Na
+/* A chuva fica ATRÁS DOS CARTÕES e não intercepta clique nenhum. Na
    primeira versão ela passava por cima do texto: num enfeite de
    portal isso é charme, numa tela de escala é ruído atravessando o
    nome do colega e o horário do posto. Enfeite que disputa com a
    informação é defeito, e aqui a informação ganha sempre. */
-#neve { position: fixed; inset: 0; pointer-events: none; z-index: 0; display: none; }
+#chuva { position: fixed; inset: 0; pointer-events: none; z-index: 0; display: none; }
+body.chovendo #chuva { display: block; }
 .container { position: relative; z-index: 1; }
-body.nevando #neve { display: block; }
 @media (prefers-reduced-motion: reduce) {
-  body.nevando .natal-luzes i { animation: none; }
+  body.chovendo .natal-luzes i { animation: none; }
 }
 .aba-curta { display: none; }
 @media (max-width: 560px) {
@@ -630,7 +640,7 @@ body.nevando #neve { display: block; }
 </style>
 </head>
 <body>
-<canvas id="neve" aria-hidden="true"></canvas>
+<canvas id="chuva" aria-hidden="true"></canvas>
 <div class="container">
 <div class="header">
 <div class="header-inner">
@@ -3300,7 +3310,7 @@ function ehTemporada(hoje) {
   return false;
 }
 
-// A neve cai durante toda a temporada, sem chave para ligar ou
+// A chuva cai durante toda a temporada, sem chave para ligar ou
 // desligar: decisão da Diretoria, 22/11/2026. Sobram duas guardas,
 // e nenhuma das duas é preferência de enfeite:
 //
@@ -3313,28 +3323,28 @@ function ehTemporada(hoje) {
 //
 // E a chave geral continua: ?natal=0 tira tudo na hora, sem
 // republicar a página.
-var neveLaco = null;
-var neveFlocos = [];
-var neveCtx = null;
+var chuvaLaco = null;
+var chuvaGotas = [];
+var chuvaCtx = null;
 
-function pararNeve() {
-  if (neveLaco) { cancelAnimationFrame(neveLaco); neveLaco = null; }
-  neveFlocos = [];
-  var c = el('neve');
-  if (c && neveCtx) neveCtx.clearRect(0, 0, c.width, c.height);
+function pararChuva() {
+  if (chuvaLaco) { cancelAnimationFrame(chuvaLaco); chuvaLaco = null; }
+  chuvaGotas = [];
+  var c = el('chuva');
+  if (c && chuvaCtx) chuvaCtx.clearRect(0, 0, c.width, c.height);
 }
 
-function comecarNeve() {
-  var c = el('neve');
+function comecarChuva() {
+  var c = el('chuva');
   if (!c || !c.getContext) return;
   // Quem configurou o próprio sistema para menos movimento fica com
-  // as luzes e sem a neve.
+  // as luzes e sem a chuva.
   var quieto = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (quieto) return;
-  if (neveLaco) return;
+  if (chuvaLaco) return;
 
-  neveCtx = c.getContext('2d');
+  chuvaCtx = c.getContext('2d');
   function medir() {
     // Um só pixel por pixel de tela: em telefone antigo, dobrar a
     // resolução do enfeite é gastar o que a página acabou de economizar.
@@ -3344,62 +3354,75 @@ function comecarNeve() {
   medir();
   window.addEventListener('resize', medir);
 
-  // Quarenta flocos. Mais que isso ninguém distingue, e cada um é
-  // uma conta por quadro.
-  var n = Math.min(40, Math.round(window.innerWidth / 11));
-  neveFlocos = [];
+  // Chuva pede mais fios que a neve pedia flocos — pancada rala não
+  // se lê como chuva —, mas cada fio é um traço de um pixel, que
+  // custa menos que o círculo preenchido de antes.
+  var n = Math.min(55, Math.round(window.innerWidth / 8));
+  chuvaGotas = [];
   for (var i = 0; i < n; i++) {
-    neveFlocos.push({
-      x: Math.random() * c.width,
-      y: Math.random() * c.height,
-      r: 0.8 + Math.random() * 1.9,
-      vy: 0.25 + Math.random() * 0.55,
-      vx: -0.18 + Math.random() * 0.36,
-      o: 0.25 + Math.random() * 0.45
-    });
+    chuvaGotas.push(novaGota(c, true));
   }
 
   var ultimo = 0;
   function quadro(agora) {
     // Aba em segundo plano não desenha. O navegador já segura o
     // requestAnimationFrame, mas a guarda é barata e explícita.
-    if (document.hidden) { neveLaco = requestAnimationFrame(quadro); return; }
-    // Trinta quadros por segundo bastam para neve e custam metade de
-    // sessenta. Ninguém vai julgar a fluidez do floco.
-    if (agora - ultimo < 33) { neveLaco = requestAnimationFrame(quadro); return; }
+    if (document.hidden) { chuvaLaco = requestAnimationFrame(quadro); return; }
+    // 20 ms entre quadros: a neve se contentava com 33, mas o fio de
+    // chuva anda rápido e aos 30 por segundo fica aos pulos. Ainda é
+    // um terço mais barato que deixar correr solto.
+    if (agora - ultimo < 20) { chuvaLaco = requestAnimationFrame(quadro); return; }
     ultimo = agora;
 
-    neveCtx.clearRect(0, 0, c.width, c.height);
-    for (var i = 0; i < neveFlocos.length; i++) {
-      var f = neveFlocos[i];
-      f.y += f.vy;
-      f.x += f.vx;
-      if (f.y > c.height + 4) { f.y = -4; f.x = Math.random() * c.width; }
-      if (f.x < -4) f.x = c.width + 4;
-      if (f.x > c.width + 4) f.x = -4;
-      neveCtx.beginPath();
-      neveCtx.arc(f.x, f.y, f.r, 0, 6.2832);
-      neveCtx.fillStyle = 'rgba(230,231,228,' + f.o + ')';
-      neveCtx.fill();
+    chuvaCtx.clearRect(0, 0, c.width, c.height);
+    chuvaCtx.lineCap = 'round';
+    for (var i = 0; i < chuvaGotas.length; i++) {
+      var g = chuvaGotas[i];
+      g.x += g.vx;
+      g.y += g.vy;
+      if (g.y > c.height + g.comp) { chuvaGotas[i] = novaGota(c, false); continue; }
+      chuvaCtx.beginPath();
+      chuvaCtx.moveTo(g.x, g.y);
+      // O fio aponta para trás do movimento: é o rastro, não a gota.
+      chuvaCtx.lineTo(g.x - g.vx * g.comp, g.y - g.vy * g.comp);
+      chuvaCtx.lineWidth = g.esp;
+      chuvaCtx.strokeStyle = 'rgba(214,220,226,' + g.o + ')';
+      chuvaCtx.stroke();
     }
-    neveLaco = requestAnimationFrame(quadro);
+    chuvaLaco = requestAnimationFrame(quadro);
   }
-  neveLaco = requestAnimationFrame(quadro);
+  chuvaLaco = requestAnimationFrame(quadro);
+}
+
+// Vento constante para a esquerda, como pancada de fim de tarde que
+// vem do mar. Gotas mais rápidas são mais opacas e mais compridas:
+// é o que dá profundidade sem precisar de camada nenhuma.
+function novaGota(c, espalhada) {
+  var v = 5.5 + Math.random() * 6;
+  return {
+    x: Math.random() * (c.width + 160) - 80,
+    y: espalhada ? Math.random() * c.height : -20 - Math.random() * 80,
+    vy: v,
+    vx: -(v * 0.26),
+    comp: 1.6 + Math.random() * 1.1,
+    esp: v > 9 ? 1.1 : 0.8,
+    o: 0.10 + (v - 5.5) / 6 * 0.17
+  };
 }
 
 function prepararNatal() {
   if (!ehTemporada()) return;          // fora da temporada, nada acontece
   document.body.classList.add('e-natal');
-  document.body.classList.add('nevando');
-  comecarNeve();
+  document.body.classList.add('chovendo');
+  comecarChuva();
 }
 
 // O ENFEITE NÃO DERRUBA O SISTEMA.
 //
 // Em 22/11/2026, ao tirar a chave de ligar e desligar, apaguei sem
-// querer a função que começa a neve. O erro subiu e abortou o script
-// INTEIRO: a página parou em "Carregando dados...", sem login, sem
-// escala. Uma animação de Natal derrubou o sistema de escala.
+// querer a função que começa a animação. O erro subiu e abortou o
+// script INTEIRO: a página parou em "Carregando dados...", sem login,
+// sem escala. Um enfeite de Natal derrubou o sistema de escala.
 //
 // Daí esta casca. Ela não conserta o enfeite — conserta a relação
 // entre ele e o resto: o que acontecer aqui dentro morre aqui dentro,
