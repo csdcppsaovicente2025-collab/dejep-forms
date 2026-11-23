@@ -570,6 +570,57 @@ color: var(--texto-4); font-size: 1.3rem; line-height: 1; cursor: pointer; paddi
 font-family: inherit; }
 .dp-lote-x:hover { color: var(--vermelho); }
 .dp-lotes-pe { font-size: 0.74rem; color: var(--verde); margin-top: 0.5rem; }
+/* ------------------------------------------------------------
+   NATAL — a única coisa nesta página que não é trabalho
+   ------------------------------------------------------------
+   Três regras, e elas são o projeto inteiro:
+
+   1. DESLIGADO por padrão. Quem abre o sistema às 23h para ver se
+      tem DEJEP amanhã não quer animação na cara. Quem quiser, liga.
+   2. SOME SOZINHO. Só existe de 1º de dezembro a 6 de janeiro.
+      Ninguém precisa lembrar de tirar em março.
+   3. NÃO RODA desligado, nem com a aba em segundo plano, nem para
+      quem pediu menos movimento no sistema operacional.
+
+   Custo: o laço só existe depois do clique, e morre no clique
+   seguinte. Desligado, a página é exatamente a de antes.
+   ------------------------------------------------------------ */
+.natal { display: none; }
+body.e-natal .natal { display: inline-flex; }
+/* A cordinha de luzes, ao pé do cabeçalho. Parada: é enfeite, não
+   pisca-pisca — sala de permanência já tem luz piscando bastante. */
+.natal-luzes { gap: 7px; align-items: center; justify-content: center;
+margin-top: 0.7rem; border: 0; background: none; cursor: pointer; padding: 4px 10px;
+border-radius: 20px; font-family: inherit; }
+.natal-luzes:hover { background: rgba(255,255,255,0.04); }
+.natal-luzes i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+.natal-luzes i:nth-child(1) { background: #c9a227; box-shadow: 0 0 7px #c9a22788; }
+.natal-luzes i:nth-child(2) { background: #5f9e6e; box-shadow: 0 0 7px #5f9e6e88; }
+.natal-luzes i:nth-child(3) { background: #d66b60; box-shadow: 0 0 7px #d66b6088; }
+.natal-luzes i:nth-child(4) { background: #e6e7e4; box-shadow: 0 0 7px #e6e7e488; }
+.natal-luzes i:nth-child(5) { background: #5f9e6e; box-shadow: 0 0 7px #5f9e6e88; }
+.natal-luzes i:nth-child(6) { background: #c9a227; box-shadow: 0 0 7px #c9a22788; }
+.natal-luzes span { font-family: var(--fonte-tit); font-size: 0.78rem; font-weight: 600;
+color: var(--texto-3); text-transform: uppercase; letter-spacing: 0.1em; margin-left: 5px; }
+.natal-luzes:hover span { color: var(--texto-2); }
+body.nevando .natal-luzes i { animation: brilho 2.6s ease-in-out infinite; }
+.natal-luzes i:nth-child(2) { animation-delay: 0.4s; }
+.natal-luzes i:nth-child(3) { animation-delay: 0.8s; }
+.natal-luzes i:nth-child(4) { animation-delay: 1.2s; }
+.natal-luzes i:nth-child(5) { animation-delay: 1.6s; }
+.natal-luzes i:nth-child(6) { animation-delay: 2.0s; }
+@keyframes brilho { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+/* A neve fica ATRÁS DOS CARTÕES e não intercepta clique nenhum. Na
+   primeira versão ela passava por cima do texto: num enfeite de
+   portal isso é charme, numa tela de escala é ruído atravessando o
+   nome do colega e o horário do posto. Enfeite que disputa com a
+   informação é defeito, e aqui a informação ganha sempre. */
+#neve { position: fixed; inset: 0; pointer-events: none; z-index: 0; display: none; }
+.container { position: relative; z-index: 1; }
+body.nevando #neve { display: block; }
+@media (prefers-reduced-motion: reduce) {
+  body.nevando .natal-luzes i { animation: none; }
+}
 .aba-curta { display: none; }
 @media (max-width: 560px) {
   .aba-longa { display: none; }
@@ -582,6 +633,7 @@ font-family: inherit; }
 </style>
 </head>
 <body>
+<canvas id="neve" aria-hidden="true"></canvas>
 <div class="container">
 <div class="header">
 <div class="header-inner">
@@ -592,6 +644,9 @@ SP" />
 <h1>Polícia Penal do Estado de São Paulo</h1>
 <h2>Centro de Progressão Penitenciária de São Vicente</h2>
 <p>DEJEP &bull; Consulta da escala e da lista corrida</p>
+<button class="natal natal-luzes" id="natal-luzes" type="button"
+ onclick="alternarNeve()" title="Dezembro na unidade">
+<i></i><i></i><i></i><i></i><i></i><i></i><span id="natal-txt">Boas festas</span></button>
 </div>
 <div class="header-espaco" aria-hidden="true"></div>
 </div>
@@ -3215,6 +3270,130 @@ function agendarAdiantamento() {
     adiantarMesVizinho();
   }, 1500);
 }
+
+// ------------------------------------------------------------
+// NATAL
+//
+// A temporada se abre sozinha em 1º de dezembro e se fecha em 6 de
+// janeiro. Fora dela nada disto existe na tela, e o laço de animação
+// nunca chega a ser criado.
+//
+// A escolha de ligar ou não fica no navegador de quem clicou — e só
+// nele. Em computador compartilhado de plantão, o que o colega ligou
+// não se impõe ao próximo: cada um liga o seu, e some ao limpar os
+// dados. Nada disso sai da máquina nem chega ao servidor.
+// ------------------------------------------------------------
+function ehTemporada(hoje) {
+  var d = hoje || new Date();
+  var m = d.getMonth(), dia = d.getDate();
+  return (m === 11) || (m === 0 && dia <= 6);
+}
+
+var neveLigada = false;
+var neveLaco = null;
+var neveFlocos = [];
+var neveCtx = null;
+
+function guardarNeve(v) {
+  try { if (v) localStorage.setItem('dejep_neve', '1');
+        else localStorage.removeItem('dejep_neve'); }
+  catch (e) { /* navegador sem armazenamento: vale só nesta visita */ }
+}
+function neveGuardada() {
+  try { return localStorage.getItem('dejep_neve') === '1'; }
+  catch (e) { return false; }
+}
+
+function alternarNeve() {
+  neveLigada = !neveLigada;
+  guardarNeve(neveLigada);
+  aplicarNeve();
+}
+
+function aplicarNeve() {
+  document.body.classList.toggle('nevando', neveLigada);
+  var b = el('natal-luzes');
+  if (b) b.title = neveLigada ? 'Desligar a neve' : 'Ligar a neve';
+  if (neveLigada) comecarNeve(); else pararNeve();
+}
+
+function pararNeve() {
+  if (neveLaco) { cancelAnimationFrame(neveLaco); neveLaco = null; }
+  neveFlocos = [];
+  var c = el('neve');
+  if (c && neveCtx) neveCtx.clearRect(0, 0, c.width, c.height);
+}
+
+function comecarNeve() {
+  var c = el('neve');
+  if (!c || !c.getContext) return;
+  // Quem pediu menos movimento no sistema fica com as luzes e sem a
+  // neve. A opção continua ligada; o que não há é animação.
+  var quieto = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (quieto) return;
+  if (neveLaco) return;
+
+  neveCtx = c.getContext('2d');
+  function medir() {
+    // Um só pixel por pixel de tela: em telefone antigo, dobrar a
+    // resolução do enfeite é gastar o que a página acabou de economizar.
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+  }
+  medir();
+  window.addEventListener('resize', medir);
+
+  // Quarenta flocos. Mais que isso ninguém distingue, e cada um é
+  // uma conta por quadro.
+  var n = Math.min(40, Math.round(window.innerWidth / 11));
+  neveFlocos = [];
+  for (var i = 0; i < n; i++) {
+    neveFlocos.push({
+      x: Math.random() * c.width,
+      y: Math.random() * c.height,
+      r: 0.8 + Math.random() * 1.9,
+      vy: 0.25 + Math.random() * 0.55,
+      vx: -0.18 + Math.random() * 0.36,
+      o: 0.25 + Math.random() * 0.45
+    });
+  }
+
+  var ultimo = 0;
+  function quadro(agora) {
+    // Aba em segundo plano não desenha. O navegador já segura o
+    // requestAnimationFrame, mas a guarda é barata e explícita.
+    if (document.hidden) { neveLaco = requestAnimationFrame(quadro); return; }
+    // Trinta quadros por segundo bastam para neve e custam metade de
+    // sessenta. Ninguém vai julgar a fluidez do floco.
+    if (agora - ultimo < 33) { neveLaco = requestAnimationFrame(quadro); return; }
+    ultimo = agora;
+
+    neveCtx.clearRect(0, 0, c.width, c.height);
+    for (var i = 0; i < neveFlocos.length; i++) {
+      var f = neveFlocos[i];
+      f.y += f.vy;
+      f.x += f.vx;
+      if (f.y > c.height + 4) { f.y = -4; f.x = Math.random() * c.width; }
+      if (f.x < -4) f.x = c.width + 4;
+      if (f.x > c.width + 4) f.x = -4;
+      neveCtx.beginPath();
+      neveCtx.arc(f.x, f.y, f.r, 0, 6.2832);
+      neveCtx.fillStyle = 'rgba(230,231,228,' + f.o + ')';
+      neveCtx.fill();
+    }
+    neveLaco = requestAnimationFrame(quadro);
+  }
+  neveLaco = requestAnimationFrame(quadro);
+}
+
+function prepararNatal() {
+  if (!ehTemporada()) return;          // fora de dezembro, nada acontece
+  document.body.classList.add('e-natal');
+  neveLigada = neveGuardada();
+  if (neveLigada) aplicarNeve();
+}
+prepararNatal();
 
 // Qualquer interação do servidor adia o encerramento
 ['click', 'keydown', 'touchstart', 'scroll'].forEach(function (ev) {
