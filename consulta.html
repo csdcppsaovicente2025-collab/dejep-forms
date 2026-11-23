@@ -5,14 +5,83 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Consulta DEJEP — CPP São Vicente</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fontawesome/6.5.0/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" />
 <style>
+/* ============================================================
+   IDENTIDADE VISUAL — multicam black
+   ============================================================
+   A paleta vem do fardamento: preto dominante, grafite, o
+   cinza-oliva do padrão, e o latão das insígnias como único
+   acento de ação. É paleta, não estampa: o padrão de camuflagem
+   em si é desenho proprietário, e como fundo de uma tela cheia de
+   nome, data e horário deixaria tudo ilegível. Aqui ele aparece
+   onde camuflagem aparece de verdade num uniforme — no tecido, ao
+   fundo, quieto — e a informação fica em cima, com contraste.
+
+   Toda cor é token. Nenhum componente tem cor literal: trocar a
+   identidade inteira é trocar este bloco.
+   ============================================================ */
+:root {
+  /* Tecido */
+  --preto:         #0a0b0c;
+  --grafite:       #14161a;
+  --grafite-alto:  #1b1e23;
+  --grafite-fundo: #101216;
+  --borda:         #262a30;
+  --borda-clara:   #343a42;
+  /* O cinza-oliva do padrão: faixas, separadores, o que é estrutura */
+  --oliva:         #4d5347;
+  --oliva-claro:   #6b7363;
+  /* Texto */
+  --texto:         #e6e7e4;
+  --texto-2:       #a6aba3;
+  --texto-3:       #8a9087;
+  --texto-4:       #555a52;
+  /* Latão da insígnia: ação, foco, o número que importa */
+  --latao:         #c9a227;
+  --latao-claro:   #e0bc5a;
+  --latao-escuro:  #8a6e18;
+  --latao-fundo:   #2a2310;
+  /* Semânticas */
+  --verde:         #5f9e6e;
+  --verde-fundo:   #16231a;
+  --verde-borda:   #2f4a35;
+  --vermelho:      #d66b60;
+  --vermelho-fundo:#271614;
+  --vermelho-borda:#4a2621;
+  --ambar:         #d9a63c;
+  --ambar-fundo:   #291f10;
+  --ambar-borda:   #4a3a16;
+  --roxo:          #9d82c9;
+  --roxo-fundo:    #1f1a2b;
+  --roxo-borda:    #3a2f4f;
+  --azul:          #7aa5cc;
+  --azul-fundo:    #141d26;
+  --azul-borda:    #26384a;
+  /* Tipografia */
+  --fonte-tit: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  --fonte: 'Inter', 'Segoe UI', Arial, sans-serif;
+  color-scheme: dark;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a2b3c;
-min-height: 100vh; padding: 2rem 1rem 4rem; }
+body { font-family: var(--fonte); background: var(--preto); color: var(--texto);
+min-height: 100vh; padding: 2rem 1rem 4rem; font-variant-numeric: tabular-nums;
+-webkit-font-smoothing: antialiased; }
 .container { max-width: 680px; margin: 0 auto; }
-.header { background: #1a3a5c; color: white; border-radius: 14px; padding: 1.25rem 2rem; margin-bottom: 1.5rem; }
+
+/* ---- Cabeçalho ----
+   Faixa de tecido com um fio de latão embaixo, como a lapela de
+   um uniforme. O brasão é a imagem oficial da instituição e fica
+   como está. */
+.header { background: linear-gradient(170deg, var(--grafite-alto), var(--grafite));
+border: 1px solid var(--borda); border-bottom: 2px solid var(--latao-escuro);
+border-radius: 14px; padding: 1.25rem 2rem; margin-bottom: 1.5rem; }
 .header-inner { display: flex; align-items: center; justify-content: center; gap: 1rem; }
-.header-brasao { width: 110px; height: 110px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+.header-brasao { width: 110px; height: 110px; object-fit: contain; flex-shrink: 0;
+filter: drop-shadow(0 2px 10px rgba(201,162,39,0.18)); }
 /* Contrapeso do brasão: sem ele o texto ficaria centralizado apenas
    no espaço à direita da imagem, e não no meio do cabeçalho. */
 .header-espaco { width: 110px; flex-shrink: 0; }
@@ -21,398 +90,494 @@ min-height: 100vh; padding: 2rem 1rem 4rem; }
   .header-inner { flex-direction: column; gap: 0.7rem; }
   .header-espaco { display: none; }
 }
-.header h1 { font-size: 1rem; font-weight: 800; color: #ffffff; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; line-height: 1.3; }
-.header h2 { font-size: 0.82rem; font-weight: 400; color: #a8c4e0; margin-bottom: 4px; }
-.header p { font-size: 0.78rem; color: #7aaad0; margin-top: 2px; }
-.card { background: white; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; border: 1px solid #dde4ed; }
-.card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #6b80a0; margin-bottom: 1rem; }
+.header h1 { font-family: var(--fonte-tit); font-size: 1.35rem; font-weight: 700;
+color: var(--texto); letter-spacing: 0.1em; text-transform: uppercase;
+margin-bottom: 5px; line-height: 1.15; }
+.header h2 { font-family: var(--fonte-tit); font-size: 1rem; font-weight: 500;
+color: var(--latao); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.header p { font-size: 0.74rem; color: var(--texto-3); margin-top: 3px;
+letter-spacing: 0.02em; }
+
+.card { background: var(--grafite); border-radius: 14px; padding: 1.5rem;
+margin-bottom: 1.25rem; border: 1px solid var(--borda); }
+.card-title { font-family: var(--fonte-tit); font-size: 0.95rem; font-weight: 700;
+text-transform: uppercase; letter-spacing: 0.11em; color: var(--texto-2);
+margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--borda); }
+
 .abas { display: flex; gap: 8px; margin-bottom: 1.25rem; }
-.aba { flex: 1; padding: 11px; border: 1px solid #d0d9e6; background: white; color: #1a2b3c;
+.aba { flex: 1; padding: 11px; border: 1px solid var(--borda-clara);
+background: var(--grafite); color: var(--texto-2);
 border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-align: center;
-font-family: inherit; transition: border 0.15s, background 0.15s; }
-.aba:hover { border-color: #2d6a9f; }
-.aba.ativa { background: #1a3a5c; color: white; border-color: #1a3a5c; }
-.busca { width: 100%; border: 1px solid #d0d9e6; border-radius: 8px; padding: 9px 12px;
-font-size: 0.95rem; color: #1a2b3c; background: white; outline: none; margin-bottom: 1.25rem; font-family: inherit; }
-.busca:focus { border-color: #2d6a9f; }
-.busca::placeholder { color: #aab8c8; }
+font-family: var(--fonte-tit); text-transform: uppercase; letter-spacing: 0.06em;
+transition: border-color 0.15s, background 0.15s, color 0.15s; }
+.aba:hover { border-color: var(--oliva-claro); color: var(--texto); }
+.aba.ativa { background: var(--latao); color: #15120a; border-color: var(--latao);
+font-weight: 700; }
+.busca { width: 100%; border: 1px solid var(--borda-clara); border-radius: 8px; padding: 9px 12px;
+font-size: 0.95rem; color: var(--texto); background: var(--grafite-fundo); outline: none;
+margin-bottom: 1.25rem; font-family: inherit; }
+.busca:focus { border-color: var(--latao); }
+.busca::placeholder { color: var(--texto-4); }
+
 .tabela-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
-th { background: #2d6a9f; color: white; padding: 9px 8px; text-align: left; font-weight: 600; white-space: nowrap; }
+th { background: var(--oliva); color: var(--texto); padding: 9px 8px; text-align: left;
+font-family: var(--fonte-tit); font-weight: 600; white-space: nowrap;
+text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.86rem; }
 th:first-child { border-radius: 8px 0 0 0; }
 th:last-child { border-radius: 0 8px 0 0; }
-td { padding: 9px 8px; border-bottom: 1px solid #eef1f5; }
+td { padding: 9px 8px; border-bottom: 1px solid var(--borda); }
 tr:last-child td { border-bottom: none; }
-tbody tr:nth-child(even) { background: #f7f9fc; }
-.pos { display: inline-block; min-width: 28px; text-align: center; background: #1a3a5c; color: white;
+tbody tr:nth-child(even) { background: var(--grafite-fundo); }
+.pos { display: inline-block; min-width: 28px; text-align: center; background: var(--grafite-alto);
+color: var(--texto); border: 1px solid var(--borda-clara);
 border-radius: 6px; padding: 2px 6px; font-size: 0.78rem; font-weight: 700; }
-.pos.topo { background: #1e7a46; }
+.pos.topo { background: var(--latao); color: #15120a; border-color: var(--latao); }
 .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* Coluna de contagem: o cabeçalho é largo e o número é curto, então
    os dois centralizados é o único jeito de ficarem na mesma prumada. */
 .centro, th.centro { text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tag { font-size: 0.7rem; padding: 2px 7px; border-radius: 5px; background: #ead1dc; color: #7a2348; font-weight: 700; }
+.tag { font-size: 0.7rem; padding: 2px 7px; border-radius: 5px; background: var(--roxo-fundo);
+color: var(--roxo); border: 1px solid var(--roxo-borda); font-weight: 700; }
 /* Marca de cancelamento na coluna DEJEPs: explica por que o número
    exibido é menor que o de quem está à frente. Diz "canc." por
    escrito — cor sozinha não se lê em impressão nem por quem enxerga
    mal — e vem em tom neutro, porque cancelar em tempo hábil é
    direito do servidor, não falta. */
-.canc { font-size: 0.66rem; padding: 1px 5px; border-radius: 4px; background: #e8edf4;
-color: #5a6f8c; font-weight: 700; white-space: nowrap; cursor: help; }
-.empty-msg { text-align: center; color: #8fa3ba; font-size: 0.88rem; padding: 1.5rem 1rem; line-height: 1.6; }
-.aviso-info { background: #eef4fb; border-left: 4px solid #2d6a9f; border-radius: 8px;
-padding: 0.85rem 1rem; font-size: 0.8rem; color: #45617f; line-height: 1.55; margin-bottom: 1.25rem; }
+.canc { font-size: 0.66rem; padding: 1px 5px; border-radius: 4px; background: var(--grafite-alto);
+color: var(--texto-2); border: 1px solid var(--borda-clara);
+font-weight: 700; white-space: nowrap; cursor: help; }
+.empty-msg { text-align: center; color: var(--texto-3); font-size: 0.88rem;
+padding: 1.5rem 1rem; line-height: 1.6; }
+.aviso-info { background: var(--azul-fundo); border-left: 3px solid var(--azul); border-radius: 8px;
+padding: 0.85rem 1rem; font-size: 0.8rem; color: var(--texto-2); line-height: 1.55;
+margin-bottom: 1.25rem; }
 .rodape { margin-top: 1.5rem; text-align: center; }
-.rodape span { display: inline-block; color: #ffffff; font-size: 12.2px; font-weight: 700;
-background: #1a3a5c; border-radius: 6px; padding: 0.5rem 1ch;
+.rodape span { display: inline-block; color: var(--texto-3); font-size: 12.2px; font-weight: 600;
+background: var(--grafite); border: 1px solid var(--borda); border-radius: 6px; padding: 0.5rem 1ch;
 /* Crédito discreto: mesmas cores, menos presença na página. */
-opacity: 0.5; }
+opacity: 0.6; }
 
-.cal-mes { text-align: center; font-weight: 700; font-size: 1.05rem; color: #1a3a5c;
-margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+/* ---- Botão de ajuda ----
+   Os textos de instrução saíram da tela. O que carrega regra — a
+   senha inicial, o prazo para cancelar, a posição preservada, a
+   marca de cancelamento na fila — mora atrás deste ícone. Fica
+   discreto porque é consulta de quem precisa, não aviso para
+   todos; e existe porque tirar a regra da tela sem deixar onde
+   lê-la transforma cada dúvida numa pergunta à Diretoria. */
+.ajuda { border: 1px solid var(--borda-clara); background: var(--grafite-alto);
+color: var(--texto-3); width: 20px; height: 20px; border-radius: 50%;
+font-size: 0.72rem; font-weight: 700; line-height: 1; cursor: pointer; padding: 0;
+font-family: var(--fonte); flex-shrink: 0; vertical-align: middle; }
+.ajuda:hover { border-color: var(--latao); color: var(--latao); }
+.card-title .ajuda { margin-left: 7px; }
+.ajuda-corpo { font-size: 0.85rem; color: var(--texto-2); line-height: 1.65; }
+.ajuda-corpo strong { color: var(--texto); }
+.ajuda-corpo p + p { margin-top: 0.7rem; }
+
+.cal-mes { text-align: center; font-family: var(--fonte-tit); font-weight: 700;
+font-size: 1.2rem; color: var(--texto);
+margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; }
 .cal-semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
-.cal-dia-sem { text-align: center; font-size: 0.68rem; font-weight: 700; color: #6b80a0;
+.cal-dia-sem { text-align: center; font-size: 0.68rem; font-weight: 700; color: var(--texto-3);
 text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 0; }
 .cal-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-cel { border: 1px solid #dde4ed; border-radius: 8px; background: white; padding: 4px 3px;
-min-height: 62px; display: flex; flex-direction: column; gap: 2px; }
+.cal-cel { border: 1px solid var(--borda); border-radius: 8px; background: var(--grafite-fundo);
+padding: 4px 3px; min-height: 62px; display: flex; flex-direction: column; gap: 2px; }
 .cal-cel.vazia { border: none; background: transparent; }
-.cal-cel.fds { background: #f7f9fc; }
-.cal-cel.sem-escala { background: #fafbfc; border-style: dashed; }
-.cal-cel.hoje { border-color: #2d6a9f; border-width: 2px; }
-.cal-num { font-size: 0.72rem; font-weight: 700; color: #45617f; text-align: center; line-height: 1.2; }
+.cal-cel.fds { background: var(--grafite-alto); }
+.cal-cel.sem-escala { background: transparent; border-style: dashed; }
+.cal-cel.hoje { border-color: var(--latao); border-width: 2px; }
+.cal-num { font-size: 0.72rem; font-weight: 700; color: var(--texto-2); text-align: center;
+line-height: 1.2; }
 .cal-item { font-size: 0.58rem; line-height: 1.25; border-radius: 4px; padding: 2px 3px;
-color: #1a2b3c; overflow: hidden; }
-.cal-item.apagado { opacity: 0.22; }
+color: var(--texto); overflow: hidden; border-left: 2px solid transparent; }
+.cal-item.apagado { opacity: 0.3; }
 .cal-hora { font-weight: 700; }
-.cal-item.h07 { background: #d9ead3; }
-.cal-item.h11 { background: #fce5cd; }
-.cal-item.h23 { background: #cfe2f3; }
-.cal-item.h10 { background: #ead1dc; }
-.cal-item.h22 { background: #e0d4ea; }
+/* Cada horário tem a sua cor, em tom de tecido: o fundo é escuro e o
+   fio da esquerda carrega a identidade. */
+.cal-item.h07 { background: var(--verde-fundo); border-left-color: var(--verde); }
+.cal-item.h11 { background: var(--ambar-fundo); border-left-color: var(--ambar); }
+.cal-item.h23 { background: var(--azul-fundo); border-left-color: var(--azul); }
+.cal-item.h10 { background: var(--roxo-fundo); border-left-color: var(--roxo); }
+.cal-item.h22 { background: var(--latao-fundo); border-left-color: var(--latao); }
 .cal-legenda { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-margin-top: 0.9rem; font-size: 0.7rem; color: #6b80a0; }
+margin-top: 0.9rem; font-size: 0.7rem; color: var(--texto-3); }
 .cal-legenda span { display: flex; align-items: center; gap: 4px; }
 .cal-legenda .pt { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.cal-legenda .pt.h07 { background: #d9ead3; } .cal-legenda .pt.h11 { background: #fce5cd; }
-.cal-legenda .pt.h23 { background: #cfe2f3; } .cal-legenda .pt.h10 { background: #ead1dc; }
-.cal-legenda .pt.h22 { background: #e0d4ea; }
+.cal-legenda .pt.h07 { background: var(--verde); } .cal-legenda .pt.h11 { background: var(--ambar); }
+.cal-legenda .pt.h23 { background: var(--azul); } .cal-legenda .pt.h10 { background: var(--roxo); }
+.cal-legenda .pt.h22 { background: var(--latao); }
 @media (max-width: 560px) {
   .cal-cel { min-height: 52px; padding: 3px 2px; }
   .cal-item { font-size: 0.5rem; }
 }
 
-/* ---- Painel pessoal e ações ---- */
-.painel { background: #1a3a5c; color: #fff; border-radius: 12px; padding: 1.1rem 1.25rem;
-margin-bottom: 1.25rem; }
-.painel-nome { font-size: 1rem; font-weight: 700; }
-.painel-pos { font-size: 0.8rem; color: #a8c4e0; margin-top: 2px; }
-.painel-item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 0.6rem 0.75rem;
+/* ---- Painel pessoal e ações ----
+   É o cartão que o servidor abre para ver a si mesmo: ganha o fio de
+   latão à esquerda, que no resto da página marca o que é dele. */
+.painel { background: linear-gradient(170deg, var(--grafite-alto), var(--grafite));
+color: var(--texto); border: 1px solid var(--borda); border-left: 3px solid var(--latao);
+border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
+.painel-nome { font-family: var(--fonte-tit); font-size: 1.3rem; font-weight: 700;
+text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.15; }
+.painel-pos { font-size: 0.8rem; color: var(--texto-2); margin-top: 3px; }
+.painel-item { background: var(--grafite-fundo); border: 1px solid var(--borda);
+border-radius: 8px; padding: 0.6rem 0.75rem;
 margin-top: 0.6rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.painel-item .pi-data { font-weight: 700; font-size: 0.9rem; min-width: 62px; }
-.painel-item .pi-info { font-size: 0.8rem; color: #c8dcf0; flex: 1; min-width: 120px; }
-.btn-acao { border: 0; border-radius: 6px; padding: 6px 11px; font-size: 0.76rem;
-font-weight: 700; cursor: pointer; background: #ffffff; color: #1a3a5c; }
-.btn-acao.cancelar { background: #e8a0a0; color: #6a1515; }
-.btn-acao:disabled { background: #7a8fa5; color: #dde4ed; cursor: not-allowed; }
-.dia-bloco { border: 1px solid #dde4ed; border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
-.dia-cab { background: #f0f4f8; padding: 7px 12px; font-size: 0.8rem; font-weight: 700;
-color: #1a3a5c; display: flex; justify-content: space-between; }
-.dia-cab .dia-fds { color: #a0522d; }
+.painel-item .pi-data { font-weight: 700; font-size: 0.95rem; min-width: 62px; color: var(--latao); }
+.painel-item .pi-info { font-size: 0.8rem; color: var(--texto-2); flex: 1; min-width: 120px; }
+.btn-acao { border: 1px solid var(--borda-clara); border-radius: 6px; padding: 6px 11px;
+font-size: 0.76rem; font-weight: 700; cursor: pointer; background: var(--grafite-alto);
+color: var(--texto); font-family: inherit; }
+.btn-acao:hover { border-color: var(--latao); color: var(--latao); }
+.btn-acao.cancelar { background: var(--vermelho-fundo); color: var(--vermelho);
+border-color: var(--vermelho-borda); }
+.btn-acao.cancelar:hover { border-color: var(--vermelho); color: var(--vermelho); }
+.btn-acao:disabled { background: var(--grafite-fundo); color: var(--texto-4);
+border-color: var(--borda); cursor: not-allowed; }
+.btn-acao:disabled:hover { border-color: var(--borda); color: var(--texto-4); }
+
+.dia-bloco { border: 1px solid var(--borda); border-radius: 10px; margin-bottom: 8px;
+overflow: hidden; }
+.dia-cab { background: var(--grafite-alto); padding: 7px 12px; font-family: var(--fonte-tit);
+font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+color: var(--texto); display: flex; justify-content: space-between; }
+.dia-cab .dia-fds { color: var(--latao); }
 .linha-dejep { display: flex; align-items: center; gap: 10px; padding: 8px 12px;
-border-top: 1px solid #eef1f5; font-size: 0.85rem; }
-.linha-dejep .ld-hora { font-weight: 700; color: #1a3a5c; min-width: 42px; }
-.linha-dejep .ld-posto { font-size: 0.72rem; color: #6b80a0; min-width: 96px; }
+border-top: 1px solid var(--borda); font-size: 0.85rem; }
+.linha-dejep .ld-hora { font-weight: 700; color: var(--latao); min-width: 42px; }
+.linha-dejep .ld-posto { font-size: 0.72rem; color: var(--texto-3); min-width: 96px; }
 .linha-dejep .ld-nome { flex: 1; min-width: 110px; }
-.linha-dejep.minha { background: #eef7ee; }
+.linha-dejep.minha { background: var(--latao-fundo); }
 .linha-dejep.clicavel { cursor: pointer; }
-.linha-dejep.clicavel:hover { background: #f5f9fd; }
-.linha-dejep .ld-vaga { color: #a02020; font-weight: 700; }
-.linha-dejep .ld-oculto { color: #a8b4c2; font-style: italic; font-weight: 400; }
-.modal-fundo { position: fixed; inset: 0; background: rgba(12,26,44,0.55); display: none;
+.linha-dejep.clicavel:hover { background: var(--grafite-alto); }
+.linha-dejep .ld-vaga { color: var(--vermelho); font-weight: 700; }
+.linha-dejep .ld-oculto { color: var(--texto-4); font-style: italic; font-weight: 400; }
+
+.modal-fundo { position: fixed; inset: 0; background: rgba(4,5,6,0.78); display: none;
 align-items: center; justify-content: center; padding: 1rem; z-index: 50; }
 .modal-fundo.ativo { display: flex; }
-.modal-cx { background: #fff; border-radius: 14px; padding: 1.5rem; max-width: 420px; width: 100%; }
-.modal-tit { font-size: 1rem; font-weight: 700; color: #1a3a5c; margin-bottom: 0.4rem; }
-.modal-sub { font-size: 0.84rem; color: #5a6e8a; line-height: 1.5; margin-bottom: 1rem; }
-.modal-opt { display: block; width: 100%; text-align: left; border: 1px solid #d0d9e6;
-background: #fff; border-radius: 8px; padding: 10px 12px; margin-bottom: 7px;
-font-size: 0.85rem; cursor: pointer; color: #1a2b3c; }
-.modal-opt:hover { border-color: #2d6a9f; background: #f5f9fd; }
+.modal-cx { background: var(--grafite); border: 1px solid var(--borda-clara);
+border-radius: 14px; padding: 1.5rem; max-width: 420px; width: 100%;
+max-height: 86vh; overflow-y: auto; }
+.modal-tit { font-family: var(--fonte-tit); font-size: 1.25rem; font-weight: 700;
+text-transform: uppercase; letter-spacing: 0.07em; color: var(--texto); margin-bottom: 0.5rem; }
+.modal-sub { font-size: 0.84rem; color: var(--texto-2); line-height: 1.55; margin-bottom: 1rem; }
+.modal-opt { display: block; width: 100%; text-align: left; border: 1px solid var(--borda-clara);
+background: var(--grafite-fundo); border-radius: 8px; padding: 10px 12px; margin-bottom: 7px;
+font-size: 0.85rem; cursor: pointer; color: var(--texto); font-family: inherit; }
+.modal-opt:hover { border-color: var(--latao); background: var(--grafite-alto); }
 .modal-acoes { display: flex; gap: 8px; margin-top: 0.75rem; }
-.modal-btn { flex: 1; border: 0; border-radius: 8px; padding: 10px; font-size: 0.85rem;
-font-weight: 700; cursor: pointer; background: #e8edf3; color: #45617f; }
-.modal-btn.principal { background: #1a3a5c; color: #fff; }
-.modal-btn.perigo { background: #a02020; color: #fff; }
+.modal-btn { flex: 1; border: 1px solid var(--borda-clara); border-radius: 8px; padding: 10px;
+font-size: 0.85rem; font-weight: 700; cursor: pointer; background: var(--grafite-alto);
+color: var(--texto-2); font-family: inherit; }
+.modal-btn:hover { color: var(--texto); }
+.modal-btn.principal { background: var(--latao); color: #15120a; border-color: var(--latao); }
+.modal-btn.perigo { background: var(--vermelho); color: #160b09; border-color: var(--vermelho); }
 /* Resposta a um pedido de troca, dentro do cartão. Mesma aparência dos
    botões do aviso, classe própria: são outro lugar e outra função. */
-.btn-resp { flex: 1; border: 0; border-radius: 8px; padding: 10px; font-size: 0.85rem;
-font-weight: 700; cursor: pointer; background: #e8edf3; color: #45617f; }
-.btn-resp.aceitar { background: #1a3a5c; color: #fff; }
-/* Retirar o próprio pedido é ação de desfazer: vermelha e cheia, para
-   não se perder no cinza do cartão. Vem sozinha na linha, longe de
-   "Aceitar" e "Recusar", que ficam nos pedidos recebidos. */
-.btn-resp.perigo { background: #c0392b; color: #fff; }
-.btn-resp.perigo:hover { background: #a93226; }
+.btn-resp { flex: 1; border: 1px solid var(--borda-clara); border-radius: 8px; padding: 10px;
+font-size: 0.85rem; font-weight: 700; cursor: pointer; background: var(--grafite-alto);
+color: var(--texto-2); font-family: inherit; }
+.btn-resp.aceitar { background: var(--latao); color: #15120a; border-color: var(--latao); }
+/* Retirar o próprio pedido é ação de desfazer: vermelha, e sozinha na
+   linha, longe de "Aceitar" e "Recusar", que ficam nos pedidos
+   recebidos. Era vermelha CHEIA, para não se perder no cinza do
+   cartão claro; no fundo escuro a premissa caiu — cheia virava a
+   coisa mais gritante da tela, mais que o próprio Entrar. Contornada
+   continua inconfundível e para de gritar. A confirmação dentro do
+   modal, essa sim, segue cheia: ali o destaque é o ponto. */
+.btn-resp.perigo { background: var(--vermelho-fundo); color: var(--vermelho);
+border-color: var(--vermelho); }
+.btn-resp.perigo:hover { background: var(--vermelho); color: #160b09; }
+
 /* Indicador de carregamento no centro da tela. No telefone, um aviso
    no rodapé passa despercebido — e o servidor clica de novo. */
-.aguardo { position: fixed; inset: 0; background: rgba(12,26,44,0.55); display: none;
+.aguardo { position: fixed; inset: 0; background: rgba(4,5,6,0.78); display: none;
 align-items: center; justify-content: center; z-index: 80; padding: 1rem; }
 .aguardo.ativo { display: flex; }
-.aguardo-cx { background: #fff; border-radius: 14px; padding: 1.6rem 2rem; text-align: center;
-box-shadow: 0 6px 26px rgba(0,0,0,0.3); max-width: 300px; }
+.aguardo-cx { background: var(--grafite); border: 1px solid var(--borda-clara);
+border-radius: 14px; padding: 1.6rem 2rem; text-align: center;
+box-shadow: 0 6px 30px rgba(0,0,0,0.6); max-width: 300px; }
 .aguardo-roda { width: 42px; height: 42px; margin: 0 auto 0.9rem; border-radius: 50%;
-border: 4px solid #dde4ed; border-top-color: #1a3a5c; animation: girar 0.9s linear infinite; }
+border: 4px solid var(--borda-clara); border-top-color: var(--latao);
+animation: girar 0.9s linear infinite; }
 @keyframes girar { to { transform: rotate(360deg); } }
-.aguardo-txt { font-size: 0.9rem; font-weight: 600; color: #1a3a5c; }
+.aguardo-txt { font-family: var(--fonte-tit); font-size: 1rem; font-weight: 600;
+text-transform: uppercase; letter-spacing: 0.07em; color: var(--texto); }
 @media (prefers-reduced-motion: reduce) { .aguardo-roda { animation-duration: 2.4s; } }
 
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px;
-background: #1a3a5c; color: #fff; padding: 12px 18px; border-radius: 10px;
-font-size: 0.85rem; max-width: 92%; z-index: 60; display: none; box-shadow: 0 4px 18px rgba(0,0,0,0.25); }
-.toast.erro { background: #a02020; }
+background: var(--grafite-alto); border: 1px solid var(--latao-escuro);
+color: var(--texto); padding: 12px 18px; border-radius: 10px;
+font-size: 0.85rem; max-width: 92%; z-index: 60; display: none;
+box-shadow: 0 4px 22px rgba(0,0,0,0.6); }
+.toast.erro { border-color: var(--vermelho); }
 
 /* ---- Impedimentos ---- */
-.imp-sec { border-top: 1px solid rgba(255,255,255,0.18); margin-top: 0.9rem; padding-top: 0.8rem; }
-.imp-tit { font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-letter-spacing: 0.06em; color: #8fb4d8; margin-bottom: 0.5rem; }
-.imp-item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 0.5rem 0.7rem;
+.imp-sec { border-top: 1px solid var(--borda); margin-top: 0.9rem; padding-top: 0.8rem; }
+.imp-tit { font-family: var(--fonte-tit); font-size: 0.86rem; font-weight: 700;
+text-transform: uppercase; letter-spacing: 0.09em; color: var(--texto-2); margin-bottom: 0.5rem; }
+.imp-item { background: var(--grafite-fundo); border: 1px solid var(--borda);
+border-radius: 8px; padding: 0.5rem 0.7rem;
 margin-bottom: 0.4rem; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
 font-size: 0.8rem; }
-.imp-item .ii-per { font-weight: 700; white-space: nowrap; }
-.imp-item .ii-mot { color: #c8dcf0; flex: 1; min-width: 100px; }
-.imp-vazio { font-size: 0.78rem; color: #a8c4e0; line-height: 1.5; margin-bottom: 0.5rem; }
-.btn-imp { border: 1px dashed rgba(255,255,255,0.45); background: transparent; color: #fff;
+.imp-item .ii-per { font-weight: 700; white-space: nowrap; color: var(--latao); }
+.imp-item .ii-mot { color: var(--texto-2); flex: 1; min-width: 100px; }
+.imp-vazio { font-size: 0.78rem; color: var(--texto-3); line-height: 1.5; margin-bottom: 0.5rem; }
+.btn-imp { border: 1px dashed var(--borda-clara); background: transparent; color: var(--texto-2);
 border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700;
 cursor: pointer; width: 100%; font-family: inherit; }
-.btn-imp:hover { border-style: solid; background: rgba(255,255,255,0.08); }
-.campo-lbl { display: block; font-size: 0.74rem; font-weight: 700; color: #45617f;
-text-transform: uppercase; letter-spacing: 0.05em; margin: 0.7rem 0 0.25rem; }
-.campo-ent { width: 100%; border: 1px solid #d0d9e6; border-radius: 8px; padding: 9px 11px;
-font-size: 0.9rem; font-family: inherit; color: #1a2b3c; background: #fff; outline: none; }
-.campo-ent:focus { border-color: #2d6a9f; }
+.btn-imp:hover { border-style: solid; border-color: var(--latao); color: var(--latao); }
+.campo-lbl { display: block; font-family: var(--fonte-tit); font-size: 0.86rem; font-weight: 600;
+color: var(--texto-2); text-transform: uppercase; letter-spacing: 0.08em;
+margin: 0.8rem 0 0.3rem; }
+.campo-ent { width: 100%; border: 1px solid var(--borda-clara); border-radius: 8px;
+padding: 10px 11px; font-size: 0.95rem; font-family: inherit; color: var(--texto);
+background: var(--grafite-fundo); outline: none; }
+.campo-ent:focus { border-color: var(--latao); }
+.campo-ent::placeholder { color: var(--texto-4); }
 .campo-dupla { display: flex; gap: 8px; }
 .campo-dupla > div { flex: 1; }
 
 /* ---- Calendário de impedimentos ---- */
 /* Seletor do mês de referência, no topo das abas. */
-.barra-mes { display: flex; align-items: center; gap: 10px; background: #fff;
-border: 1px solid #dde4ed; border-radius: 10px; padding: 8px 10px; margin-bottom: 1.1rem; }
-.barra-mes button { border: 1px solid #d0d9e6; background: #fff; color: #1a3a5c;
-border-radius: 8px; width: 40px; height: 40px; font-size: 1.15rem; cursor: pointer;
-font-family: inherit; flex-shrink: 0; }
-.barra-mes button:hover:not(:disabled) { border-color: #2d6a9f; background: #f5f9fd; }
-.barra-mes button:disabled { color: #ccd5e0; cursor: not-allowed; }
+.barra-mes { display: flex; align-items: center; gap: 10px; background: var(--grafite);
+border: 1px solid var(--borda); border-radius: 10px; padding: 8px 10px; margin-bottom: 1.1rem; }
+.barra-mes button { border: 1px solid var(--borda-clara); background: var(--grafite-alto);
+color: var(--texto-2); border-radius: 8px; width: 40px; height: 40px; font-size: 1.15rem;
+cursor: pointer; font-family: inherit; flex-shrink: 0; }
+.barra-mes button:hover:not(:disabled) { border-color: var(--latao); color: var(--latao); }
+.barra-mes button:disabled { color: var(--texto-4); border-color: var(--borda);
+cursor: not-allowed; }
 .bm-centro { flex: 1; text-align: center; min-width: 0; }
-.bm-mes { font-size: 1rem; font-weight: 700; color: #1a3a5c; }
-.bm-sub { font-size: 0.68rem; color: #8fa3ba; margin-top: 1px; }
+.bm-mes { font-family: var(--fonte-tit); font-size: 1.2rem; font-weight: 700;
+color: var(--texto); text-transform: uppercase; letter-spacing: 0.08em; }
+.bm-sub { font-size: 0.68rem; color: var(--texto-3); margin-top: 1px; }
 .dp-nav { display: flex; align-items: center; justify-content: space-between;
 margin-bottom: 0.8rem; gap: 8px; }
-.dp-nav button { border: 1px solid #d0d9e6; background: #fff; color: #1a3a5c;
-border-radius: 8px; width: 38px; height: 38px; font-size: 1rem; cursor: pointer;
-font-family: inherit; flex-shrink: 0; }
-.dp-nav button:hover:not(:disabled) { border-color: #2d6a9f; background: #f5f9fd; }
-.dp-nav button:disabled { color: #ccd5e0; cursor: not-allowed; }
-.dp-mes { flex: 1; text-align: center; font-weight: 700; font-size: 0.98rem;
-color: #1a3a5c; text-transform: uppercase; letter-spacing: 0.04em; }
+.dp-nav button { border: 1px solid var(--borda-clara); background: var(--grafite-alto);
+color: var(--texto-2); border-radius: 8px; width: 38px; height: 38px; font-size: 1rem;
+cursor: pointer; font-family: inherit; flex-shrink: 0; }
+.dp-nav button:hover:not(:disabled) { border-color: var(--latao); color: var(--latao); }
+.dp-nav button:disabled { color: var(--texto-4); border-color: var(--borda); cursor: not-allowed; }
+.dp-mes { flex: 1; text-align: center; font-family: var(--fonte-tit); font-weight: 700;
+font-size: 1.15rem; color: var(--texto); text-transform: uppercase; letter-spacing: 0.08em; }
 .dp-sem { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 5px; }
-.dp-sem span { text-align: center; font-size: 0.66rem; font-weight: 700; color: #6b80a0;
+.dp-sem span { text-align: center; font-size: 0.66rem; font-weight: 700; color: var(--texto-3);
 text-transform: uppercase; letter-spacing: 0.04em; }
 .dp-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-.dp-dia { min-height: 46px; border: 1px solid #dde4ed; border-radius: 8px; background: #fff;
+.dp-dia { min-height: 46px; border: 1px solid var(--borda); border-radius: 8px;
+background: var(--grafite-fundo);
 display: flex; flex-direction: column; align-items: center; justify-content: center;
-font-size: 0.9rem; font-weight: 600; color: #1a2b3c; cursor: pointer; position: relative;
+font-size: 0.9rem; font-weight: 600; color: var(--texto); cursor: pointer; position: relative;
 font-family: inherit; padding: 0; line-height: 1; }
-.dp-dia:hover:not(:disabled) { border-color: #2d6a9f; background: #f5f9fd; }
+.dp-dia:hover:not(:disabled) { border-color: var(--latao); }
 .dp-dia.fora { visibility: hidden; }
 .dp-dia:disabled { cursor: not-allowed; }
-.dp-dia.passada { color: #c8d2de; background: #fafbfc; border-style: dashed; }
-.dp-dia.marcada { background: #1a3a5c; border-color: #1a3a5c; color: #fff; }
-.dp-dia.declarada { background: #fff2cc; border-color: #e0b040; color: #7a5800; }
-.dp-dia.em-lote { background: #dcece0; border-color: #4a8a62; color: #2c6442;
+.dp-dia.passada { color: var(--texto-4); background: transparent; border-style: dashed; }
+.dp-dia.marcada { background: var(--latao); border-color: var(--latao); color: #15120a;
 font-weight: 700; }
-.dp-dia.hoje { box-shadow: inset 0 0 0 2px #2d6a9f; }
+.dp-dia.declarada { background: var(--ambar-fundo); border-color: var(--ambar); color: var(--ambar); }
+.dp-dia.em-lote { background: var(--verde-fundo); border-color: var(--verde); color: var(--verde);
+font-weight: 700; }
+.dp-dia.hoje { box-shadow: inset 0 0 0 2px var(--oliva-claro); }
 .dp-dejep { position: absolute; bottom: 5px; width: 5px; height: 5px; border-radius: 50%;
-background: #1e7a46; }
-.dp-dia.marcada .dp-dejep { background: #ffd8a0; }
+background: var(--verde); }
+.dp-dia.marcada .dp-dejep { background: #15120a; }
 .dp-leg { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
-margin-top: 0.9rem; font-size: 0.7rem; color: #6b80a0; }
+margin-top: 0.9rem; font-size: 0.7rem; color: var(--texto-3); }
 .dp-leg span { display: flex; align-items: center; gap: 5px; }
 .dp-leg i.pt { width: 12px; height: 12px; border-radius: 4px; display: inline-block;
-border: 1px solid #dde4ed; }
-.dp-resumo { background: #eef4fb; border-left: 4px solid #2d6a9f; border-radius: 8px;
-padding: 0.8rem 1rem; margin: 1rem 0 0; font-size: 0.82rem; color: #1a3a5c; line-height: 1.55; }
-.dp-resumo.vazio { background: #f7f9fc; border-left-color: #c0ccd8; color: #6b80a0; }
-.dp-resumo.alerta { background: #fde8e8; border-left-color: #a02020; color: #7a1a1a; }
+border: 1px solid var(--borda-clara); }
+.dp-resumo { background: var(--azul-fundo); border-left: 3px solid var(--azul); border-radius: 8px;
+padding: 0.8rem 1rem; margin: 1rem 0 0; font-size: 0.82rem; color: var(--texto);
+line-height: 1.55; }
+.dp-resumo.vazio { background: var(--grafite-alto); border-left-color: var(--oliva);
+color: var(--texto-3); }
+.dp-resumo.alerta { background: var(--vermelho-fundo); border-left-color: var(--vermelho);
+color: var(--texto); }
 .dp-atalhos { display: flex; gap: 8px; margin-top: 0.8rem; flex-wrap: wrap; }
-.dp-atalhos button { flex: 1; min-width: 130px; border: 1px solid #d0d9e6; background: #fff;
-color: #45617f; border-radius: 8px; padding: 9px; font-size: 0.78rem; font-weight: 600;
-cursor: pointer; font-family: inherit; }
-.dp-atalhos button:hover { border-color: #2d6a9f; color: #1a3a5c; }
-.dp-enviar { width: 100%; border: 0; border-radius: 9px; padding: 13px; margin-top: 1rem;
-background: #1a3a5c; color: #fff; font-size: 0.92rem; font-weight: 700; cursor: pointer;
-font-family: inherit; }
-.dp-enviar:disabled { background: #c0ccd8; cursor: not-allowed; }
-.dp-enviar.adm { background: #5e3a80; }
+.dp-atalhos button { flex: 1; min-width: 130px; border: 1px solid var(--borda-clara);
+background: var(--grafite-alto); color: var(--texto-2); border-radius: 8px; padding: 9px;
+font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+.dp-atalhos button:hover { border-color: var(--latao); color: var(--latao); }
+.dp-enviar { width: 100%; border: 0; border-radius: 9px; padding: 14px; margin-top: 1rem;
+background: var(--latao); color: #15120a; font-family: var(--fonte-tit); font-size: 1.05rem;
+font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; cursor: pointer; }
+.dp-enviar:hover:not(:disabled) { background: var(--latao-claro); }
+.dp-enviar:disabled { background: var(--grafite-alto); color: var(--texto-4);
+cursor: not-allowed; }
+.dp-enviar.adm { background: var(--roxo); color: #130f1b; }
+
 /* ---- Gráficos da aba de estatísticas ----
-   Paleta conferida com o validador de contraste e de daltonismo:
-   as cinco cores passam na banda de luminosidade, no piso de croma,
-   na separação sob deuteranopia e no contraste contra o branco.
-   Cada série também vai rotulada — cor sozinha nunca carrega a
-   identidade. */
-.viz { --s1:#2d6a9f; --s2:#9c6b12; --s3:#0f8f6b; --s4:#c0392b; --s5:#7c58ab;
-  --neutro:#8fa3ba; --trilho:#e8edf3; }
+   Cinco cores conferidas contra o grafite dos cartões: todas na mesma
+   banda de luminosidade, com hues separados o bastante para não se
+   confundirem sob deuteranopia. Cada série também vai rotulada — cor
+   sozinha nunca carrega a identidade. */
+.viz { --s1:#7aa5cc; --s2:#d9a63c; --s3:#5fb49c; --s4:#c9564c; --s5:#a98fd0;
+  --neutro:#757b72; --trilho:#1b1e23; }
 .viz-grade { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.viz-cartao { border: 1px solid #dde4ed; border-radius: 12px; padding: 0.9rem 1rem; background: #fff; }
-.viz-tit { font-size: 0.74rem; font-weight: 700; color: #1a3a5c; text-transform: uppercase;
-  letter-spacing: 0.04em; margin-bottom: 2px; }
-.viz-sub { font-size: 0.72rem; color: #8fa3ba; margin-bottom: 10px; line-height: 1.4; }
-.viz-num { font-size: 2.1rem; font-weight: 700; color: #1a3a5c; line-height: 1.1;
-  font-variant-numeric: tabular-nums; }
-.viz-num small { font-size: 0.9rem; font-weight: 600; color: #6b80a0; }
+.viz-cartao { border: 1px solid var(--borda); border-radius: 12px; padding: 0.9rem 1rem;
+background: var(--grafite-fundo); }
+.viz-tit { font-family: var(--fonte-tit); font-size: 0.9rem; font-weight: 700;
+color: var(--texto); text-transform: uppercase;
+  letter-spacing: 0.08em; margin-bottom: 2px; }
+.viz-sub { font-size: 0.72rem; color: var(--texto-3); margin-bottom: 10px; line-height: 1.4; }
+.viz-num { font-family: var(--fonte-tit); font-size: 2.6rem; font-weight: 700;
+color: var(--latao); line-height: 1; font-variant-numeric: tabular-nums; }
+.viz-num small { font-size: 0.9rem; font-weight: 600; color: var(--texto-3); }
 .viz-linha { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
-.viz-rot { font-size: 0.78rem; color: #45617f; width: 47%; flex: none;
+.viz-rot { font-size: 0.78rem; color: var(--texto-2); width: 47%; flex: none;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .viz-trilho { flex: 1; height: 13px; background: var(--trilho); border-radius: 4px; overflow: hidden; }
 .viz-barra { height: 100%; border-radius: 4px; min-width: 2px; }
-.viz-val { font-size: 0.8rem; font-weight: 700; color: #1a3a5c; width: 34px;
+.viz-val { font-size: 0.8rem; font-weight: 700; color: var(--texto); width: 34px;
   text-align: right; flex: none; font-variant-numeric: tabular-nums; }
 /* Barra segmentada: 2px de respiro entre os blocos, para que dois
    vizinhos não se leiam como um só. */
 .viz-seg { display: flex; height: 26px; border-radius: 5px; overflow: hidden;
   background: var(--trilho); gap: 2px; }
 .viz-seg > span { display: flex; align-items: center; justify-content: center;
-  font-size: 0.72rem; font-weight: 700; color: #fff; min-width: 2px; }
+  font-size: 0.72rem; font-weight: 700; color: #0d0f12; min-width: 2px; }
 .viz-legenda { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 9px; }
-.viz-leg { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: #45617f; }
+.viz-leg { display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: var(--texto-2); }
 .viz-ponto { width: 10px; height: 10px; border-radius: 3px; flex: none; }
 .viz-cols { display: flex; align-items: flex-end; gap: 6px; height: 104px; margin-top: 4px; }
 .viz-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
   align-items: center; gap: 4px; height: 100%; }
 .viz-col-barra { width: 100%; border-radius: 4px 4px 0 0; min-height: 2px; }
-.viz-col-rot { font-size: 0.68rem; color: #6b80a0; white-space: nowrap; }
-.viz-col-val { font-size: 0.72rem; font-weight: 700; color: #1a3a5c; }
-.viz-vazio { font-size: 0.8rem; color: #8fa3ba; padding: 6px 0; }
+.viz-col-rot { font-size: 0.68rem; color: var(--texto-3); white-space: nowrap; }
+.viz-col-val { font-size: 0.72rem; font-weight: 700; color: var(--texto); }
+.viz-vazio { font-size: 0.8rem; color: var(--texto-3); padding: 6px 0; }
 /* Verde, e não o roxo do administrativo: a cor da faixa é o aviso
    mais rápido de qual perfil está aberto. Precisa vir com as duas
    classes para vencer a regra de .faixa-adm. */
-.faixa-adm.faixa-consulta { background: #1f5133; }
+.faixa-adm.faixa-consulta { background: var(--verde-fundo); border-color: var(--verde-borda); }
 
 /* A cota do mês. Fica acima das abas de propósito: é controle de
    rotina, e tem de estar na tela em qualquer aba, sem clique. */
-.cota { background: #fff; border: 1px solid #dde4ed; border-radius: 10px;
-padding: 0.65rem 0.85rem; margin-bottom: 0.8rem;
-box-shadow: 0 1px 3px rgba(26,58,92,0.06); }
+.cota { background: var(--grafite); border: 1px solid var(--borda); border-radius: 10px;
+padding: 0.65rem 0.85rem; margin-bottom: 0.8rem; }
 .cota-linha { display: flex; align-items: baseline; gap: 0.55rem;
-flex-wrap: wrap; font-size: 0.84rem; color: #4a5d73; }
-.cota-mes { font-weight: 700; color: #1a3a5c; }
-.cota-num { font-size: 1.22rem; font-weight: 700; color: #1a3a5c;
-line-height: 1; letter-spacing: -0.01em; }
-.cota-de { color: #7b8ca0; }
-.cota-sep { color: #ccd5e0; }
-.cota-faltam { font-weight: 700; color: #2d6a9f; }
-.cota-aviso { font-weight: 700; color: #c0392b; }
+flex-wrap: wrap; font-size: 0.84rem; color: var(--texto-2); }
+.cota-mes { font-family: var(--fonte-tit); font-weight: 700; color: var(--texto);
+text-transform: uppercase; letter-spacing: 0.07em; font-size: 0.95rem; }
+.cota-num { font-family: var(--fonte-tit); font-size: 1.5rem; font-weight: 700;
+color: var(--latao); line-height: 1; letter-spacing: 0; }
+.cota-de { color: var(--texto-3); }
+.cota-sep { color: var(--borda-clara); }
+.cota-faltam { font-weight: 700; color: var(--azul); }
+.cota-aviso { font-weight: 700; color: var(--vermelho); }
 /* Medidor de 119: o que está escalado, o que a emergência consumiu, e
    o que ainda falta colocar. */
 .cota-barra { display: flex; height: 7px; border-radius: 4px;
-overflow: hidden; background: #eef2f7; margin-top: 0.5rem; }
+overflow: hidden; background: var(--grafite-alto); margin-top: 0.5rem; }
 .cota-barra span { display: block; height: 100%; }
-.cb-usadas { background: #2d6a9f; }
-.cb-emg { background: #9c6b12; }
+.cb-usadas { background: var(--latao); }
+.cb-emg { background: var(--ambar); }
 .cota-leg { display: flex; gap: 0.9rem; flex-wrap: wrap; margin-top: 0.4rem;
-font-size: 0.72rem; color: #7b8ca0; }
+font-size: 0.72rem; color: var(--texto-3); }
 .cota-leg i { display: inline-block; width: 8px; height: 8px; border-radius: 2px;
 margin-right: 4px; vertical-align: middle; }
 @media (max-width: 480px) {
-  .cota-num { font-size: 1.1rem; }
+  .cota-num { font-size: 1.3rem; }
   .cota-linha { font-size: 0.79rem; gap: 0.4rem; }
 }
 
 /* Lista para lançamento no sistema oficial: a escala virada do
    avesso, por horário e por segurança, em ordem alfabética. */
-.ag-ajuda { background: #eef4fb; border-left: 3px solid #2d6a9f;
+.ag-ajuda { background: var(--azul-fundo); border-left: 3px solid var(--azul);
 padding: 0.7rem 0.9rem; border-radius: 6px; font-size: 0.82rem;
-color: #35506d; line-height: 1.55; margin-bottom: 1rem; }
+color: var(--texto-2); line-height: 1.55; margin-bottom: 1rem; }
 /* O bloco de segurança é o de fora: Interna inteira, depois Externa. */
 .ag-grupo { margin-top: 1.6rem; }
 .ag-grupo:first-of-type { margin-top: 0.2rem; }
 .ag-seg-cab { display: flex; align-items: baseline; gap: 0.6rem;
-flex-wrap: wrap; background: #1a3a5c; color: #fff; padding: 0.55rem 0.85rem;
-border-radius: 8px 8px 0 0; font-weight: 700; font-size: 1rem; }
-.ag-seg-cab small { font-weight: 400; opacity: 0.82; font-size: 0.78rem;
-margin-left: auto; }
-.ag-seg { border: 1px solid #dde4ed; border-top: 0; }
+flex-wrap: wrap; background: var(--oliva); color: var(--texto); padding: 0.55rem 0.85rem;
+border-radius: 8px 8px 0 0; font-family: var(--fonte-tit); font-weight: 700;
+font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.07em; }
+.ag-seg-cab small { font-family: var(--fonte); font-weight: 400; opacity: 0.85;
+font-size: 0.78rem; margin-left: auto; letter-spacing: 0; text-transform: none; }
+.ag-seg { border: 1px solid var(--borda); border-top: 0; }
 .ag-seg-tit { display: flex; align-items: baseline; gap: 0.5rem;
-background: #f4f7fb; padding: 0.4rem 0.8rem; font-weight: 700;
-font-size: 0.82rem; color: #1a3a5c; border-bottom: 1px solid #e6ecf3; }
-.ag-seg-tit small { font-weight: 400; color: #7b8ca0; font-size: 0.75rem; }
-.ag-copiar { margin-left: auto; border: 1px solid #c3d0e0; background: #fff;
-color: #2d6a9f; border-radius: 6px; padding: 3px 9px; font-size: 0.72rem;
-font-weight: 600; cursor: pointer; font-family: inherit; }
-.ag-copiar:hover { background: #eef4fb; }
+background: var(--grafite-alto); padding: 0.4rem 0.8rem; font-family: var(--fonte-tit);
+font-weight: 700; font-size: 0.95rem; color: var(--texto); text-transform: uppercase;
+letter-spacing: 0.06em; border-bottom: 1px solid var(--borda); }
+.ag-seg-tit small { font-family: var(--fonte); font-weight: 400; color: var(--texto-3);
+font-size: 0.75rem; letter-spacing: 0; text-transform: none; }
+.ag-copiar { margin-left: auto; border: 1px solid var(--borda-clara); background: var(--grafite);
+color: var(--texto-2); border-radius: 6px; padding: 3px 9px; font-size: 0.72rem;
+font-weight: 600; cursor: pointer; font-family: var(--fonte); letter-spacing: 0;
+text-transform: none; }
+.ag-copiar:hover { border-color: var(--latao); color: var(--latao); }
 .ag-li { display: flex; gap: 0.6rem; align-items: baseline;
-padding: 0.38rem 0.8rem; border-bottom: 1px solid #f0f4f8; font-size: 0.86rem; }
+padding: 0.38rem 0.8rem; border-bottom: 1px solid var(--borda); font-size: 0.86rem; }
 .ag-li:last-child { border-bottom: 0; }
-.ag-li:nth-child(even) { background: #fbfcfe; }
-.ag-n { color: #9aa9bb; font-size: 0.76rem; min-width: 1.6rem;
+.ag-li:nth-child(even) { background: var(--grafite-fundo); }
+.ag-n { color: var(--texto-4); font-size: 0.76rem; min-width: 1.6rem;
 text-align: right; font-variant-numeric: tabular-nums; }
-.ag-nome { flex: 1; min-width: 150px; color: #1a2b3c; }
-.ag-datas { color: #4a5d73; font-size: 0.8rem; text-align: right;
+.ag-nome { flex: 1; min-width: 150px; color: var(--texto); }
+.ag-datas { color: var(--texto-2); font-size: 0.8rem; text-align: right;
 font-variant-numeric: tabular-nums; }
-.ag-vazio { padding: 0.6rem 0.8rem; color: #7b8ca0; font-size: 0.82rem; }
+.ag-vazio { padding: 0.6rem 0.8rem; color: var(--texto-3); font-size: 0.82rem; }
 @media (max-width: 560px) {
   .ag-li { flex-wrap: wrap; gap: 0.2rem 0.6rem; }
   .ag-datas { width: 100%; text-align: left; padding-left: 2.2rem; }
 }
 
-.link-adm { border: 0; background: none; color: #6b80a0; font-size: 0.8rem;
+.link-adm { border: 0; background: none; color: var(--texto-3); font-size: 0.8rem;
 text-decoration: underline; cursor: pointer; font-family: inherit; padding: 6px; }
-.link-adm:hover { color: #1a3a5c; }
+.link-adm:hover { color: var(--latao); }
 /* Roxo em toda parte administrativa: a cor é o aviso de que o que
    está na tela é a DEJEP de outra pessoa. */
 .faixa-adm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-background: #5e3a80; color: #fff; border-radius: 10px; padding: 0.7rem 0.9rem;
+background: var(--roxo-fundo); border: 1px solid var(--roxo-borda); border-left: 3px solid var(--roxo);
+color: var(--texto); border-radius: 10px; padding: 0.7rem 0.9rem;
 margin-bottom: 1rem; font-size: 0.82rem; }
 .fa-txt { flex: 1; min-width: 150px; line-height: 1.45; }
-.fa-btn { border: 1px solid rgba(255,255,255,0.45); background: rgba(255,255,255,0.1);
-color: #fff; border-radius: 7px; padding: 6px 12px; font-size: 0.76rem; font-weight: 600;
+.fa-btn { border: 1px solid var(--borda-clara); background: var(--grafite-alto);
+color: var(--texto-2); border-radius: 7px; padding: 6px 12px; font-size: 0.76rem;
+font-weight: 600; cursor: pointer; font-family: inherit; }
+.fa-btn:hover { border-color: var(--roxo); color: var(--roxo); }
+.fa-btn.sair { border-color: var(--roxo-borda); }
+.painel.adm { border-left-color: var(--roxo); }
+.ad-item { display: block; width: 100%; text-align: left; border: 1px solid var(--borda);
+background: var(--grafite-fundo); border-radius: 9px; padding: 0.7rem 0.9rem; margin-bottom: 7px;
 cursor: pointer; font-family: inherit; }
-.fa-btn:hover { background: rgba(255,255,255,0.22); }
-.fa-btn.sair { border-color: rgba(255,255,255,0.8); }
-.painel.adm { box-shadow: inset 0 0 0 2px #5e3a80; }
-.ad-item { display: block; width: 100%; text-align: left; border: 1px solid #dde4ed;
-background: #fff; border-radius: 9px; padding: 0.7rem 0.9rem; margin-bottom: 7px;
-cursor: pointer; font-family: inherit; }
-.ad-item:hover { border-color: #5e3a80; background: #faf7fd; }
-.ad-nome { display: block; font-weight: 700; font-size: 0.88rem; color: #1a3a5c; }
-.ad-det { display: block; font-size: 0.74rem; color: #6b80a0; margin-top: 3px; }
-.dp-add { width: 100%; border: 1px dashed #4a8a62; border-radius: 9px; padding: 11px;
-margin-top: 1rem; background: #f3f9f5; color: #2c6442; font-size: 0.84rem; font-weight: 700;
-cursor: pointer; font-family: inherit; }
-.dp-add:hover:not(:disabled) { background: #e7f3eb; }
-.dp-add:disabled { border-color: #d7dee6; background: #fafbfc; color: #a8b4c2;
+.ad-item:hover { border-color: var(--roxo); background: var(--roxo-fundo); }
+.ad-nome { display: block; font-weight: 700; font-size: 0.88rem; color: var(--texto); }
+.ad-det { display: block; font-size: 0.74rem; color: var(--texto-3); margin-top: 3px; }
+.dp-add { width: 100%; border: 1px dashed var(--verde-borda); border-radius: 9px; padding: 11px;
+margin-top: 1rem; background: var(--verde-fundo); color: var(--verde); font-size: 0.84rem;
+font-weight: 700; cursor: pointer; font-family: inherit; }
+.dp-add:hover:not(:disabled) { border-color: var(--verde); }
+.dp-add:disabled { border-color: var(--borda); background: transparent; color: var(--texto-4);
 cursor: not-allowed; }
-.dp-lotes { margin-top: 1.1rem; border: 1px solid #cfe0d5; border-radius: 10px;
-background: #f7fbf8; padding: 0.85rem 0.9rem; }
-.dp-lotes-tit { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
-color: #2c6442; font-weight: 700; margin-bottom: 0.6rem; }
+.dp-lotes { margin-top: 1.1rem; border: 1px solid var(--verde-borda); border-radius: 10px;
+background: var(--verde-fundo); padding: 0.85rem 0.9rem; }
+.dp-lotes-tit { font-family: var(--fonte-tit); font-size: 0.86rem; text-transform: uppercase;
+letter-spacing: 0.09em; color: var(--verde); font-weight: 700; margin-bottom: 0.6rem; }
 .dp-lote { position: relative; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
-background: #fff; border: 1px solid #dce7e0; border-radius: 8px;
+background: var(--grafite); border: 1px solid var(--borda); border-radius: 8px;
 padding: 0.55rem 2rem 0.55rem 0.7rem; margin-bottom: 6px; }
-.dp-lote-mot { font-weight: 700; font-size: 0.82rem; color: #2c6442; white-space: nowrap; }
-.dp-lote-dias { flex: 1; min-width: 130px; font-size: 0.79rem; color: #45617f; }
-.dp-lote-obs { width: 100%; font-size: 0.73rem; color: #8a99ab; font-style: italic; }
+.dp-lote-mot { font-weight: 700; font-size: 0.82rem; color: var(--verde); white-space: nowrap; }
+.dp-lote-dias { flex: 1; min-width: 130px; font-size: 0.79rem; color: var(--texto-2); }
+.dp-lote-obs { width: 100%; font-size: 0.73rem; color: var(--texto-3); font-style: italic; }
 .dp-lote-x { position: absolute; top: 4px; right: 4px; border: 0; background: none;
-color: #a0adbc; font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 2px 6px;
+color: var(--texto-4); font-size: 1.3rem; line-height: 1; cursor: pointer; padding: 2px 6px;
 font-family: inherit; }
-.dp-lote-x:hover { color: #a02020; }
-.dp-lotes-pe { font-size: 0.74rem; color: #2c6442; margin-top: 0.5rem; }
+.dp-lote-x:hover { color: var(--vermelho); }
+.dp-lotes-pe { font-size: 0.74rem; color: var(--verde); margin-top: 0.5rem; }
 .aba-curta { display: none; }
 @media (max-width: 560px) {
   .aba-longa { display: none; }
   .aba-curta { display: inline; }
   .aba { padding: 11px 4px; font-size: 0.84rem; }
   .dp-dia { font-size: 0.82rem; }
+  .header h1 { font-size: 1.15rem; letter-spacing: 0.07em; }
+  .painel-nome { font-size: 1.15rem; }
 }
 </style>
 </head>
@@ -534,7 +699,7 @@ function desenharDiag() {
     cx = document.createElement('div');
     cx.id = 'diag';
     cx.style.cssText = 'position:fixed;right:10px;bottom:10px;z-index:9999;max-width:330px;'
-      + 'background:#1a3a5c;color:#fff;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;'
+      + 'background: var(--grafite-alto);color: var(--texto);font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;'
       + 'padding:10px 12px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.35)';
     document.body.appendChild(cx);
   }
@@ -546,7 +711,7 @@ function desenharDiag() {
   // invisível parece painel que não funciona.
   if (!diagChamadas.length) {
     cx.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Diagnóstico</div>'
-      + '<div style="color:#a8c4e0">Nenhuma chamada ao servidor ainda.<br>'
+      + '<div style="color: var(--texto-2)">Nenhuma chamada ao servidor ainda.<br>'
       + 'Entre no sistema: os tempos aparecem aqui.</div>';
     return;
   }
@@ -555,8 +720,8 @@ function desenharDiag() {
   const somaS = diagChamadas.reduce(function (a, c) {
     return a + (c.servidor || 0); }, 0);
   cx.innerHTML = '<div style="font-weight:700;margin-bottom:6px">Diagnóstico</div>'
-    + '<div style="color:#a8c4e0">versão no ar: <b style="color:#fff">' + v + '</b></div>'
-    + '<div style="color:#a8c4e0;margin-bottom:6px">'
+    + '<div style="color: var(--texto-2)">versão no ar: <b style="color: var(--texto)">' + v + '</b></div>'
+    + '<div style="color: var(--texto-2);margin-bottom:6px">'
     + diagChamadas.length + ' chamada(s) · ' + somaT + ' ms, sendo '
     + somaS + ' ms de servidor</div>'
     + diagChamadas.map(function (c) {
@@ -565,7 +730,7 @@ function desenharDiag() {
         // lista longa, o que interessa é o primeiro.
         var detalhe = '';
         if (c.marcos && c.marcos.length) {
-          detalhe = '<div style="margin:4px 0 8px 10px;color:#cfe0f0">'
+          detalhe = '<div style="margin:4px 0 8px 10px;color: var(--texto-2)">'
             + c.marcos.slice().sort(function (a, b) { return b.ms - a.ms; })
                 .slice(0, 6)
                 .map(function (m) { return '· ' + m.o + ': <b>' + m.ms + ' ms</b>'; })
@@ -573,7 +738,7 @@ function desenharDiag() {
             + '</div>';
         }
         return '<div>' + c.acao + ': <b>' + c.total + ' ms</b>'
-          + ' <span style="color:#a8c4e0">(' + (c.servidor === null ? '?' : c.servidor)
+          + ' <span style="color: var(--texto-2)">(' + (c.servidor === null ? '?' : c.servidor)
           + ' servidor + ' + fora + ' rede) · '
           + Math.round(c.bytes / 1024) + ' KB</span></div>' + detalhe;
       }).join('');
@@ -638,12 +803,13 @@ function ehGestao() { return ehAdm() || ehConsulta(); }
 // não foi escalado.
 function avisoEntrar() {
   if (!dados || !dados.precisaEntrar) return '';
-  return '<div class="aviso-info" style="margin-bottom:1.1rem;">'
-    + '<strong>Entre para ver os nomes.</strong><br>'
-    + 'A escala mostra qual servidor está em qual posto e em que horário. '
-    + 'Por segurança do efetivo, esses nomes aparecem apenas para quem se identifica. '
-    + 'As datas, os postos e os horários continuam à vista. '
-    + 'Use a aba <strong>Gerenciar DEJEPs</strong> para entrar com o seu RG e a sua senha.'
+  // Uma linha: os nomes só aparecem para quem entra. O porquê não
+  // precisa estar na tela — e o botão resolve mais que o parágrafo.
+  return '<div class="aviso-info" style="margin-bottom:1.1rem;display:flex;'
+    + 'align-items:center;gap:10px;flex-wrap:wrap;">'
+    + '<span style="flex:1;min-width:150px;">Os nomes aparecem para quem se '
+    + 'identifica.</span>'
+    + '<button class="btn-acao" onclick="mostrar(\'ger\')">Entrar</button>'
     + '</div>';
 }
 
@@ -971,17 +1137,12 @@ function dadosImp() { return dados || {}; }
 // ------------------------------------------------------------
 function renderLogin() {
   return ''
-    + '<div class="aviso-info" style="margin-bottom:1.2rem;">'
-    + 'Entre com o seu <strong>RG</strong> e a sua <strong>senha</strong> para ver as suas '
-    + 'DEJEPs do mês, solicitar troca com um colega, cancelar e informar os dias em que não '
-    + 'pode ser convocado — férias, licença, troca de plantão.</div>'
-
     + '<label class="campo-lbl" for="lg-rg">RG</label>'
     + '<input class="campo-ent" type="text" id="lg-rg" inputmode="numeric"'
     + ' autocomplete="username" placeholder="00.000.000-0"'
     + ' onkeydown="if(event.key===\'Enter\')document.getElementById(\'lg-senha\').focus()" />'
 
-    + '<label class="campo-lbl" for="lg-senha">Senha</label>'
+    + '<label class="campo-lbl" for="lg-senha">Senha ' + btnAjuda('senha') + '</label>'
     + '<input class="campo-ent" type="password" id="lg-senha" autocomplete="current-password"'
     + ' placeholder="Ex.: JOA123"'
     + ' onkeydown="if(event.key===\'Enter\')entrar()" />'
@@ -991,17 +1152,6 @@ function renderLogin() {
     + '<div style="text-align:center;margin-top:0.9rem;">'
     + '<button class="link-adm" onclick="irParaAcesso(\'recuperar\')">Esqueci minha senha</button>'
     + '</div>'
-
-    + '<div style="font-size:0.78rem;color:#6b80a0;margin-top:1.1rem;line-height:1.6;'
-    + 'background:#f7f9fc;border-radius:9px;padding:0.9rem 1rem;">'
-    + '<strong style="color:#1a3a5c;">Ainda não defini a minha senha</strong><br>'
-    + 'No primeiro acesso, entre com a senha inicial: as <strong>três primeiras letras do '
-    + 'seu primeiro nome</strong> seguidas dos <strong>três primeiros números do seu '
-    + 'RG</strong> — quem se chama João e tem RG 12.345.678-9 entra com '
-    + '<strong>JOA123</strong>. O sistema pede, na sequência, que você escolha uma senha '
-    + 'só sua: a inicial é fácil de adivinhar e por isso serve uma vez só.<br><br>'
-    + 'Se o seu RG não for encontrado, procure a Diretoria de Disciplina — pode ser que '
-    + 'ele ainda não conste do seu cadastro.</div>'
 
     + '<div style="text-align:center;margin-top:1.2rem;">'
     + '<button class="link-adm" onclick="irParaAcesso(\'adm\')">Acesso de gestão</button>'
@@ -1022,19 +1172,13 @@ function renderAcesso() {
 // erre — a tela não serve para descobrir quem está inscrito.
 function renderRecuperar() {
   return ''
-    + '<div class="aviso-info" style="margin-bottom:1.2rem;">'
-    + '<strong>Esqueci minha senha</strong><br>'
-    + 'Informe o seu RG e o e-mail que consta do seu cadastro. Se os dois conferirem, '
-    + 'você recebe um link para definir uma senha nova. '
-    + 'O sistema <strong>não guarda a sua senha</strong> e por isso não tem como '
-    + 'reenviá-la — o que vai por e-mail é o link, não a senha.</div>'
-
     + '<label class="campo-lbl" for="rc-rg">RG</label>'
     + '<input class="campo-ent" type="text" id="rc-rg" inputmode="numeric"'
     + ' placeholder="00.000.000-0"'
     + ' onkeydown="if(event.key===\'Enter\')document.getElementById(\'rc-email\').focus()" />'
 
-    + '<label class="campo-lbl" for="rc-email">E-mail do cadastro</label>'
+    + '<label class="campo-lbl" for="rc-email">E-mail do cadastro '
+    + btnAjuda('recuperar') + '</label>'
     + '<input class="campo-ent" type="email" id="rc-email" placeholder="nome@exemplo.gov.br"'
     + ' onkeydown="if(event.key===\'Enter\')pedirLink()" />'
 
@@ -1042,11 +1186,7 @@ function renderRecuperar() {
 
     + '<div style="text-align:center;margin-top:1.1rem;">'
     + '<button class="link-adm" onclick="irParaAcesso(\'login\')">Voltar para a entrada</button>'
-    + '</div>'
-
-    + '<div style="font-size:0.76rem;color:#6b80a0;margin-top:1.1rem;line-height:1.55;">'
-    + 'Não sabe qual e-mail está no seu cadastro? É o mesmo que recebe as convocações. '
-    + 'Se não tiver acesso a ele, procure a Diretoria de Disciplina.</div>';
+    + '</div>';
 }
 
 // Definir a senha: pelo link do e-mail (porLink) ou logo após entrar
@@ -1055,21 +1195,19 @@ function renderDefinirSenha(porLink) {
   const quem = recNome ? ', ' + escapar(recNome) : '';
   return ''
     + '<div class="aviso-info" style="margin-bottom:1.2rem;'
-    + (porLink ? '' : 'border-left-color:#e0b040;background:#fff8e0;color:#7a5800;') + '">'
+    + (porLink ? '' : 'border-left-color: var(--ambar);background: var(--ambar-fundo);color: var(--ambar);') + '">'
     + '<strong>' + (porLink ? 'Defina a sua senha' + quem : 'Troque a senha inicial')
     + '</strong><br>'
     + (porLink
-        ? 'Escolha uma senha só sua. Ela não fica guardada em lugar nenhum: o sistema '
-          + 'guarda apenas um resumo, que não permite voltar à senha.'
-        : 'Você entrou com a senha inicial, formada pelo seu nome e pelo seu RG — '
-          + 'qualquer colega consegue adivinhá-la. Escolha agora uma senha só sua.')
+        ? 'Escolha uma senha só sua.'
+        : 'A senha inicial vem do seu nome e do seu RG: qualquer colega a adivinha.')
     + '</div>'
 
     + (porLink ? '' :
         '<label class="campo-lbl" for="ds-atual">Senha atual</label>'
       + '<input class="campo-ent" type="password" id="ds-atual" autocomplete="current-password" />')
 
-    + '<label class="campo-lbl" for="ds-nova">Senha nova</label>'
+    + '<label class="campo-lbl" for="ds-nova">Senha nova ' + btnAjuda('novaSenha') + '</label>'
     + '<input class="campo-ent" type="password" id="ds-nova" autocomplete="new-password"'
     + ' placeholder="Mínimo de 6 caracteres"'
     + ' onkeydown="if(event.key===\'Enter\')document.getElementById(\'ds-rep\').focus()" />'
@@ -1081,9 +1219,7 @@ function renderDefinirSenha(porLink) {
     + '<button class="dp-enviar" id="ds-enviar" onclick="salvarSenha('
     + (porLink ? 'true' : 'false') + ')">Salvar a senha</button>'
 
-    + '<div style="font-size:0.76rem;color:#6b80a0;margin-top:1.1rem;line-height:1.55;">'
-    + 'Não use o seu RG nem a senha inicial. Você recebe um e-mail confirmando a troca; '
-    + 'se ele chegar sem que você tenha trocado, avise a Diretoria de Disciplina.</div>';
+    + '';
 }
 
 function pedirLink() {
@@ -1151,17 +1287,6 @@ function salvarSenha(porLink) {
 // porta do dia a dia e não deve competir com ela.
 function renderLoginAdm() {
   return ''
-    + '<div class="aviso-info" style="margin-bottom:1.2rem;border-left-color:#7a4b9c;'
-    + 'background:#f6f1fa;color:#4a2d63;">'
-    + '<strong>Acesso de gestão</strong><br>'
-    + 'São dois perfis, cada um com a sua credencial — o sistema reconhece pelo '
-    + 'usuário informado.<br><br>'
-    + '<strong>Diretoria de Disciplina:</strong> age <strong>em nome de um servidor</strong> '
-    + '— solicita troca, cancela DEJEP e lança impedimento. Toda ação fica registrada e o '
-    + 'servidor recebe aviso por e-mail.<br><br>'
-    + '<strong>Chefia (consulta):</strong> vê a escala, a lista e as estatísticas. '
-    + '<strong>Não altera nada.</strong></div>'
-
     + '<label class="campo-lbl" for="ad-usuario">Usuário</label>'
     + '<input class="campo-ent" type="text" id="ad-usuario" autocomplete="username"'
     + ' onkeydown="if(event.key===\'Enter\')document.getElementById(\'ad-senha\').focus()" />'
@@ -1246,13 +1371,9 @@ function renderEscolhaDeServidor() {
     : lista;
 
   let h = faixaAdm()
-    + '<div class="aviso-info" style="margin-bottom:1rem;">'
-    + 'Escolha o servidor em nome de quem você vai agir. A tela seguinte é a mesma que '
-    + 'ele vê, e tudo o que for feito ali entra no nome dele, com registro de que partiu '
-    + 'da Diretoria.</div>'
     + '<input class="campo-ent" type="text" id="ad-busca" placeholder="Buscar por nome ou RG"'
     + ' value="' + escapar(filtroAdm) + '" oninput="filtrarAdm(this.value)" />'
-    + '<div style="font-size:0.74rem;color:#6b80a0;margin:0.6rem 0 0.9rem;">'
+    + '<div style="font-size:0.74rem;color: var(--texto-3);margin:0.6rem 0 0.9rem;">'
     + vis.length + ' de ' + lista.length + ' servidores</div>';
 
   if (!vis.length) {
@@ -1271,7 +1392,7 @@ function renderEscolhaDeServidor() {
       + (pos.length ? ' &bull; ' + pos.join(', ') : '') + '</span></button>';
   });
   if (vis.length > 60) {
-    h += '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.6rem;">'
+    h += '<div style="font-size:0.74rem;color: var(--texto-3);margin-top:0.6rem;">'
       + 'Mostrando os 60 primeiros. Refine a busca.</div>';
   }
   return h;
@@ -1352,7 +1473,7 @@ function vizSegmentada(titulo, sub, itens) {
   const legenda = itens.map(function (i, k) {
     return '<span class="viz-leg"><span class="viz-ponto" style="background:'
       + VIZ_CORES[k % VIZ_CORES.length] + ';"></span>' + escapar(i.rotulo)
-      + ' <strong style="color:#1a3a5c;">' + i.valor + '</strong></span>';
+      + ' <strong style="color: var(--texto);">' + i.valor + '</strong></span>';
   }).join('');
   return vizCartao(titulo, sub,
     '<div class="viz-seg">' + blocos + '</div>'
@@ -1407,7 +1528,7 @@ function vizSaldo(e) {
   } else if (falta === 0) {
     nota = '<strong>Cota fechada.</strong> As ' + e.cotaTotal + ' estão colocadas.';
   } else if (alerta) {
-    nota = '<strong style="color:#8a2020;">Não cabe mais tudo.</strong> Faltam '
+    nota = '<strong style="color: var(--vermelho);">Não cabe mais tudo.</strong> Faltam '
       + s.faltam + ' e só cabem ' + s.capacidade + ' em ' + s.diasDisponiveis
       + ' dia(s) de terça a sexta com antecedência suficiente'
       + (s.ultimoDia ? ' — o último é ' + s.ultimoDia : '') + '. '
@@ -1424,7 +1545,7 @@ function vizSaldo(e) {
   }
   return '<div class="viz-cartao" style="margin-bottom:14px;">'
     + '<div class="viz-tit">Saldo da cota</div>'
-    + '<div class="viz-num" style="color:' + (alerta ? '#8a2020' : '#1a3a5c') + ';">'
+    + '<div class="viz-num" style="color:' + (alerta ? 'var(--vermelho)' : 'var(--latao)') + ';">'
     + s.usadas + '<small> de ' + e.cotaTotal + '</small></div>'
     + '<div class="viz-sub" style="margin:4px 0 9px;">' + falta
     + ' por colocar até o fim do mês</div>'
@@ -1454,7 +1575,7 @@ function renderEstatisticas() {
         '<strong>' + e.previstas + '</strong> a escalar &bull; <strong>'
         + e.reservaEmergencial + '</strong> reservadas para convocação emergencial')
     + vizNumero('DEJEPs escaladas', e.agendadas,
-        e.emAberto ? '<strong style="color:#8a2020;">' + e.emAberto
+        e.emAberto ? '<strong style="color: var(--vermelho);">' + e.emAberto
           + ' vaga(s) em aberto</strong>' : 'de ' + e.previstas + ', nenhuma em aberto')
     + vizNumero('Reserva emergencial', e.reservaEmergencial,
         '<strong>' + e.emergenciaisUsadas + '</strong> usada(s) até agora &bull; '
@@ -1600,8 +1721,8 @@ function renderGerenciar() {
   // Entrou como ADM e ainda não disse em nome de quem vai agir.
   if (dados.adm && !dados.eu) return renderEscolhaDeServidor();
   if (!dados.eu) {
-    return '<div class="aviso-info" style="border-left-color:#a02020;background:#fde8e8;'
-      + 'color:#7a1a1a;margin-bottom:1rem;">A sua sessão expirou. Entre novamente.</div>'
+    return '<div class="aviso-info" style="border-left-color: var(--vermelho);background: var(--vermelho-fundo);'
+      + 'color: var(--vermelho);margin-bottom:1rem;">A sua sessão expirou. Entre novamente.</div>'
       + renderAcesso();
   }
 
@@ -1619,7 +1740,7 @@ function renderGerenciar() {
     + '<div class="painel-pos">' + partes.join(' &nbsp;•&nbsp; ')
     + (eu.soTorre ? ' &bull; somente postos de torre' : '')
     + (eu.genero === 'Feminino' ? ' &bull; posto das 08h e jumbo' : '') + '</div>'
-    + '<div style="font-size:0.7rem;color:#8fb4d8;margin-top:4px;">'
+    + '<div style="font-size:0.7rem;color: var(--texto-2);margin-top:4px;">'
     + (ehAdm()
         ? 'Você está agindo <strong>em nome deste servidor</strong>. Tudo o que fizer '
           + 'aqui é avisado a ele por e-mail.'
@@ -1632,9 +1753,8 @@ function renderGerenciar() {
 
   if (dados.semEscalaNoMes) {
     h += '<div class="painel-item"><span class="pi-info">'
-      + 'A escala de ' + escapar(dados.mes) + ' ainda não foi lançada. Você já pode '
-      + 'declarar os dias em que não poderá ser convocado — a declaração vale quando a '
-      + 'escala for gerada.</span></div>';
+      + 'Escala de ' + escapar(dados.mes) + ' ainda não lançada. Já dá para declarar '
+      + 'impedimento.</span></div>';
   } else if (!dados.minhas.length) {
     h += '<div class="painel-item"><span class="pi-info">'
       + 'Você não tem DEJEP agendada em ' + escapar(dados.mes) + '.</span></div>';
@@ -1653,7 +1773,7 @@ function renderGerenciar() {
         // sujeita o servidor a penalidade.
         + ((ehAdm() && m.podeCancelar && m.tardio)
             ? '<div style="font-size:0.7rem;line-height:1.45;margin:-2px 0 6px;'
-              + 'color:#ffb4a0;">Faltam ' + m.horasAte + 'h: cancelar aqui será '
+              + 'color: var(--vermelho);">Faltam ' + m.horasAte + 'h: cancelar aqui será '
               + 'registrado como <strong>aviso tardio</strong>, sujeito a '
               + 'penalidade.</div>'
             : '')
@@ -1662,7 +1782,7 @@ function renderGerenciar() {
         // prazo já entrou na faixa tardia.
         + (m.podeCancelar ? '' :
             '<div style="font-size:0.7rem;line-height:1.45;margin:-2px 0 6px;color:'
-            + (m.tardio ? '#ffb4a0' : '#8fb4d8') + ';">'
+            + (m.tardio ? 'var(--vermelho)' : 'var(--texto-2)') + ';">'
             + escapar(motivoSemCancelar(m)) + '</div>');
     });
   }
@@ -1670,26 +1790,25 @@ function renderGerenciar() {
   const totalCompat = (dados.escala || []).reduce(function (s, i) {
     return s + ((i.trocaCom || []).length ? 1 : 0);
   }, 0);
-  h += '<div style="font-size:0.74rem;color:#8fb4d8;margin-top:0.7rem;line-height:1.5;">';
-  if (dados.minhas.length && totalCompat === 0) {
-    h += '<strong style="color:#ffd8a0;">Nenhuma troca compatível neste mês.</strong> '
-      + 'As demais DEJEPs esbarram no intervalo mínimo de descanso em relação ao seu '
-      + 'plantão, no posto ou na composição da vaga. ';
-  } else if (dados.minhas.length) {
-    h += 'Há <strong>' + totalCompat + '</strong> DEJEPs compatíveis para troca, marcadas '
-      + 'com "trocar" na aba Escala do Mês. As incompatíveis aparecem sem o link. ';
+  // Uma linha, não um parágrafo: quantas trocas há e onde ler a regra.
+  if (dados.minhas.length) {
+    h += '<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;'
+      + 'font-size:0.76rem;color: var(--texto-2);margin-top:0.8rem;">'
+      + (totalCompat === 0
+          ? '<span style="color: var(--ambar);font-weight:700;">Nenhuma troca compatível '
+            + 'neste mês</span>'
+          : '<strong>' + totalCompat + '</strong> para troca neste mês')
+      + btnAjuda('troca')
+      + '<span style="color: var(--borda-clara);">|</span>'
+      + 'Cancelar' + btnAjuda('cancelar')
+      + '</div>';
   }
-  const pz = dados.prazos || { cancelamento: 48, tardio: 24 };
-  h += 'O cancelamento pela página exige <strong>' + pz.cancelamento
-    + ' horas</strong> de antecedência e <strong>não altera a sua posição</strong> na '
-    + 'lista. Abaixo desse prazo, procure a Diretoria de Disciplina: com menos de '
-    + '<strong>' + pz.tardio + ' horas</strong> o aviso é considerado tardio e '
-    + 'sujeita o servidor a penalidade.</div></div>';
+  h += '</div>';
 
   h += renderSolicitacoes();
 
   h += '<div class="card-title" style="margin-bottom:0.3rem;">'
-    + 'Dias em que não posso ser convocado</div>';
+    + 'Dias em que não posso ser convocado' + btnAjuda('impedimento') + '</div>';
   return h + renderImpedir();
 }
 
@@ -1701,16 +1820,16 @@ function renderGerenciar() {
 // descobre pelo e-mail, que nem sempre chega.
 // ------------------------------------------------------------
 const SITUACAO_TROCA = {
-  'Pendente':       { cor: '#8a6d1a', fundo: '#fff8e0', texto: 'aguardando resposta' },
-  'Aceita':         { cor: '#276221', fundo: '#eef7ee', texto: 'aceita — troca feita' },
-  'Recusada':       { cor: '#8a2020', fundo: '#fde8e8', texto: 'recusada' },
-  'Invalida':       { cor: '#8a2020', fundo: '#fde8e8', texto: 'não pôde ser efetivada' },
-  'Cancelada':      { cor: '#45617f', fundo: '#eef1f5', texto: 'cancelada por você' },
-  'Falha no envio': { cor: '#8a2020', fundo: '#fde8e8', texto: 'o e-mail não foi entregue' }
+  'Pendente':       { cor: 'var(--ambar)', fundo: 'var(--ambar-fundo)', texto: 'aguardando resposta' },
+  'Aceita':         { cor: 'var(--verde)', fundo: 'var(--verde-fundo)', texto: 'aceita — troca feita' },
+  'Recusada':       { cor: 'var(--vermelho)', fundo: 'var(--vermelho-fundo)', texto: 'recusada' },
+  'Invalida':       { cor: 'var(--vermelho)', fundo: 'var(--vermelho-fundo)', texto: 'não pôde ser efetivada' },
+  'Cancelada':      { cor: 'var(--texto-3)', fundo: 'var(--grafite-alto)', texto: 'cancelada por você' },
+  'Falha no envio': { cor: 'var(--vermelho)', fundo: 'var(--vermelho-fundo)', texto: 'o e-mail não foi entregue' }
 };
 
 function etiquetaSituacao(sit, textoAlt) {
-  const e = SITUACAO_TROCA[sit] || { cor: '#45617f', fundo: '#eef1f5', texto: sit };
+  const e = SITUACAO_TROCA[sit] || { cor: 'var(--texto-3)', fundo: 'var(--grafite-alto)', texto: sit };
   return '<span style="font-size:0.68rem;font-weight:700;border-radius:5px;padding:2px 8px;'
     + 'white-space:nowrap;background:' + e.fundo + ';color:' + e.cor + ';">'
     + escapar(textoAlt || e.texto) + '</span>';
@@ -1729,21 +1848,21 @@ function renderSolicitacoes() {
     + 'Solicitações de troca deste mês</div>';
 
   if (s.recebidas.length) {
-    h += '<div style="font-size:0.78rem;font-weight:700;color:#1a3a5c;margin-bottom:0.4rem;">'
+    h += '<div style="font-size:0.78rem;font-weight:700;color: var(--texto);margin-bottom:0.4rem;">'
       + 'Pedidos que você recebeu</div>';
     s.recebidas.forEach(function (r) {
       const pendente = r.situacao === 'Pendente';
-      h += '<div style="border:1px solid ' + (pendente ? '#e0b040' : '#dde4ed') + ';'
+      h += '<div style="border:1px solid ' + (pendente ? 'var(--ambar)' : 'var(--borda)') + ';'
         + 'border-radius:10px;padding:0.8rem 0.9rem;margin-bottom:8px;'
-        + (pendente ? 'background:#fffdf5;' : '') + '">'
+        + (pendente ? 'background: var(--ambar-fundo);' : '') + '">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
-        + '<strong style="font-size:0.88rem;color:#1a3a5c;">' + escapar(r.outro) + '</strong>'
+        + '<strong style="font-size:0.88rem;color: var(--texto);">' + escapar(r.outro) + '</strong>'
         + etiquetaSituacao(r.situacao, pendente ? 'aguardando a sua resposta' : null)
         + '</div>'
-        + '<div style="font-size:0.82rem;color:#45617f;line-height:1.6;">'
+        + '<div style="font-size:0.82rem;color: var(--texto-2);line-height:1.6;">'
         + 'Ele assumiria a sua DEJEP de <strong>' + trechoDejep(r.minha) + '</strong><br>'
         + 'e você ficaria com a dele de <strong>' + trechoDejep(r.dele) + '</strong></div>'
-        + (r.observacao ? '<div style="font-size:0.76rem;color:#8a2020;margin-top:5px;">'
+        + (r.observacao ? '<div style="font-size:0.76rem;color: var(--vermelho);margin-top:5px;">'
             + escapar(r.observacao) + '</div>' : '')
         + (pendente
             ? '<div style="display:flex;gap:8px;margin-top:0.7rem;">'
@@ -1752,29 +1871,29 @@ function renderSolicitacoes() {
               + '<button class="btn-resp aceitar"'
               + ' onclick="confirmarResposta(\'' + r.id + '\',\'sim\')">Aceitar a troca</button>'
               + '</div>'
-            : '<div style="font-size:0.72rem;color:#8fa3ba;margin-top:5px;">respondida em '
+            : '<div style="font-size:0.72rem;color: var(--texto-3);margin-top:5px;">respondida em '
               + escapar(r.respondidaEm || '—') + '</div>')
         + '</div>';
     });
   }
 
   if (s.feitas.length) {
-    h += '<div style="font-size:0.78rem;font-weight:700;color:#1a3a5c;'
+    h += '<div style="font-size:0.78rem;font-weight:700;color: var(--texto);'
       + 'margin:' + (s.recebidas.length ? '1rem' : '0') + ' 0 0.4rem;">'
       + 'Pedidos que você fez</div>';
     s.feitas.forEach(function (r) {
       const pend = r.situacao === 'Pendente';
-      h += '<div style="border:1px solid ' + (pend ? '#cfdcea' : '#dde4ed') + ';'
+      h += '<div style="border:1px solid ' + (pend ? 'var(--azul-borda)' : 'var(--borda)') + ';'
         + 'border-radius:10px;padding:0.8rem 0.9rem;margin-bottom:8px;">'
         + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">'
-        + '<strong style="font-size:0.88rem;color:#1a3a5c;">' + escapar(r.outro) + '</strong>'
+        + '<strong style="font-size:0.88rem;color: var(--texto);">' + escapar(r.outro) + '</strong>'
         + etiquetaSituacao(r.situacao) + '</div>'
-        + '<div style="font-size:0.82rem;color:#45617f;line-height:1.6;">'
+        + '<div style="font-size:0.82rem;color: var(--texto-2);line-height:1.6;">'
         + 'Você ofereceu a sua DEJEP de <strong>' + trechoDejep(r.minha) + '</strong><br>'
         + 'em troca da dele de <strong>' + trechoDejep(r.dele) + '</strong></div>'
-        + (r.observacao ? '<div style="font-size:0.76rem;color:#8a2020;margin-top:5px;">'
+        + (r.observacao ? '<div style="font-size:0.76rem;color: var(--vermelho);margin-top:5px;">'
             + escapar(r.observacao) + '</div>' : '')
-        + '<div style="font-size:0.72rem;color:#8fa3ba;margin-top:5px;">'
+        + '<div style="font-size:0.72rem;color: var(--texto-3);margin-top:5px;">'
         + 'enviado em ' + escapar(r.criadaEm)
         + (r.respondidaEm ? ' &bull; respondido em ' + escapar(r.respondidaEm) : '')
         + (r.situacao === 'Falha no envio'
@@ -1843,8 +1962,8 @@ function confirmarResposta(id, resposta) {
   abrirModal('Aceitar a troca',
     'Você passa a cumprir <strong>' + trechoDejep(r.dele) + '</strong> e '
     + escapar(r.outro) + ' assume a sua de <strong>' + trechoDejep(r.minha) + '</strong>.'
-    + '<br><br>O horário de entrada é reapurado pelo intervalo de descanso de cada um, e a '
-    + 'posição de vocês na lista <strong>não muda</strong>.', '',
+    + '<br><br>A posição de vocês na lista <strong>não muda</strong>. '
+    + btnAjuda('troca'), '',
     '<button class="modal-btn" onclick="fecharModalForcado()">Voltar</button>'
     + '<button class="modal-btn principal" onclick="responderTroca(\'' + id + '\',\'sim\')">'
     + 'Confirmar a troca</button>');
@@ -2017,22 +2136,16 @@ function renderImpedir() {
   }).join('');
 
   return ''
-    + '<div class="aviso-info" style="margin-bottom:1.1rem;">'
-    + 'Marque no calendário os dias em que <strong>não pode</strong> ser convocado. '
-    + 'Você continua na lista, na <strong>mesma posição</strong> — o sistema apenas segue '
-    + 'para o próximo e volta a você no dia seguinte disponível. Troque o mês nas setas do '
-    + 'topo da aba: a marcação de todos os meses é enviada de uma só vez.</div>'
-
     + '<div class="dp-nav" style="justify-content:center;">'
     + '<div class="dp-mes" id="dp-mes"></div></div>'
     + '<div class="dp-sem">' + DIAS_SEM_LONGO.map(function (d) {
         return '<span>' + d + '</span>'; }).join('') + '</div>'
     + '<div class="dp-grade" id="dp-grade"></div>'
     + '<div class="dp-leg">'
-    + '<span><i class="pt" style="background:#1a3a5c;border-color:#1a3a5c;"></i> marcado agora</span>'
-    + '<span><i class="pt" style="background:#dcece0;border-color:#4a8a62;"></i> em um bloco montado</span>'
-    + '<span><i class="pt" style="background:#fff2cc;border-color:#e0b040;"></i> já declarado</span>'
-    + '<span><i class="pt" style="background:#fff;"></i><i class="dp-dejep" style="position:static;"></i> DEJEP sua</span>'
+    + '<span><i class="pt" style="background: var(--grafite-alto);border-color: var(--borda-clara);"></i> marcado agora</span>'
+    + '<span><i class="pt" style="background: var(--verde-fundo);border-color: var(--verde);"></i> em um bloco montado</span>'
+    + '<span><i class="pt" style="background: var(--ambar-fundo);border-color: var(--ambar);"></i> já declarado</span>'
+    + '<span><i class="pt" style="background: var(--grafite);"></i><i class="dp-dejep" style="position:static;"></i> DEJEP sua</span>'
     + '</div>'
 
     + '<div class="dp-atalhos">'
@@ -2051,17 +2164,8 @@ function renderImpedir() {
 
     + '<button class="dp-add" id="dp-add" onclick="adicionarLote()">'
     + 'Guardar estes dias e marcar outro motivo</button>'
-    + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.55rem;line-height:1.5;">'
-    + 'Use este botão quando os próximos dias tiverem <strong>outro motivo</strong> — '
-    + 'férias no início do mês, troca de plantão no dia 15, curso no dia 25. '
-    + 'Os blocos ficam guardados aqui e só são enviados quando você clicar em Declarar.</div>'
 
     + renderLotes()
-
-    + '<div style="font-size:0.74rem;color:#6b80a0;margin-top:0.9rem;line-height:1.5;">'
-    + 'O impedimento <strong>vale de imediato</strong>, qualquer que seja o motivo: '
-    + 'não depende de validação da Diretoria. Você não é escalado nos dias declarados '
-    + 'e <strong>mantém a sua posição na fila</strong>.</div>'
 
     + '<button class="dp-enviar" id="dp-enviar" onclick="enviarDias()">Declarar</button>'
 
@@ -2147,10 +2251,10 @@ function renderDeclarados() {
   let h = '<div style="margin-top:1.8rem;"><div class="card-title">Já declarados</div>';
   lista.forEach(function (i) {
     h += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;'
-      + 'border:1px solid #dde4ed;border-radius:9px;padding:0.65rem 0.85rem;margin-bottom:7px;">'
-      + '<span style="font-weight:700;font-size:0.86rem;color:#1a3a5c;white-space:nowrap;">'
+      + 'border:1px solid var(--borda);border-radius:9px;padding:0.65rem 0.85rem;margin-bottom:7px;">'
+      + '<span style="font-weight:700;font-size:0.86rem;color: var(--texto);white-space:nowrap;">'
       + escapar(periodoTexto(i)) + '</span>'
-      + '<span style="flex:1;min-width:110px;font-size:0.8rem;color:#6b80a0;">'
+      + '<span style="flex:1;min-width:110px;font-size:0.8rem;color: var(--texto-3);">'
       + escapar(i.motivo) + '</span>'
       + '<button class="btn-acao cancelar" onclick="confirmarRemocaoImpedimento(\''
       + i.id + '\')">Remover</button></div>';
@@ -2408,7 +2512,7 @@ function renderEscala(filtro) {
     html += '<div class="dia-bloco"><div class="dia-cab">'
       + '<span' + (fds ? ' class="dia-fds"' : '') + '>' + escapar(d) + ' &bull; '
       + DIAS_SEM[dow] + '</span>'
-      + '<span style="color:#8fa3ba;font-weight:400;">' + visiveis.length + '</span></div>';
+      + '<span style="color: var(--texto-3);font-weight:400;">' + visiveis.length + '</span></div>';
 
     visiveis.forEach(function (i) {
       const ehMinha = meuNome && (i.nome || '').toLowerCase() === meuNome;
@@ -2431,12 +2535,12 @@ function renderEscala(filtro) {
         + '<span class="ld-nome' + (vaga ? ' ld-vaga' : '')
         + (oculto ? ' ld-oculto' : '') + '">'
         + (oculto ? 'preenchida' : (vaga ? 'VAGA' : escapar(i.nome))) + '</span>'
-        + (ehMinha ? '<span style="font-size:0.7rem;color:#276221;font-weight:700;">você</span>'
-                   : (podeClicar ? '<span style="font-size:0.7rem;color:#2d6a9f;">trocar</span>'
+        + (ehMinha ? '<span style="font-size:0.7rem;color: var(--verde);font-weight:700;">você</span>'
+                   : (podeClicar ? '<span style="font-size:0.7rem;color: var(--azul);">trocar</span>'
                    : (dados.eu && !vaga && dados.minhas.length
-                      ? '<span style="font-size:0.68rem;color:#c0ccd8;" title="Troca incompatível com o intervalo de descanso, o posto ou a sua situação">—</span>'
+                      ? '<span style="font-size:0.68rem;color: var(--texto-3);" title="Troca incompatível com o intervalo de descanso, o posto ou a sua situação">—</span>'
                       : '')))
-        + (i.situacao === 'Falta' ? '<span style="font-size:0.7rem;color:#a02020;font-weight:700;">falta</span>' : '')
+        + (i.situacao === 'Falta' ? '<span style="font-size:0.7rem;color: var(--vermelho);font-weight:700;">falta</span>' : '')
         + '</div>';
     });
     html += '</div>';
@@ -2446,14 +2550,16 @@ function renderEscala(filtro) {
     || '<div class="empty-msg">Nenhum servidor encontrado com esse nome.</div>');
 }
 
-function tabelaFila(titulo, itens, filtro, subtitulo) {
+function tabelaFila(titulo, itens, filtro, subtitulo, ajuda) {
   const visiveis = filtro
     ? itens.filter(function (i) { return i.nome.toLowerCase().includes(filtro); })
     : itens;
-  let html = '<div style="font-size:0.78rem;font-weight:700;color:#1a3a5c;'
-    + 'text-transform:uppercase;letter-spacing:0.06em;margin:16px 0 4px;">' + titulo
-    + ' <span style="color:#8fa3ba;font-weight:400;">(' + itens.length + ')</span></div>'
-    + '<div style="font-size:0.74rem;color:#6b80a0;margin-bottom:8px;">' + subtitulo + '</div>';
+  let html = '<div style="font-family:var(--fonte-tit);font-size:1.05rem;font-weight:700;'
+    + 'color: var(--texto);text-transform:uppercase;letter-spacing:0.09em;'
+    + 'margin:18px 0 4px;display:flex;align-items:center;gap:7px;">' + titulo
+    + ' <span style="color: var(--texto-3);font-weight:500;">(' + itens.length + ')</span>'
+    + (ajuda ? btnAjuda(ajuda) : '') + '</div>'
+    + '<div style="font-size:0.74rem;color: var(--texto-3);margin-bottom:8px;">' + subtitulo + '</div>';
 
   if (!visiveis.length) {
     return html + '<div class="empty-msg">' + (itens.length
@@ -2472,11 +2578,13 @@ function tabelaFila(titulo, itens, filtro, subtitulo) {
     + '</tr></thead><tbody>';
   visiveis.forEach(function (i) {
     const eu = meuNome && i.nome.toLowerCase() === meuNome;
-    html += '<tr' + (eu ? ' style="background:#eef7ee;font-weight:700;"' : '') + '>'
+    html += '<tr' + (eu
+      ? ' style="background: var(--latao-fundo);font-weight:700;'
+        + 'box-shadow: inset 3px 0 0 var(--latao);"' : '') + '>'
       + '<td class="num">' + i.posicao + 'º</td>'
       + '<td>' + escapar(i.nome)
       + (i.soTorre ? ' <span class="tag">torre</span>' : '')
-      + (i.listas === 'Ambas' ? ' <span class="tag" style="background:#d9e8f5;color:#1a3a5c;">nos dois períodos</span>' : '')
+      + (i.listas === 'Ambas' ? ' <span class="tag" style="background: var(--azul-fundo);color: var(--texto);">nos dois períodos</span>' : '')
       + '</td>'
       + (comContagem
           ? '<td class="centro">' + (i.dejeps === null || i.dejeps === undefined
@@ -2507,35 +2615,13 @@ function renderLista(filtro) {
   if (!diurna.length && !noturna.length) {
     return '<div class="empty-msg">A lista corrida ainda não foi constituída.</div>';
   }
+  // A explicação da ordem — que era o texto mais longo da página —
+  // mora no "?" ao lado do título de cada período. Quem discute a
+  // própria posição precisa dela; quem só quer ver a lista, não.
   return avisoEntrar() + tabelaFila('Período diurno', diurna, filtro,
-      'Atende os postos das 07h e das 08h, o jumbo e a torre diurna.')
+      'Postos das 07h e das 08h, jumbo e torre diurna.', 'fila')
     + tabelaFila('Período noturno', noturna, filtro,
-      'Atende a torre noturna. A participação depende de manifestação na inscrição.')
-    + '<div style="font-size:0.76rem;color:#6b80a0;line-height:1.5;margin-top:14px;">'
-    + (dados.porContagem
-        ? 'Lista única, separada nos períodos diurno e noturno, na forma da Resolução SAP nº 048, de 24 de agosto de 2026.<br><br>'
-          + 'A ordem é dada pela <strong>quantidade de DEJEPs</strong> de cada um: quem fez '
-          + 'menos vem primeiro. A coluna DEJEPs mostra esse número, e ele é o '
-          + '<strong>total do servidor</strong> — diurnas e noturnas somadas. Por isso quem '
-          + 'atua nos dois períodos aparece com o mesmo número nos dois: a DEJEP é a mesma, '
-          + 'de dia ou de noite.<br><br>'
-          + 'Conta desde que o sistema entrou em operação, e não entram as faltas.<br><br>'
-          + '<strong>Cancelamento.</strong> Quem cancela a própria DEJEP não perde posição '
-          + 'nem ganha — é o que diz a Resolução. Por isso a DEJEP cancelada continua '
-          + 'pesando na ordem da fila, ainda que não seja DEJEP cumprida: quem cancela fica '
-          + 'onde estava. O número da coluna é o das DEJEPs <strong>cumpridas</strong>, e é '
-          + 'por isso que alguém pode aparecer com menos DEJEPs e ainda assim atrás de quem '
-          + 'tem mais. Nesse caso a marca <span class="canc">+1 canc.</span> aparece ao lado '
-          + 'do número e mostra a diferença.<br><br>'
-          + 'Quem empata na mesma quantidade fica na ordem do rodízio daquele '
-          + 'período, e dentro do mês vale o rodízio de sempre: quem pega uma vaga passa '
-          + 'para o fim. Quem se inscreve depois entra com a média do efetivo, para não '
-          + 'passar à frente de quem já está na lista.'
-        : 'Lista única, separada nos períodos diurno e noturno. A ordem foi definida na '
-          + 'inscrição e é contínua — quem realiza uma DEJEP passa para o fim do seu '
-          + 'período, e o mês seguinte começa de onde o anterior parou. A falta e a '
-          + 'convocação emergencial também recolocam o servidor no fim.')
-    + '</div>';
+      'Torre noturna. Depende de manifestação na inscrição.', 'fila');
 }
 
 // Identificado = servidor com token válido, ou acesso administrativo.
@@ -2629,11 +2715,11 @@ function renderAgendamento() {
   if (!a.grupos || !a.grupos.length) {
     return '<div class="empty-msg">Não há DEJEPs agendadas em ' + a.mes + '.</div>';
   }
-  let h = '<div class="ag-ajuda">Os mesmos nomes da escala, organizados do jeito '
-    + 'do sistema oficial: primeiro a <strong>Segurança Interna</strong> inteira, '
-    + 'depois a <strong>Externa</strong>; dentro de cada uma, um bloco por '
-    + '<strong>horário</strong>, em ordem alfabética. '
-    + '<strong>' + a.total + '</strong> lançamentos em ' + a.mes + '.</div>';
+  // A explicação de como a lista é organizada foi para o "?". O que
+  // fica é o número, que é o que o operador confere antes de lançar.
+  let h = '<div class="ag-ajuda" style="display:flex;align-items:center;gap:8px;'
+    + 'flex-wrap:wrap;"><strong>' + a.total + '</strong> lançamentos em '
+    + a.mes + btnAjuda('lancamento') + '</div>';
 
   a.grupos.forEach(g => {
     h += '<div class="ag-grupo"><div class="ag-seg-cab">'
@@ -2768,9 +2854,134 @@ function render() {
 // ------------------------------------------------------------
 let trocaAlvo = null;
 
+// ------------------------------------------------------------
+// AJUDA — a regra sai da tela, não do sistema
+//
+// A tela ficou sem os textos de instrução, que ocupavam mais espaço
+// que a informação. Mas parte daquela prosa não era instrução: era
+// REGRA — a senha inicial, o prazo para cancelar, a posição que se
+// preserva, por que a fila mostra um número menor na frente de um
+// maior. Tirar isso da tela sem deixar onde ler transformaria cada
+// dúvida numa pergunta à Diretoria, que é justamente o que o sistema
+// existe para evitar.
+//
+// Então mora aqui, atrás de um "?" discreto, ao lado do assunto a que
+// se refere. Quem já sabe não lê; quem precisa, acha.
+// ------------------------------------------------------------
+var AJUDA = {
+  senha: {
+    tit: 'Primeiro acesso',
+    txt: '<p>No primeiro acesso a senha é formada pelas <strong>três primeiras '
+       + 'letras do seu primeiro nome</strong> seguidas dos <strong>três primeiros '
+       + 'números do seu RG</strong>.</p>'
+       + '<p>Quem se chama João e tem RG 12.345.678-9 entra com <strong>JOA123</strong>. '
+       + 'O sistema pede em seguida que você escolha uma senha só sua: a inicial é '
+       + 'fácil de adivinhar e serve uma vez só.</p>'
+       + '<p>Se o seu RG não for encontrado, procure a Diretoria de Disciplina — pode '
+       + 'ser que ele ainda não conste do seu cadastro.</p>'
+  },
+  recuperar: {
+    tit: 'Recuperar o acesso',
+    txt: '<p>Informe o seu RG e o e-mail que consta do seu cadastro. Se os dois '
+       + 'conferirem, você recebe um link para definir uma senha nova.</p>'
+       + '<p>O sistema <strong>não guarda a sua senha</strong> e por isso não tem como '
+       + 'reenviá-la — o que vai por e-mail é o link, não a senha.</p>'
+       + '<p>O e-mail do cadastro é o mesmo que recebe as convocações. Sem acesso a '
+       + 'ele, procure a Diretoria de Disciplina.</p>'
+  },
+  novaSenha: {
+    tit: 'A senha nova',
+    txt: '<p>Não use o seu RG nem a senha inicial.</p>'
+       + '<p>Você recebe um e-mail confirmando a troca. Se ele chegar sem que você '
+       + 'tenha trocado, avise a Diretoria de Disciplina.</p>'
+  },
+  impedimento: {
+    tit: 'Impedimento',
+    txt: '<p>Marque no calendário os dias em que <strong>não pode</strong> ser '
+       + 'convocado. A declaração <strong>vale de imediato</strong>, qualquer que '
+       + 'seja o motivo: não depende de validação da Diretoria.</p>'
+       + '<p>Você continua na lista, na <strong>mesma posição</strong>. O sistema '
+       + 'apenas segue para o próximo e volta a você no dia seguinte disponível.</p>'
+       + '<p>A marcação de todos os meses é enviada de uma só vez — troque o mês nas '
+       + 'setas do topo antes de declarar. Para dias com motivos diferentes, guarde '
+       + 'um bloco e marque o motivo seguinte.</p>'
+  },
+  cancelar: {
+    tit: 'Cancelar uma DEJEP',
+    // Os prazos vêm do servidor, não escritos aqui: são configuração
+    // da unidade e mudam sem passar por esta página.
+    txt: function () {
+      var pz = (dados && dados.prazos) || { cancelamento: 48, tardio: 24 };
+      return '<p>O cancelamento pela página exige <strong>' + pz.cancelamento
+        + ' horas</strong> de antecedência e <strong>não altera a sua posição</strong> '
+        + 'na lista.</p>'
+        + '<p>Abaixo desse prazo, procure a Diretoria de Disciplina. Com menos de '
+        + '<strong>' + pz.tardio + ' horas</strong> o aviso é considerado tardio e '
+        + 'sujeita o servidor a penalidade.</p>'
+        + '<p>A vaga cancelada é reconvocada pelo próximo da lista.</p>';
+    }
+  },
+  fila: {
+    tit: 'Como a fila é ordenada',
+    txt: '<p>A ordem é dada pela <strong>quantidade de DEJEPs</strong> de cada um: '
+       + 'quem fez menos vem primeiro. É o total do servidor — diurnas e noturnas '
+       + 'somadas —, e por isso quem atua nos dois períodos aparece com o mesmo '
+       + 'número nos dois. Conta desde que o sistema entrou em operação, e não '
+       + 'entram as faltas.</p>'
+       + '<p><strong>Cancelamento.</strong> Quem cancela a própria DEJEP '
+       + 'não perde posição nem ganha — é o que diz a Resolução. A DEJEP cancelada continua '
+       + 'pesando na ordem, ainda que não tenha sido cumprida. O número da coluna é '
+       + 'o das <strong>cumpridas</strong>, e é por isso que alguém pode aparecer '
+       + 'com menos DEJEPs e ainda assim atrás de quem tem mais. Nesse caso a marca '
+       + '<span class="canc">+1 canc.</span> aparece ao lado.</p>'
+       + '<p><strong>Empate.</strong> Quem empata fica na ordem do rodízio daquele '
+       + 'período. Dentro do mês vale o rodízio de sempre: quem pega uma vaga passa '
+       + 'para o fim. Quem se inscreve depois entra com a média do efetivo, para não '
+       + 'passar à frente de quem já vinha servindo.</p>'
+       + '<p>Lista única, separada nos períodos diurno e noturno, na forma da '
+       + 'Resolução SAP nº 048, de 24 de agosto de 2026.</p>'
+  },
+  troca: {
+    tit: 'Troca com um colega',
+    txt: '<p>Só aparecem as DEJEPs <strong>compatíveis</strong>: o intervalo mínimo '
+       + 'de descanso dos dois já foi conferido pelo sistema.</p>'
+       + '<p>A troca só se efetiva se o colega aceitar — pelo e-mail ou na aba '
+       + 'Gerenciar DEJEPs dele. Enquanto isso, o pedido fica visível no seu painel '
+       + 'e pode ser retirado.</p>'
+       + '<p>O horário de entrada é reapurado pelo intervalo de descanso de cada um, '
+       + 'e por isso pode mudar depois da troca.</p>'
+  },
+  lancamento: {
+    tit: 'Lista para lançamento',
+    txt: '<p>A escala virada do avesso, na ordem em que o sistema oficial pede: '
+       + 'primeiro a <strong>Segurança Interna</strong> inteira, depois a '
+       + '<strong>Externa</strong>; dentro de cada uma, um bloco por horário, em '
+       + 'ordem alfabética.</p>'
+       + '<p>O botão de cada bloco copia em texto simples, para colar na planilha ou '
+       + 'no campo do sistema.</p>'
+  }
+};
+
+// O "?" ao lado do assunto. 'onclick' em vez de link: a ajuda é
+// consulta, não navegação, e não tira o servidor de onde ele está.
+function btnAjuda(chave) {
+  return '<button class="ajuda" type="button" title="Como funciona" '
+    + 'onclick="verAjuda(\'' + chave + '\')">?</button>';
+}
+function verAjuda(chave) {
+  var a = AJUDA[chave];
+  if (!a) return;
+  var txt = (typeof a.txt === 'function') ? a.txt() : a.txt;
+  abrirModal(a.tit, '', '<div class="ajuda-corpo">' + txt + '</div>',
+    '<button class="modal-btn principal" onclick="fecharModalForcado()">Entendi</button>');
+}
+
 function abrirModal(tit, sub, corpo, acoes) {
   el('modal-tit').textContent = tit;
-  el('modal-sub').innerHTML = sub;
+  el('modal-sub').innerHTML = sub || '';
+  // Sem subtítulo o div vazio ainda ocupava a sua margem, abrindo um
+  // vão entre o título e o corpo.
+  el('modal-sub').hidden = !sub;
   el('modal-corpo').innerHTML = corpo || '';
   el('modal-acoes').innerHTML = acoes || '';
   el('modal').classList.add('ativo');
@@ -2811,10 +3022,7 @@ function abrirTrocaComAlvo(idAlvo) {
 
   abrirModal('Solicitar troca com ' + alvo.nome,
     'Você assumiria <strong>' + escapar(alvo.data) + '</strong> — ' + escapar(alvo.posto)
-    + '. Escolha abaixo <strong>qual das suas DEJEPs</strong> oferece em troca. '
-    + 'Só aparecem as compatíveis: o intervalo de descanso dos dois já foi conferido. '
-    + 'A troca só se efetiva se o colega aceitar — pelo e-mail ou na aba '
-    + 'Gerenciar DEJEPs dele. Enquanto isso, o pedido fica visível aqui.',
+    + '. Escolha qual das suas oferece em troca. ' + btnAjuda('troca'),
     opcoes,
     '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>');
 }
@@ -2834,13 +3042,12 @@ function abrirTrocaDaMinha(idMinha) {
     return '<button class="modal-opt" onclick="enviarTrocaCom(\'' + idMinha + '\',\'' + c.id + '\')">'
       + '<strong>' + escapar(c.data) + '</strong> &nbsp; ' + escapar(c.posto)
       + ' &bull; ' + rotuloHorario(c.horario) + '<br>'
-      + '<span style="color:#6b80a0;font-size:0.8rem;">' + escapar(c.nome) + '</span></button>';
+      + '<span style="color: var(--texto-3);font-size:0.8rem;">' + escapar(c.nome) + '</span></button>';
   }).join('');
 
   abrirModal('Trocar a DEJEP de ' + minha.data,
-    'Estas são as <strong>' + candidatos.length + ' trocas compatíveis</strong> com a sua '
-    + 'DEJEP de ' + escapar(minha.data) + ' — o intervalo de descanso dos dois já foi '
-    + 'conferido. O colega receberá um e-mail e a troca só se efetiva se ele aceitar.',
+    '<strong>' + candidatos.length + ' trocas compatíveis</strong> com a sua DEJEP de '
+    + escapar(minha.data) + '. ' + btnAjuda('troca'),
     '<div style="max-height:320px;overflow-y:auto;">' + opcoes + '</div>',
     '<button class="modal-btn" onclick="fecharModalForcado()">Cancelar</button>');
 }
@@ -2871,8 +3078,7 @@ function confirmarCancelamento(id) {
   abrirModal('Cancelar a DEJEP de ' + m.data,
     'Você deixará de cumprir <strong>' + escapar(m.data) + '</strong> — ' + escapar(m.posto)
     + ', ' + rotuloHorario(m.horario) + '.<br><br>'
-    + 'A sua <strong>posição na lista corrida é preservada</strong>, e a vaga será '
-    + 'reconvocada pelo próximo da lista. A Diretoria de Disciplina é avisada.',
+    + 'A sua <strong>posição na lista é preservada</strong>. ' + btnAjuda('cancelar'),
     '',
     '<button class="modal-btn" onclick="fecharModalForcado()">Voltar</button>'
     + '<button class="modal-btn perigo" onclick="executarCancelamento(\'' + id + '\')">Confirmar cancelamento</button>');
