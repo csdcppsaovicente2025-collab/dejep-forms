@@ -2611,6 +2611,51 @@ function renderEscala(filtro) {
     || '<div class="empty-msg">Nenhum servidor encontrado com esse nome.</div>');
 }
 
+// A célula da contagem.
+//
+// Até 23/11/2026 era um número só, e ele somava o crédito da
+// inscrição às DEJEPs feitas: a coluna dizia 14 para quem tinha feito
+// 6. Agora são três coisas separadas, porque são três coisas:
+//
+//   - a MÉDIA POR MÊS, em destaque. É o que compara duas pessoas sem
+//     depender de há quanto tempo cada uma está na lista.
+//   - o ABSOLUTO embaixo, miúdo: "6 em 8 meses". Sem ele, "0,8" não
+//     diz de quê.
+//   - as MARCAS do que pesa na ordem mas não é DEJEP cumprida: o
+//     crédito anterior e as canceladas.
+//
+// As marcas existem porque a ordem da fila é por contagem, e sem elas
+// a coluna se contradiz na cara do servidor — alguém com número menor
+// aparece atrás de alguém com número maior, e nada na tela explica.
+function celulaContagem(i) {
+  if (i.dejeps === null || i.dejeps === undefined) return '—';
+  const meses = i.meses || 1;
+  const media = (typeof i.media === 'number') ? i.media : (i.dejeps / meses);
+  let h = '<div style="font-weight:700;font-size:0.95rem;">'
+    + media.toFixed(1).replace('.', ',') + '</div>'
+    + '<div style="font-size:0.66rem;color: var(--texto-3);line-height:1.3;">'
+    + i.dejeps + " em " + meses
+    + (meses === 1 ? ' mês' : ' meses') + '</div>';
+  const marcas = [];
+  if (i.credito) {
+    marcas.push('<span class="canc" title="' + i.credito + ' DEJEP'
+      + (i.credito > 1 ? 's' : '') + ' que o servidor já havia feito antes de o '
+      + 'sistema começar a contar. Pesam na ordem da fila, mas não são DEJEPs '
+      + 'cumpridas no sistema.">+' + i.credito + ' ant.</span>');
+  }
+  if (i.canceladas) {
+    marcas.push('<span class="canc" title="' + i.canceladas + ' DEJEP'
+      + (i.canceladas > 1 ? 's canceladas' : ' cancelada')
+      + ' por ele. Contam na ordem da fila, para que o cancelamento '
+      + 'não faça perder nem ganhar posição.">+' + i.canceladas + ' canc.</span>');
+  }
+  if (marcas.length) {
+    h += '<div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;'
+      + 'margin-top:3px;">' + marcas.join('') + '</div>';
+  }
+  return h;
+}
+
 function tabelaFila(titulo, itens, filtro, subtitulo, ajuda) {
   const visiveis = filtro
     ? itens.filter(function (i) { return i.nome.toLowerCase().includes(filtro); })
@@ -2634,7 +2679,7 @@ function tabelaFila(titulo, itens, filtro, subtitulo, ajuda) {
   const comContagem = !!dados.porContagem;
   html += '<div class="tabela-wrap"><table><thead><tr>'
     + '<th style="width:60px;">#</th><th>Servidor</th>'
-    + (comContagem ? '<th class="centro" style="width:86px;">DEJEPs</th>' : '')
+    + (comContagem ? '<th class="centro" style="width:104px;">DEJEPs/mês</th>' : '')
     + '<th class="centro" style="width:90px;">Turno</th>'
     + '</tr></thead><tbody>';
   visiveis.forEach(function (i) {
@@ -2647,23 +2692,7 @@ function tabelaFila(titulo, itens, filtro, subtitulo, ajuda) {
       + (i.soTorre ? ' <span class="tag">torre</span>' : '')
       + (i.listas === 'Ambas' ? ' <span class="tag" style="background: var(--azul-fundo);color: var(--texto);">nos dois períodos</span>' : '')
       + '</td>'
-      + (comContagem
-          ? '<td class="centro">' + (i.dejeps === null || i.dejeps === undefined
-              ? '—' : i.dejeps)
-            // A marca de cancelamento. Sem ela a coluna se contradiz:
-            // quem cancelou aparece com menos DEJEPs e ainda assim
-            // atrás de quem tem mais. O cancelamento em tempo hábil
-            // não faz perder nem ganhar posição, e é isso que o número
-            // exibido, sozinho, não consegue dizer.
-            + (i.canceladas
-                ? ' <span class="canc" title="' + i.canceladas + ' DEJEP'
-                  + (i.canceladas > 1 ? 's canceladas' : ' cancelada')
-                  + ' por ele. Contam na ordem da fila, para que o cancelamento '
-                  + 'não faça perder nem ganhar posição.">+' + i.canceladas
-                  + ' canc.</span>'
-                : '')
-            + '</td>'
-          : '')
+      + (comContagem ? '<td class="centro">' + celulaContagem(i) + '</td>' : '')
       + '<td class="centro">' + escapar(i.turno || '—') + '</td></tr>';
   });
   return html + '</tbody></table></div>';
@@ -2984,17 +3013,26 @@ var AJUDA = {
   },
   fila: {
     tit: 'Como a fila é ordenada',
-    txt: '<p>A ordem é dada pela <strong>quantidade de DEJEPs</strong> de cada um: '
-       + 'quem fez menos vem primeiro. É o total do servidor — diurnas e noturnas '
-       + 'somadas —, e por isso quem atua nos dois períodos aparece com o mesmo '
-       + 'número nos dois. Conta desde que o sistema entrou em operação, e não '
-       + 'entram as faltas.</p>'
-       + '<p><strong>Cancelamento.</strong> Quem cancela a própria DEJEP '
-       + 'não perde posição nem ganha — é o que diz a Resolução. A DEJEP cancelada continua '
-       + 'pesando na ordem, ainda que não tenha sido cumprida. O número da coluna é '
-       + 'o das <strong>cumpridas</strong>, e é por isso que alguém pode aparecer '
-       + 'com menos DEJEPs e ainda assim atrás de quem tem mais. Nesse caso a marca '
-       + '<span class="canc">+1 canc.</span> aparece ao lado.</p>'
+    txt: '<p><strong>O número da coluna.</strong> É a sua <strong>média por mês</strong>: '
+       + 'as DEJEPs que você cumpriu divididas pelos meses em que esteve na lista. '
+       + 'Embaixo, miúdo, vem o absoluto — "6 em 8 meses" —, que é de onde a média '
+       + 'sai. A média serve para comparar duas pessoas sem depender de há quanto '
+       + 'tempo cada uma está na lista.</p>'
+       + '<p>É o total do servidor, diurnas e noturnas somadas, e por isso quem atua '
+       + 'nos dois períodos aparece com o mesmo número nos dois. Conta desde que o '
+       + 'sistema entrou em operação, e não entram as faltas.</p>'
+       + '<p><strong>A ordem, porém, não é pela média.</strong> A fila é ordenada '
+       + 'pela contagem: as DEJEPs cumpridas, mais as que você cancelou, mais as que '
+       + 'já havia feito antes do sistema. Por isso duas marcas podem aparecer ao '
+       + 'lado do número, e elas existem para que a ordem não pareça arbitrária:</p>'
+       + '<p><span class="canc">+3 ant.</span> são DEJEPs cumpridas <strong>antes '
+       + 'de o sistema começar a contar</strong>, lançadas na inscrição. Pesam na '
+       + 'ordem, mas não são DEJEPs cumpridas no sistema e por isso não entram no '
+       + 'número da coluna — que mostra o que você fez, e só.</p>'
+       + '<p><span class="canc">+1 canc.</span> é DEJEP que você cancelou. Quem '
+       + 'cancela a própria DEJEP '
+       + 'não perde posição nem ganha — é o que diz a Resolução —, e para isso ela '
+       + 'continua pesando na ordem, ainda que não tenha sido cumprida.</p>'
        + '<p><strong>Empate.</strong> Quem empata fica na ordem do rodízio daquele '
        + 'período. Dentro do mês vale o rodízio de sempre: quem pega uma vaga passa '
        + 'para o fim. Quem se inscreve depois entra com a média do efetivo, para não '
